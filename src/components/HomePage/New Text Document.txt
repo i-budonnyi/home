@@ -1,0 +1,53 @@
+import React from 'react';
+import Header from '../Header';
+import Footer from '../Footer';
+
+const HomePage = () => (
+  <div style={{ fontFamily: 'Arial, sans-serif', lineHeight: '1.6' }}>
+    <Header />
+    <main style={{ padding: '40px', textAlign: 'center' }}>
+      <h1 style={{ fontSize: '2.5em', color: '#333', fontWeight: 'bold' }}>Ваша думка має значення!</h1>
+      <p style={{ fontSize: '1.2em', color: '#555', maxWidth: '800px', margin: '0 auto' }}>
+        У вас є ідея чи пропозиція, яка може зробити наш сервіс кращим? Ми завжди шукаємо нові способи вдосконалення та вирішення існуючих проблем.
+        Не зволікайте, поділіться своїми думками! Разом ми можемо створити зручніший та ефективніший продукт для всіх користувачів.
+      </p>
+      <div style={{ marginTop: '30px' }}>
+        <button
+          style={{
+            padding: '15px 30px',
+            margin: '10px',
+            backgroundColor: '#007BFF',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontSize: '1em',
+            fontWeight: 'bold',
+            letterSpacing: '1px',
+          }}
+        >
+          Подати Ідею
+        </button>
+        <button
+          style={{
+            padding: '15px 30px',
+            margin: '10px',
+            backgroundColor: '#FF5733',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontSize: '1em',
+            fontWeight: 'bold',
+            letterSpacing: '1px',
+          }}
+        >
+          Подати Проблему
+        </button>
+      </div>
+    </main>
+    <Footer />
+  </div>
+);
+
+export default HomePage;

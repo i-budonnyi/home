@@ -1,0 +1,14 @@
+// src/components/Header/Header.js
+import React from 'react';
+
+const Header = () => (
+  <header style={{ padding: '10px', backgroundColor: '#003366', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <h1>Avtologistika</h1>
+    <nav>
+      <a href="/login" style={{ color: 'white', marginRight: '15px' }}>¬х≥д</a>
+      <a href="/register" style={{ color: 'white' }}>–еЇстрац≥€</a>
+    </nav>
+  </header>
+);
+
+export default Header;

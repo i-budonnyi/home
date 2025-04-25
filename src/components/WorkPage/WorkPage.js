@@ -1,0 +1,193 @@
+﻿import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Layout,
+  Menu,
+  Card,
+  Avatar,
+  Typography,
+  Space,
+} from "antd";
+import {
+  MessageOutlined,
+  BulbOutlined,
+  FileTextOutlined,
+  AppstoreOutlined,
+  ProjectOutlined,
+  StarOutlined,
+  PhoneOutlined,
+  MailOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+import axios from "axios";
+
+const { Content, Sider } = Layout;
+const { Title, Text } = Typography;
+
+const API_BASE_URL = "http://192.168.0.116:5000/api/userRoutes/";
+
+const WorkerPage = () => {
+  const [userData, setUserData] = useState(null);
+  const [isCheckingRole, setIsCheckingRole] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return navigate("/login");
+
+    const fetchUserProfile = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const userRole = response.data.role?.toLowerCase() || "worker";
+        localStorage.setItem("userId", response.data.id);
+
+        setUserData({
+          id: response.data.id,
+          firstName: response.data.first_name || "Невідоме ім'я",
+          lastName: response.data.last_name || "Невідоме прізвище",
+          email: response.data.email || "Невідомий email",
+          phone: response.data.phone || "Номер не вказано",
+          profilePicture: response.data.profile_picture || "",
+          role: userRole,
+        });
+
+        setIsCheckingRole(false);
+      } catch (err) {
+        setError(err.response?.data?.message || err.message || "Сталася помилка.");
+        setIsCheckingRole(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!isCheckingRole && userData?.role) {
+      const redirects = {
+        project_manager: "/pm-projects",
+        ambassador: "/ambassadors",
+        jury_secretary: "/jury-secretary",
+        jury_member: "/jury",
+      };
+      if (redirects[userData.role]) navigate(redirects[userData.role], { replace: true });
+    }
+  }, [isCheckingRole, userData?.role, navigate]);
+
+  return (
+    <Layout style={{ minHeight: "100vh" }}>
+      <Sider width={250} style={styles.sider}>
+        <div style={styles.logo}>
+          <Title level={4} style={styles.logoText}>Avtologistika</Title>
+        </div>
+        <Menu
+          theme="dark"
+          mode="inline"
+          selectedKeys={[window.location.pathname]}
+          onClick={({ key }) => navigate(key)}
+          items={[
+            { key: "/blog", icon: <MessageOutlined />, label: "Блог" },
+            { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
+            { key: "/submit-problem", icon: <FileTextOutlined />, label: "Подати проблему" },
+            { key: "/my-ideas", icon: <AppstoreOutlined />, label: "Мої ідеї" },
+            { key: "/my-problems", icon: <ProjectOutlined />, label: "Мої проблеми" },
+            { key: "/subscriptions", icon: <StarOutlined />, label: "Підписка" },
+            { key: "/projects", icon: <ProjectOutlined />, label: "Мої подані ідеї" },
+          ]}
+          style={styles.menu}
+        />
+      </Sider>
+
+      <Layout style={{ marginLeft: 250 }}>
+        <Content style={styles.content}>
+          {isCheckingRole ? (
+            <Title level={3}>⏳ Визначаємо вашу роль...</Title>
+          ) : error ? (
+            <Title level={3} type="danger">❌ Помилка: {error}</Title>
+          ) : (
+            <Card hoverable style={styles.card} bodyStyle={{ padding: "24px" }}>
+              <Card.Meta
+                avatar={
+                  <Avatar
+                    size={72}
+                    src={userData?.profilePicture || null}
+                    icon={!userData?.profilePicture && <UserOutlined />}
+                    style={{ backgroundColor: "#f0f0f0" }}
+                  />
+                }
+                title={
+                  <Title level={4} style={{ marginBottom: 0 }}>
+                    {`${userData?.firstName} ${userData?.lastName}`}
+                  </Title>
+                }
+                description={
+                  <Text style={{ color: "#8c8c8c", fontSize: "16px" }}>
+                    Роль: {userData?.role}
+                  </Text>
+                }
+              />
+              <Space direction="vertical" size="large" style={{ marginTop: "24px" }}>
+                <Text><PhoneOutlined style={styles.icon} />{userData?.phone}</Text>
+                <Text><MailOutlined style={styles.icon} />{userData?.email}</Text>
+              </Space>
+            </Card>
+          )}
+        </Content>
+      </Layout>
+    </Layout>
+  );
+};
+
+const styles = {
+  sider: {
+    background: "#002140",
+    position: "fixed",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    height: "100vh",
+    zIndex: 1000,
+    borderRight: "1px solid #001f3f",
+  },
+  logo: {
+    height: 64,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "#002140",
+    borderBottom: "1px solid #001f3f",
+  },
+  logoText: {
+    color: "#ffffff",
+    margin: 0,
+    fontSize: "18px",
+    fontWeight: "bold",
+  },
+  menu: {
+    marginTop: 20,
+  },
+  content: {
+    padding: "30px",
+    paddingLeft: "50px",
+    paddingRight: "50px",
+    background: "#f4f6f9",
+    minHeight: "100vh",
+  },
+  card: {
+    borderRadius: "16px",
+    boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+    background: "#fff",
+    maxWidth: "500px",
+    width: "100%",
+    margin: "0 auto",
+  },
+  icon: {
+    marginRight: "8px",
+    color: "#1890ff",
+  },
+};
+
+export default WorkerPage;

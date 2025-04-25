@@ -1,0 +1,14 @@
+﻿/* src/components/AmbassadorPage/AmbassadorPage.css */
+.ambassador-page {
+  padding: 20px;
+}
+
+.ideas-list {
+  margin-top: 20px;
+}
+
+.idea-card {
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-bottom: 10px;
+}

@@ -1,0 +1,27 @@
+﻿import React from 'react';
+
+const ProfileSettingsPage = () => {
+  return (
+    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+      <h2>Налаштування Профілю</h2>
+      <p>Тут ви можете змінити налаштування свого профілю.</p>
+      <form>
+        <div style={{ marginBottom: '10px' }}>
+          <label>Ім'я користувача</label>
+          <input type="text" style={{ width: '100%', padding: '8px' }} />
+        </div>
+        <div style={{ marginBottom: '10px' }}>
+          <label>Електронна пошта</label>
+          <input type="email" style={{ width: '100%', padding: '8px' }} />
+        </div>
+        <div style={{ marginBottom: '10px' }}>
+          <label>Пароль</label>
+          <input type="password" style={{ width: '100%', padding: '8px' }} />
+        </div>
+        <button type="submit" style={{ padding: '10px 20px', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '5px' }}>Зберегти зміни</button>
+      </form>
+    </div>
+  );
+};
+
+export default ProfileSettingsPage;

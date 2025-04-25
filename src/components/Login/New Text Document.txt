@@ -1,0 +1,125 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+const LoginPage = () => {
+  const API_URL = "http://192.168.0.116:5000/api/authRoutes/login"; // URL API
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogin = async () => {
+    setError("");
+    setIsLoading(true);
+
+    if (!email || !password) {
+      setError("Введіть email і пароль.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Помилка сервера");
+      }
+
+      const result = await response.json();
+      localStorage.setItem("token", result.token);
+
+      alert("Вхід успішний!");
+      navigate("/worker"); // Перенаправлення на сторінку працівника
+    } catch (err) {
+      setError(err.message || "Невідома помилка.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div
+      style={{
+        height: "calc(100vh - 60px)", // Враховує висоту глобального хедера/футера
+        background: "#f8f9fa",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {/* Основний блок входу */}
+      <div
+        style={{
+          background: "#fff",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+          borderRadius: "10px",
+          padding: "30px",
+          width: "100%",
+          maxWidth: "400px",
+          textAlign: "center",
+        }}
+      >
+        <h2 style={{ marginBottom: "20px", color: "#003366" }}>Вхід</h2>
+        <input
+          type="email"
+          placeholder="Введіть email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px",
+            marginBottom: "15px",
+            border: "1px solid #ddd",
+            borderRadius: "5px",
+            fontSize: "16px",
+          }}
+        />
+        <input
+          type="password"
+          placeholder="Введіть пароль"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "10px",
+            marginBottom: "15px",
+            border: "1px solid #ddd",
+            borderRadius: "5px",
+            fontSize: "16px",
+          }}
+        />
+        <button
+          onClick={handleLogin}
+          disabled={isLoading}
+          style={{
+            width: "100%",
+            padding: "10px",
+            background: isLoading ? "#6c757d" : "#007bff",
+            color: "#fff",
+            border: "none",
+            borderRadius: "5px",
+            fontSize: "16px",
+            cursor: isLoading ? "not-allowed" : "pointer",
+            transition: "background-color 0.3s ease",
+          }}
+        >
+          {isLoading ? "Завантаження..." : "Увійти"}
+        </button>
+        {error && (
+          <p style={{ color: "red", marginTop: "15px", fontSize: "14px" }}>
+            {error}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default LoginPage;

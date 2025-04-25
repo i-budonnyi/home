@@ -1,0 +1,207 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ambassador Dashboard</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      background-color: #007bff;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 24px;
+    }
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      margin-top: 0;
+    }
+    input, button, select {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .idea-card {
+      background: #ffffff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 10px;
+    }
+    .idea-card h3 {
+      margin-top: 0;
+      color: #007bff;
+    }
+    .idea-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .success, .error {
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <header>Ambassador Dashboard</header>
+  <div class="container">
+    <!-- Повідомлення -->
+    <div id="messages"></div>
+
+    <!-- Форма для оновлення особистих даних -->
+    <div class="card">
+      <h2>Особисті дані</h2>
+      <input type="text" id="name" placeholder="Ім'я" value="Іван Амбасадор">
+      <input type="email" id="email" placeholder="Email" value="ambassador@example.com">
+      <input type="tel" id="phone" placeholder="Телефон" value="+380123456789">
+      <button onclick="updatePersonalData()">Оновити дані</button>
+    </div>
+
+    <!-- Фільтри -->
+    <div class="card">
+      <h2>Фільтри ідей</h2>
+      <select id="status-filter">
+        <option value="all">Всі статуси</option>
+        <option value="pending">На розгляді</option>
+        <option value="accepted">Прийняті</option>
+        <option value="rejected">Відхилені</option>
+      </select>
+      <button onclick="applyFilter()">Застосувати фільтр</button>
+    </div>
+
+    <!-- Список отриманих ідей -->
+    <div class="card">
+      <h2>Отримані ідеї</h2>
+      <div id="ideas-list">
+        <!-- Ідеї динамічно додаються через JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Статичні дані для ідей
+    const ideas = [
+      {
+        id: 1,
+        title: 'Поліпшення якості',
+        description: 'Додати нову систему моніторингу якості продукції.',
+        status: 'pending',
+        author: { name: 'Петро Петренко', email: 'petro@example.com' },
+      },
+      {
+        id: 2,
+        title: 'Новий дизайн',
+        description: 'Оновити дизайн корпоративного сайту.',
+        status: 'pending',
+        author: { name: 'Марія Іванова', email: 'maria@example.com' },
+      },
+      {
+        id: 3,
+        title: 'Оптимізація витрат',
+        description: 'Зменшити витрати шляхом автоматизації процесів.',
+        status: 'accepted',
+        author: { name: 'Олег Сидоренко', email: 'oleg@example.com' },
+      },
+    ];
+
+    // Відображення ідей
+    function displayIdeas(filteredIdeas) {
+      const ideasList = document.getElementById('ideas-list');
+      ideasList.innerHTML = '';
+
+      if (filteredIdeas.length === 0) {
+        ideasList.innerHTML = '<p>Ідей не знайдено.</p>';
+        return;
+      }
+
+      filteredIdeas.forEach((idea) => {
+        const ideaCard = document.createElement('div');
+        ideaCard.classList.add('idea-card');
+        ideaCard.innerHTML = `
+          <h3>${idea.title}</h3>
+          <p>${idea.description}</p>
+          <p><strong>Автор:</strong> ${idea.author.name} (${idea.author.email})</p>
+          <p><strong>Статус:</strong> ${idea.status}</p>
+          <div class="idea-actions">
+            <button onclick="handleIdeaAction(${idea.id}, 'accept')">Прийняти</button>
+            <button onclick="handleIdeaAction(${idea.id}, 'reject')">Відхилити</button>
+          </div>
+        `;
+        ideasList.appendChild(ideaCard);
+      });
+    }
+
+    // Ініціалізація списку ідей
+    displayIdeas(ideas);
+
+    // Оновлення особистих даних
+    function updatePersonalData() {
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const phone = document.getElementById('phone').value;
+
+      document.getElementById('messages').innerHTML = `
+        <div class="success">Дані успішно оновлено: ${name}, ${email}, ${phone}</div>
+      `;
+    }
+
+    // Фільтрація ідей
+    function applyFilter() {
+      const statusFilter = document.getElementById('status-filter').value;
+      const filteredIdeas = ideas.filter((idea) => {
+        return statusFilter === 'all' || idea.status === statusFilter;
+      });
+      displayIdeas(filteredIdeas);
+    }
+
+    // Обробка дій з ідеєю
+    function handleIdeaAction(ideaId, action) {
+      const actionText = action === 'accept' ? 'прийнято' : 'відхилено';
+      document.getElementById('messages').innerHTML = `
+        <div class="success">Ідея ${ideaId} успішно ${actionText}!</div>
+      `;
+    }
+  </script>
+</body>
+</html>

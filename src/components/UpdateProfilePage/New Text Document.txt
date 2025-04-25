@@ -1,0 +1,199 @@
+require('dotenv').config();
+const express = require('express');
+const bodyParser = require('body-parser');
+const { Pool } = require('pg');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const cors = require('cors');
+const { v4: uuidv4 } = require('uuid');
+
+const app = express();
+
+// Налаштування PostgreSQL
+const pool = new Pool({
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: process.env.DB_PORT,
+});
+
+// Перевірка підключення до бази даних
+(async () => {
+    try {
+        const client = await pool.connect();
+        console.log(`[DB CONNECTED] - ${new Date().toISOString()} - Successfully connected to PostgreSQL`);
+        client.release();
+    } catch (error) {
+        console.error(`[DB CONNECTION ERROR] - ${new Date().toISOString()} - ${error.message}`);
+        process.exit(1);
+    }
+})();
+
+// Секрет для JWT
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
+
+// Middleware для перевірки токену
+const authenticateToken = (req, res, next) => {
+    const currentTime = new Date().toISOString();
+    console.log(`[AUTH] - ${currentTime} - Checking token for request to: ${req.url}`);
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        console.warn(`[AUTH ERROR] - ${currentTime} - Authorization header missing`);
+        return res.status(401).json({ error: 'Authorization header missing' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.user = decoded; // Зберігаємо дані з токена для використання в маршрутах
+        console.log(`[AUTH SUCCESS] - ${currentTime} - Token valid for user: ${decoded.username}`);
+        next();
+    } catch (error) {
+        console.warn(`[AUTH ERROR] - ${currentTime} - Invalid token: ${error.message}`);
+        res.status(401).json({ error: 'Invalid token' });
+    }
+};
+
+// Middleware
+app.use(bodyParser.json());
+app.use(cors({
+    origin: process.env.CORS_ORIGIN?.split(',') || '*',
+    credentials: true,
+}));
+
+// Реєстрація
+app.post('/api/register', async (req, res) => {
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+        return res.status(400).json({ error: 'Username, email, and password are required' });
+    }
+
+    try {
+        const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        if (userCheck.rows.length > 0) {
+            return res.status(400).json({ error: 'Email already in use' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const uuid = uuidv4();
+
+        await pool.query(
+            'INSERT INTO users (uuid_id, username, email, password) VALUES ($1, $2, $3, $4)',
+            [uuid, username, email, hashedPassword]
+        );
+
+        res.status(201).json({ message: 'User registered successfully' });
+    } catch (error) {
+        console.error(`[REGISTER ERROR] - ${new Date().toISOString()} - ${error.message}`);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Вхід
+app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    try {
+        const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        const user = userResult.rows[0];
+
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: 'Invalid credentials' });
+        }
+
+        const token = jwt.sign({ id: user.uuid_id, username: user.username }, JWT_SECRET, { expiresIn: '1d' });
+        res.json({ token });
+    } catch (error) {
+        console.error(`[LOGIN ERROR] - ${new Date().toISOString()} - ${error.message}`);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+// Маршрут для подання нової ідеї
+app.post('/api/submit-idea', authenticateToken, async (req, res) => {
+    const { title, description } = req.body;
+
+    // Перевірка вхідних даних
+    if (!title || title.trim() === '') {
+        return res.status(400).json({ error: 'Заголовок ідеї є обов’язковим.' });
+    }
+
+    try {
+        // Додавання нової ідеї до бази даних
+        const result = await pool.query(
+            'INSERT INTO ideas (title, description, user_id, created_at) VALUES ($1, $2, $3, NOW()) RETURNING id, title, description, created_at',
+            [title.trim(), description || '', req.user.id]
+        );
+
+        const newIdea = result.rows[0];
+        res.status(201).json({ message: 'Ідея успішно подана!', idea: newIdea });
+    } catch (error) {
+        console.error(`[SUBMIT IDEA ERROR] - ${new Date().toISOString()} - ${error.message}`);
+        res.status(500).json({ error: 'Не вдалося подати ідею. Спробуйте пізніше.' });
+    }
+});
+
+// Оновлення профілю
+app.put('/api/worker/update', authenticateToken, async (req, res) => {
+    const userId = req.user.id;
+    const { username, email, currentPassword, newPassword } = req.body;
+
+    try {
+        const userResult = await pool.query('SELECT * FROM users WHERE uuid_id = $1', [userId]);
+        const user = userResult.rows[0];
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (newPassword) {
+            const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+            if (!isPasswordValid) {
+                return res.status(400).json({ error: 'Invalid current password' });
+            }
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            await pool.query('UPDATE users SET password = $1 WHERE uuid_id = $2', [hashedPassword, userId]);
+        }
+
+        await pool.query('UPDATE users SET username = $1, email = $2 WHERE uuid_id = $3', [username, email, userId]);
+        res.json({ message: 'Profile updated successfully' });
+    } catch (error) {
+        console.error(`[UPDATE PROFILE ERROR] - ${new Date().toISOString()} - ${error.message}`);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Маршрут для тестування
+app.get('/api/worker', authenticateToken, async (req, res) => {
+    try {
+        const userResult = await pool.query('SELECT username, email FROM users WHERE uuid_id = $1', [req.user.id]);
+        const user = userResult.rows[0];
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error(`[WORKER ROUTE ERROR] - ${new Date().toISOString()} - ${error.message}`);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+// Запуск сервера
+const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || '192.168.0.116';
+app.listen(PORT, HOST, () => {
+    console.log(`[SERVER STARTED] - ${new Date().toISOString()} - Server is running on http://${HOST}:${PORT}`);
+});
