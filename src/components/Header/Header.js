@@ -1,15 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Нова правильна адреса API
 const API_BASE_URL = 'https://idea-backend.onrender.com/api/userRoutes';
 
 const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false); // Додали флаг
 
-  // 🔥 handleLogout теж обгортаємо в useCallback
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
     setUserName(null);
@@ -17,7 +16,6 @@ const Header = () => {
     navigate('/');
   }, [navigate]);
 
-  // 🔥 fetchUserProfile тепер точно стабільний
   const fetchUserProfile = useCallback(async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
@@ -41,7 +39,9 @@ const Header = () => {
       setUserId(data.id);
     } catch (error) {
       console.error('[ERROR] Помилка отримання профілю:', error.message);
-      handleLogout();
+      localStorage.removeItem('token'); // 🔥 Без navigate тут
+    } finally {
+      setIsLoaded(true); // 🔥 Дали сигнал що завантажено
     }
   }, [handleLogout]);
 
@@ -49,8 +49,14 @@ const Header = () => {
     const token = localStorage.getItem('token');
     if (token) {
       fetchUserProfile(token);
+    } else {
+      setIsLoaded(true); // 🔥 Якщо токена нема, все одно вантажимо сторінку
     }
   }, [fetchUserProfile]);
+
+  if (!isLoaded) {
+    return null; // 🔥 Поки не завантажено токен — не малюємо Header взагалі
+  }
 
   return (
     <header
