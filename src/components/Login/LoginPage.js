@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { UserContext } from "../context/UserContext"; // 🔥 підключаємо контекст користувача
 
-// ✅ Виправлена правильна адреса бекенду
-const API_URL = "https://backend-avtologistika.onrender.com/api/authRoutes/login"; // 🔥 тут правильний бекенд!
+const API_URL = "https://backend-avtologistika.onrender.com/api/authRoutes/login";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -10,6 +10,7 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { setUser } = useContext(UserContext); // ⬅️ Ось що треба!
 
   const handleLogin = async () => {
     setError("");
@@ -24,7 +25,7 @@ const LoginPage = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json(); // ⬅️ РОЗПАРСИТИ JSON одразу!
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || "Помилка логіну");
@@ -32,6 +33,7 @@ const LoginPage = () => {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      setUser(data.user); // 🔥 Оновити глобального користувача тут!
 
       const redirects = {
         project_manager: "/pm-projects",
@@ -41,7 +43,7 @@ const LoginPage = () => {
       };
 
       if (data.user.role === "worker") {
-        navigate("/worker"); // 🔥 без ід!
+        navigate("/worker");
       } else {
         navigate(redirects[data.user.role] || "/");
       }

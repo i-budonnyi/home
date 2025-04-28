@@ -1,13 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'https://idea-backend.onrender.com/api/userRoutes';
+// ✅ Виправлена правильна адреса бекенду
+const API_BASE_URL = 'https://backend-avtologistika.onrender.com/api/userRoutes';
 
 const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [userId, setUserId] = useState(null);
-  const [isLoaded, setIsLoaded] = useState(false); // Додали флаг
+  const [isLoaded, setIsLoaded] = useState(false); // Для контролю завантаження
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -39,9 +40,9 @@ const Header = () => {
       setUserId(data.id);
     } catch (error) {
       console.error('[ERROR] Помилка отримання профілю:', error.message);
-      localStorage.removeItem('token'); // 🔥 Без navigate тут
+      localStorage.removeItem('token');
     } finally {
-      setIsLoaded(true); // 🔥 Дали сигнал що завантажено
+      setIsLoaded(true);
     }
   }, [handleLogout]);
 
@@ -50,12 +51,12 @@ const Header = () => {
     if (token) {
       fetchUserProfile(token);
     } else {
-      setIsLoaded(true); // 🔥 Якщо токена нема, все одно вантажимо сторінку
+      setIsLoaded(true);
     }
   }, [fetchUserProfile]);
 
   if (!isLoaded) {
-    return null; // 🔥 Поки не завантажено токен — не малюємо Header взагалі
+    return null;
   }
 
   return (
