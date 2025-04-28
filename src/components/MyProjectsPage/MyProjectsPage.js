@@ -21,7 +21,7 @@ const MyProjectsPage = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  const validateAuthToken = () => {
+  const validateAuthToken = useCallback(() => {
     const token = getAuthToken();
     if (!token) {
       setError("Необхідно авторизуватися.");
@@ -29,28 +29,26 @@ const MyProjectsPage = () => {
       return false;
     }
     return token;
-  };
+  }, []);
 
-  const fetchIdeaAuthor = async (ideaId, token) => {
+  const fetchIdeaAuthor = useCallback(async (ideaId, token) => {
     try {
       const response = await axios.get(`${API_IDEA_URL}/idea-author?idea_id=${ideaId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (response.status === 200) {
         setIdeaAuthors((prev) => ({ ...prev, [ideaId]: response.data }));
       }
     } catch {
       setIdeaAuthors((prev) => ({ ...prev, [ideaId]: { first_name: "Невідомий", last_name: "" } }));
     }
-  };
+  }, []);
 
-  const fetchComments = async (ideaId, token) => {
+  const fetchComments = useCallback(async (ideaId, token) => {
     try {
       const response = await axios.get(`${API_FEEDBACK_URL}/list?idea_id=${ideaId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (response.status === 200) {
         setComments((prev) => ({
           ...prev,
@@ -63,7 +61,7 @@ const MyProjectsPage = () => {
         [ideaId]: [{ text: "Помилка завантаження коментарів." }],
       }));
     }
-  };
+  }, []);
 
   const fetchUserIdeas = useCallback(async () => {
     try {
@@ -86,7 +84,7 @@ const MyProjectsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [validateAuthToken, fetchComments, fetchIdeaAuthor]);
 
   const handleAddComment = async (ideaId) => {
     if (!commentText[ideaId]?.trim()) {
@@ -111,7 +109,6 @@ const MyProjectsPage = () => {
   };
 
   const handleSelectIdea = (idea) => {
-    console.log("📌 Обрано ідею:", idea);
     localStorage.setItem("selectedIdea", JSON.stringify(idea));
     navigate(`/applications/${idea.id}`);
   };

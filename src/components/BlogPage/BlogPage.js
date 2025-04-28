@@ -42,6 +42,21 @@ const BlogPage = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
+  const fetchLikes = useCallback(async (entry) => {
+    try {
+      const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
+      setLikesData((prev) => ({
+        ...prev,
+        [entry.id]: {
+          likesCount: response.data.likesCount || 0,
+          userLiked: response.data.likedBy?.some((user) => user.user_id === userId),
+        },
+      }));
+    } catch (err) {
+      console.error(`❌ Помилка отримання лайків:`, err);
+    }
+  }, [userId]);
+
   const fetchUserId = useCallback(() => {
     try {
       const token = getAuthToken();
@@ -81,22 +96,33 @@ const BlogPage = () => {
     } finally {
       setIsLoading(false);
     }
+  }, [fetchLikes]);
+
+  const fetchSubscriptions = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`);
+      const subscriptions = response.data.subscriptions.reduce((acc, sub) => {
+        acc[sub.blog_id || sub.idea_id || sub.problem_id] = true;
+        return acc;
+      }, {});
+      setSubscribedEntries(subscriptions);
+    } catch (err) {
+      console.error("❌ Помилка підписок:", err);
+    }
   }, []);
 
-  const fetchLikes = async (entry) => {
+  const fetchComments = useCallback(async (entry) => {
     try {
-      const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
-      setLikesData((prev) => ({
+      const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
+      if (!response.data || !Array.isArray(response.data.comments)) return;
+      setCommentsData((prev) => ({
         ...prev,
-        [entry.id]: {
-          likesCount: response.data.likesCount || 0,
-          userLiked: response.data.likedBy?.some((user) => user.user_id === userId),
-        },
+        [entry.id]: response.data.comments,
       }));
     } catch (err) {
-      console.error(`❌ Помилка отримання лайків:`, err);
+      console.error(`❌ Помилка коментарів:`, err);
     }
-  };
+  }, []);
 
   const toggleLike = async (entry) => {
     try {
@@ -109,19 +135,6 @@ const BlogPage = () => {
     } catch (err) {
       console.error(`❌ Помилка лайкування:`, err);
       message.error("Не вдалося змінити лайк.");
-    }
-  };
-
-  const fetchSubscriptions = async () => {
-    try {
-      const response = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`);
-      const subscriptions = response.data.subscriptions.reduce((acc, sub) => {
-        acc[sub.blog_id || sub.idea_id || sub.problem_id] = true;
-        return acc;
-      }, {});
-      setSubscribedEntries(subscriptions);
-    } catch (err) {
-      console.error("❌ Помилка підписок:", err);
     }
   };
 
@@ -144,19 +157,6 @@ const BlogPage = () => {
     } catch (err) {
       console.error("❌ Помилка підписки/відписки:", err);
       message.error("Не вдалося виконати операцію.");
-    }
-  };
-
-  const fetchComments = async (entry) => {
-    try {
-      const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
-      if (!response.data || !Array.isArray(response.data.comments)) return;
-      setCommentsData((prev) => ({
-        ...prev,
-        [entry.id]: response.data.comments,
-      }));
-    } catch (err) {
-      console.error(`❌ Помилка коментарів:`, err);
     }
   };
 
@@ -193,7 +193,7 @@ const BlogPage = () => {
     fetchUserId();
     fetchAllEntries();
     fetchSubscriptions();
-  }, [fetchUserId, fetchAllEntries]);
+  }, [fetchUserId, fetchAllEntries, fetchSubscriptions]);
 
   return (
     <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
