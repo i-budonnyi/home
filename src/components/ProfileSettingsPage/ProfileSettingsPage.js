@@ -88,4 +88,16 @@ const ProfileSettingsPage = () => {
             backgroundColor: '#007BFF',
             color: 'white',
             border: 'none',
-            borderRadius: '
+            borderRadius: '8px', // 🔥 ВИПРАВИЛА borderRadius
+            cursor: loading ? 'not-allowed' : 'pointer'
+          }}
+          disabled={loading}
+        >
+          {loading ? 'Оновлюємо...' : 'Зберегти зміни'}
+        </button>
+      </form>
+    </div>
+  );
+};
+
+export default ProfileSettingsPage;
