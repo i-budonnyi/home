@@ -1,9 +1,20 @@
-import React, { createContext, useContext } from "react";
+// src/components/context/UserContext.js
 
-const UserContext = createContext();
+import React, { createContext, useContext, useState } from "react";
 
+// 🔥 Обов'язково експортуємо UserContext
+export const UserContext = createContext();
+
+// 🔥 Провайдер контексту
 export const UserProvider = ({ children }) => {
-  return <UserContext.Provider value={{}}>{children}</UserContext.Provider>;
+  const [user, setUser] = useState(null); // Якщо захочеш додавати юзера
+
+  return (
+    <UserContext.Provider value={{ user, setUser }}>
+      {children}
+    </UserContext.Provider>
+  );
 };
 
+// 🔥 Хук для використання контексту
 export const useUser = () => useContext(UserContext);
