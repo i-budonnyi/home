@@ -24,8 +24,8 @@ import axios from "axios";
 const { Content, Sider } = Layout;
 const { Title, Text } = Typography;
 
-// Виправлена адреса на Render
-const API_BASE_URL = "https://your-backend-service-name.onrender.com/api/userRoutes/";
+// 🔥 Правильна адреса бекенду
+const API_BASE_URL = "https://backend-avtologistika.onrender.com/api/userRoutes";
 
 const WorkerPage = () => {
   const [userData, setUserData] = useState(null);
@@ -35,30 +35,30 @@ const WorkerPage = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return navigate("/login");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
 
     const fetchUserProfile = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}profile`, {
+        const response = await axios.get(`${API_BASE_URL}/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         const userRole = response.data.role?.toLowerCase() || "worker";
-        localStorage.setItem("userId", response.data.id);
-
         setUserData({
           id: response.data.id,
-          firstName: response.data.first_name || "Невідоме ім'я",
-          lastName: response.data.last_name || "Невідоме прізвище",
-          email: response.data.email || "Невідомий email",
-          phone: response.data.phone || "Номер не вказано",
+          firstName: response.data.first_name || "",
+          lastName: response.data.last_name || "",
+          email: response.data.email || "",
+          phone: response.data.phone || "",
           profilePicture: response.data.profile_picture || "",
           role: userRole,
         });
-
-        setIsCheckingRole(false);
       } catch (err) {
-        setError(err.response?.data?.message || err.message || "Сталася помилка.");
+        setError(err.response?.data?.message || "Сталася помилка");
+      } finally {
         setIsCheckingRole(false);
       }
     };
@@ -74,7 +74,9 @@ const WorkerPage = () => {
         jury_secretary: "/jury-secretary",
         jury_member: "/jury",
       };
-      if (redirects[userData.role]) navigate(redirects[userData.role], { replace: true });
+      if (redirects[userData.role]) {
+        navigate(redirects[userData.role], { replace: true });
+      }
     }
   }, [isCheckingRole, userData?.role, navigate]);
 
@@ -105,34 +107,38 @@ const WorkerPage = () => {
       <Layout style={{ marginLeft: 250 }}>
         <Content style={styles.content}>
           {isCheckingRole ? (
-            <Title level={3}>⏳ Визначаємо вашу роль...</Title>
+            <Title level={3}>⏳ Завантаження...</Title>
           ) : error ? (
-            <Title level={3} type="danger">❌ Помилка: {error}</Title>
+            <Title level={3} type="danger">❌ {error}</Title>
           ) : (
             <Card hoverable style={styles.card} bodyStyle={{ padding: "24px" }}>
               <Card.Meta
                 avatar={
                   <Avatar
                     size={72}
-                    src={userData?.profilePicture || null}
-                    icon={!userData?.profilePicture && <UserOutlined />}
+                    src={userData.profilePicture || null}
+                    icon={!userData.profilePicture && <UserOutlined />}
                     style={{ backgroundColor: "#f0f0f0" }}
                   />
                 }
                 title={
                   <Title level={4} style={{ marginBottom: 0 }}>
-                    {`${userData?.firstName} ${userData?.lastName}`}
+                    {`${userData.firstName} ${userData.lastName}`.trim() || "Користувач"}
                   </Title>
                 }
                 description={
                   <Text style={{ color: "#8c8c8c", fontSize: "16px" }}>
-                    Роль: {userData?.role}
+                    Роль: {userData.role}
                   </Text>
                 }
               />
               <Space direction="vertical" size="large" style={{ marginTop: "24px" }}>
-                <Text><PhoneOutlined style={styles.icon} />{userData?.phone}</Text>
-                <Text><MailOutlined style={styles.icon} />{userData?.email}</Text>
+                {userData.phone && (
+                  <Text><PhoneOutlined style={styles.icon} /> {userData.phone}</Text>
+                )}
+                {userData.email && (
+                  <Text><MailOutlined style={styles.icon} /> {userData.email}</Text>
+                )}
               </Space>
             </Card>
           )}

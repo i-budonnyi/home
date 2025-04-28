@@ -1,19 +1,17 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// ✅ Виправлена правильна адреса бекенду
 const API_BASE_URL = 'https://backend-avtologistika.onrender.com/api/userRoutes';
 
 const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [isLoaded, setIsLoaded] = useState(false); // Для контролю завантаження
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUserName(null);
-    setUserId(null);
     navigate('/');
   }, [navigate]);
 
@@ -36,8 +34,8 @@ const Header = () => {
       }
 
       const data = await response.json();
-      setUserName(data.firstName || 'Користувач');
-      setUserId(data.id);
+      const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim();
+      setUserName(fullName || null);
     } catch (error) {
       console.error('[ERROR] Помилка отримання профілю:', error.message);
       localStorage.removeItem('token');
@@ -84,7 +82,7 @@ const Header = () => {
         {userName ? (
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <span
-              onClick={() => navigate(`/worker/${userId}`)}
+              onClick={() => navigate('/worker')}
               style={{
                 marginRight: '15px',
                 cursor: 'pointer',
