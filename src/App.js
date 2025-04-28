@@ -17,42 +17,40 @@ import Logout from './components/Logout';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import BlogPage from './components/BlogPage';
 import AmbassadorPage from './components/AmbassadorPage';
-
-// 🔹 Виправлено імпорт Applications
-import Applications from './components/applications/applications'; // Якщо файл називається `applications.js` (з малої літери)
-// import Applications from './components/applications/Applications'; // Якщо файл `Applications.js` (з великої літери)
-
+import Applications from './components/applications/applications'; // Якщо файл називається `applications.js`
 import JurySecretaryProfile from './components/JurySecretaryProfile/JurySecretaryProfile';
 import JuryVotingPage from './components/JuryVotingPage/JuryVotingPage';
 import PMProjectsPage from './components/PMProjectsPage/PMProjectsPage';
 import { UserProvider } from './components/context/UserContext';
 
-const App = () => (
-  <UserProvider> {/* Обгортання всього застосунку в UserContext */}
-    <Header />
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/worker" element={<WorkPage />} />
-      <Route path="/profile-settings" element={<ProfileSettingsPage />} />
-      <Route path="/update-profile" element={<UpdateProfilePage />} />
-      <Route path="/projects" element={<MyProjectsPage />} />
-      <Route path="/submit-problem" element={<SubmitProblemPage />} />
-      <Route path="/submit-idea" element={<SubmitIdeaPage />} />
-      <Route path="/subscriptions" element={<Subscriptions />} />
-      <Route path="/my-problems" element={<IdeasPlatform />} />
-      <Route path="/logout" element={<Logout />} />
-      <Route path="/Admin" element={<AdminDashboard />} />
-      <Route path="/blog" element={<BlogPage />} />
-      <Route path="/ambassadors" element={<AmbassadorPage />} />
-      <Route path="/applications/:ideaId" element={<Applications />} />
-      <Route path="/jury-secretary" element={<JurySecretaryProfile />} />
-      <Route path="/jury" element={<JuryVotingPage />} />
-      <Route path="/pm-projects" element={<PMProjectsPage />} />
-    </Routes>
-    <Footer />
-  </UserProvider>
-);
+const App = () => {
+  return (
+    <UserProvider> {/* Обгортання всього застосунку в UserContext */}
+      <Header />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/worker" element={<WorkPage />} />
+        <Route path="/profile-settings" element={<ProfileSettingsPage />} />
+        <Route path="/update-profile" element={<UpdateProfilePage />} />
+        <Route path="/projects" element={<MyProjectsPage />} />
+        <Route path="/submit-problem" element={<SubmitProblemPage />} />
+        <Route path="/submit-idea" element={<SubmitIdeaPage />} />
+        <Route path="/subscriptions" element={<Subscriptions />} />
+        <Route path="/my-problems" element={<IdeasPlatform />} />
+        <Route path="/logout" element={<Logout />} />
+        <Route path="/Admin" element={<AdminDashboard />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/ambassadors" element={<AmbassadorPage />} />
+        <Route path="/applications/:ideaId" element={<Applications />} />
+        <Route path="/jury-secretary" element={<JurySecretaryProfile />} />
+        <Route path="/jury" element={<JuryVotingPage />} />
+        <Route path="/pm-projects" element={<PMProjectsPage />} />
+      </Routes>
+      <Footer />
+    </UserProvider>
+  );
+};
 
 export default App;
