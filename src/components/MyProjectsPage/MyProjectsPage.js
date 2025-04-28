@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react"; // 🔥 додали useCallback
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Layout, List, Card, Typography, Skeleton, Alert, Button, Tag, Input, message } from "antd";
 import { useNavigate } from "react-router-dom";
@@ -65,7 +65,6 @@ const MyProjectsPage = () => {
     }
   };
 
-  // 🔥 Обгорнули fetchUserIdeas у useCallback
   const fetchUserIdeas = useCallback(async () => {
     try {
       const token = validateAuthToken();
@@ -87,7 +86,7 @@ const MyProjectsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []); // 🔥 можна залишити пусто, бо validateAuthToken не змінюється
+  }, []);
 
   const handleAddComment = async (ideaId) => {
     if (!commentText[ideaId]?.trim()) {
@@ -119,11 +118,75 @@ const MyProjectsPage = () => {
 
   useEffect(() => {
     fetchUserIdeas();
-  }, [fetchUserIdeas]); // 🔥 тепер залежність правильна!
+  }, [fetchUserIdeas]);
 
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f8" }}>
-      {/* решта твого коду */}
+      <Header style={{ background: "#003366", textAlign: "center", padding: "15px" }}>
+        <Title style={{ color: "white", fontSize: "24px" }}>Мої подані ідеї</Title>
+      </Header>
+
+      <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
+        {error && <Alert message={error} type="error" showIcon />}
+        {isLoading ? (
+          <Skeleton active />
+        ) : (
+          <List
+            grid={{ gutter: 20, column: 1 }}
+            dataSource={ideas}
+            renderItem={(idea) => (
+              <List.Item>
+                <Card hoverable title={<Title level={4}>{idea.title}</Title>} style={{ width: "100%" }}>
+                  <Text strong>Автор:</Text> {ideaAuthors[idea.id]?.first_name} {ideaAuthors[idea.id]?.last_name}
+                  <br />
+                  <Tag color={idea.status === "approved" ? "green" : idea.status === "pending" ? "orange" : "red"}>
+                    {idea.status.toUpperCase()}
+                  </Tag>
+                  <br />
+                  <Text>{idea.description || "Без опису"}</Text>
+                  <br />
+                  <Button type="primary" onClick={() => handleSelectIdea(idea)} style={{ marginTop: "10px" }}>
+                    📌 Відкрити заявку
+                  </Button>
+
+                  {/* Коментарі */}
+                  {comments[idea.id] && (
+                    <>
+                      <List
+                        bordered
+                        style={{ marginTop: "15px" }}
+                        dataSource={comments[idea.id]}
+                        renderItem={(comment) => (
+                          <List.Item>
+                            <Text strong>
+                              {comment.sender_first_name} {comment.sender_last_name}:
+                            </Text>{" "}
+                            {comment.text}
+                          </List.Item>
+                        )}
+                      />
+                      <TextArea
+                        rows={4}
+                        value={commentText[idea.id] || ""}
+                        onChange={(e) => setCommentText((prev) => ({ ...prev, [idea.id]: e.target.value }))}
+                        placeholder="Напишіть ваш коментар..."
+                        style={{ marginTop: "10px" }}
+                      />
+                      <Button
+                        type="primary"
+                        onClick={() => handleAddComment(idea.id)}
+                        style={{ marginTop: "10px" }}
+                      >
+                        Додати коментар
+                      </Button>
+                    </>
+                  )}
+                </Card>
+              </List.Item>
+            )}
+          />
+        )}
+      </Content>
     </Layout>
   );
 };

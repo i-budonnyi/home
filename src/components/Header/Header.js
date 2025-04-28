@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'; // 🔥 Додали useCallback
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Нова правильна адреса API
@@ -9,14 +9,15 @@ const Header = () => {
   const [userName, setUserName] = useState(null);
   const [userId, setUserId] = useState(null);
 
-  const handleLogout = () => {
+  // 🔥 handleLogout теж обгортаємо в useCallback
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
     setUserName(null);
     setUserId(null);
     navigate('/');
-  };
+  }, [navigate]);
 
-  // 🔥 Обгорнули fetchUserProfile у useCallback
+  // 🔥 fetchUserProfile тепер точно стабільний
   const fetchUserProfile = useCallback(async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
@@ -42,14 +43,14 @@ const Header = () => {
       console.error('[ERROR] Помилка отримання профілю:', error.message);
       handleLogout();
     }
-  }, [navigate]); // 🔥 або пустий масив [] якщо handleLogout не міняється
+  }, [handleLogout]);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       fetchUserProfile(token);
     }
-  }, [fetchUserProfile]); // 🔥 тепер все правильно
+  }, [fetchUserProfile]);
 
   return (
     <header

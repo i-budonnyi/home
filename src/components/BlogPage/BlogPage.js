@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react"; // 🔥 додали useCallback
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Layout,
   Card,
@@ -23,7 +23,6 @@ const { Content } = Layout;
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-// ✅ ОНОВЛЕНО ПІД RENDER
 const API_BASE = "https://idea-backend.onrender.com/api";
 const API_BLOG_URL = `${API_BASE}/blogRoutes`;
 const API_PROBLEMS_URL = `${API_BASE}/problems`;
@@ -43,7 +42,6 @@ const BlogPage = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  // 🔥 Обгорнули в useCallback
   const fetchUserId = useCallback(() => {
     try {
       const token = getAuthToken();
@@ -191,12 +189,11 @@ const BlogPage = () => {
   const filteredEntries =
     filteredType === "all" ? entries : entries.filter((e) => e.entryType === filteredType);
 
-  // 🔥 Виправлений useEffect із правильними залежностями
   useEffect(() => {
     fetchUserId();
     fetchAllEntries();
     fetchSubscriptions();
-  }, [fetchUserId, fetchAllEntries]); // 🔥 додано fetchUserId і fetchAllEntries
+  }, [fetchUserId, fetchAllEntries]);
 
   return (
     <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
@@ -204,7 +201,109 @@ const BlogPage = () => {
         <Skeleton active />
       ) : (
         <>
-          {/* решта твого коду залишається без змін */}
+          {/* Фільтри */}
+          <div style={{ marginBottom: "20px", textAlign: "center" }}>
+            <Title level={5}>Фільтрувати за типом:</Title>
+            <Space>
+              {["all", "blog", "idea", "problem"].map((type) => (
+                <Button
+                  key={type}
+                  type={filteredType === type ? "primary" : "default"}
+                  onClick={() => setFilteredType(type)}
+                >
+                  {type === "all" ? "Усі" : type.charAt(0).toUpperCase() + type.slice(1)}
+                </Button>
+              ))}
+            </Space>
+          </div>
+
+          {/* Записи */}
+          <Space direction="vertical" size="large" style={{ width: "100%" }}>
+            {filteredEntries.map((entry) => (
+              <Card key={entry.id} hoverable style={{ borderRadius: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Title level={4} style={{ margin: 0 }}>{entry.title}</Title>
+                  <Button
+                    type="primary"
+                    icon={<UserAddOutlined />}
+                    onClick={() => handleSubscribe(entry)}
+                  >
+                    {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
+                  </Button>
+                </div>
+
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+                  <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
+                  <Text strong>Автор: {entry.authorname || "Невідомий"}</Text>
+                </div>
+
+                <Divider style={{ margin: "8px 0" }} />
+                <Text>{entry.description || "Без опису"}</Text>
+
+                {/* Лайки */}
+                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+                  <Space>
+                    <Button type="text" onClick={() => toggleLike(entry)}>
+                      {likesData[entry.id]?.userLiked ? (
+                        <HeartFilled style={{ color: "red" }} />
+                      ) : (
+                        <HeartOutlined />
+                      )}
+                    </Button>
+                    <Text>{likesData[entry.id]?.likesCount || 0} лайк(ів)</Text>
+                  </Space>
+                </div>
+
+                {/* Коментарі */}
+                <Divider />
+                <div>
+                  <Title level={5}>Коментарі:</Title>
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    {commentsData[entry.id]?.length ? (
+                      commentsData[entry.id].map((comment) => (
+                        <Card
+                          key={comment.id}
+                          size="small"
+                          style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <Text strong>{comment.authorName || "Анонім"}</Text>
+                            <Text type="secondary" style={{ fontSize: "12px" }}>
+                              {new Date(comment.createdAt).toLocaleString("uk-UA")}
+                            </Text>
+                          </div>
+                          <Text>{comment.text}</Text>
+                        </Card>
+                      ))
+                    ) : (
+                      <Text type="secondary">Коментарів ще немає.</Text>
+                    )}
+                  </Space>
+
+                  {/* Додати коментар */}
+                  <div style={{ marginTop: "12px" }}>
+                    <Text strong>Додати коментар:</Text>
+                    <TextArea
+                      rows={2}
+                      value={newComment[entry.id] || ""}
+                      onChange={(e) =>
+                        setNewComment({ ...newComment, [entry.id]: e.target.value })
+                      }
+                      placeholder="Напишіть коментар..."
+                      style={{ marginTop: "8px", marginBottom: "8px" }}
+                    />
+                    <Button
+                      type="primary"
+                      icon={<SendOutlined />}
+                      onClick={() => handleCommentSubmit(entry)}
+                    >
+                      Відправити
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </Space>
         </>
       )}
     </Content>
