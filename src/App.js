@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
 import HomePage from './components/HomePage';
 import LoginPage from './components/Login';
 import Register from './components/Register';
@@ -24,8 +25,8 @@ import PMProjectsPage from './components/PMProjectsPage/PMProjectsPage';
 import { UserProvider } from './components/context/UserContext';
 
 const App = () => (
-  <UserProvider>
-    <BrowserRouter> {/* 🔥 Додаємо обгортку Router */}
+  <BrowserRouter> {/* 🔥 ПРАВИЛЬНО: BrowserRouter зверху */}
+    <UserProvider> {/* 🔥 Потім вже обгортаємо контекстом */}
       <Header />
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -40,7 +41,7 @@ const App = () => (
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/my-problems" element={<IdeasPlatform />} />
         <Route path="/logout" element={<Logout />} />
-        <Route path="/Admin" element={<AdminDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/ambassadors" element={<AmbassadorPage />} />
         <Route path="/applications/:ideaId" element={<Applications />} />
@@ -49,8 +50,8 @@ const App = () => (
         <Route path="/pm-projects" element={<PMProjectsPage />} />
       </Routes>
       <Footer />
-    </BrowserRouter>
-  </UserProvider>
+    </UserProvider>
+  </BrowserRouter>
 );
 
 export default App;
