@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Layout,
   Form,
@@ -33,7 +33,8 @@ const SubmitProblemPage = () => {
     return { Authorization: `Bearer ${token}` };
   };
 
-  const fetchUserId = async () => {
+  // 🔥 Обгортаємо запити у useCallback
+  const fetchUserId = useCallback(async () => {
     try {
       const response = await fetch(`${USER_API_BASE_URL}/profile`, {
         headers: getAuthHeaders(),
@@ -44,9 +45,9 @@ const SubmitProblemPage = () => {
     } catch (error) {
       console.error("❌ Не вдалося отримати user_id:", error);
     }
-  };
+  }, []);
 
-  const fetchAmbassadors = async () => {
+  const fetchAmbassadors = useCallback(async () => {
     try {
       const response = await fetch(`${AMBASSADOR_API_BASE_URL}`, {
         headers: getAuthHeaders(),
@@ -62,7 +63,7 @@ const SubmitProblemPage = () => {
     } catch (error) {
       console.error("❌ Помилка отримання амбасадорів:", error);
     }
-  };
+  }, []);
 
   const handleSubmit = async (values) => {
     try {
@@ -94,9 +95,12 @@ const SubmitProblemPage = () => {
   };
 
   useEffect(() => {
-    fetchUserId();
-    fetchAmbassadors();
-  }, []);
+    const fetchData = async () => {
+      await fetchUserId();
+      await fetchAmbassadors();
+    };
+    fetchData();
+  }, [fetchUserId, fetchAmbassadors]); // 🔥 Додали залежності
 
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f9" }}>

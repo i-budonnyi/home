@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Layout, List, Card, Typography, Skeleton, Alert, Tag } from "antd";
 
@@ -15,7 +15,8 @@ const Subscriptions = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  const fetchUserSubscriptions = async () => {
+  // 🔥 Обгорнули fetchUserSubscriptions у useCallback
+  const fetchUserSubscriptions = useCallback(async () => {
     try {
       const token = getAuthToken();
       if (!token) {
@@ -41,11 +42,11 @@ const Subscriptions = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []); // пусті залежності тут норм
 
   useEffect(() => {
     fetchUserSubscriptions();
-  }, []);
+  }, [fetchUserSubscriptions]); // 🔥 додали fetchUserSubscriptions у залежності
 
   const getStatusColor = (status) => {
     switch (status) {

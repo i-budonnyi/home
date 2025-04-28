@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Layout,
   Form,
@@ -33,7 +33,8 @@ const SubmitIdeaPage = () => {
     return { Authorization: `Bearer ${token}` };
   };
 
-  const fetchUserId = async () => {
+  // 🔥 Обгорнули в useCallback
+  const fetchUserId = useCallback(async () => {
     try {
       const response = await fetch(`${USER_API_BASE_URL}/profile`, {
         headers: getAuthHeaders(),
@@ -44,9 +45,9 @@ const SubmitIdeaPage = () => {
     } catch (error) {
       console.error("[ERROR] Не вдалося отримати user_id:", error);
     }
-  };
+  }, []);
 
-  const fetchAmbassadors = async () => {
+  const fetchAmbassadors = useCallback(async () => {
     try {
       const response = await fetch(`${AMBASSADOR_API_BASE_URL}`, {
         headers: getAuthHeaders(),
@@ -62,7 +63,7 @@ const SubmitIdeaPage = () => {
     } catch (error) {
       console.error("[ERROR] Помилка отримання амбасадорів:", error);
     }
-  };
+  }, []);
 
   const handleSubmit = async (values) => {
     try {
@@ -99,7 +100,7 @@ const SubmitIdeaPage = () => {
       await fetchAmbassadors();
     };
     fetchData();
-  }, []);
+  }, [fetchUserId, fetchAmbassadors]); // 🔥 Додано обидві залежності!
 
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f9" }}>

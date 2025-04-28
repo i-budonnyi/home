@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Layout, Card, Typography, Spin, Alert, Button, Select, Input, DatePicker, message } from "antd";
 
@@ -14,19 +14,15 @@ const API_VOTE = `${API_BASE_URL}/juryVoting/vote`;
 const JuryMemberProfile = () => {
   const [juryMember, setJuryMember] = useState(null);
   const [agenda, setAgenda] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [decisions, setDecisions] = useState({});
   const [sortBy, setSortBy] = useState("date");
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  useEffect(() => {
-    fetchJuryMember();
-    fetchAgenda();
-  }, [sortBy]);
-
-  const fetchJuryMember = async () => {
+  // 🔥 Обгорнули запити в useCallback для коректних залежностей
+  const fetchJuryMember = useCallback(async () => {
     try {
       const token = getAuthToken();
       if (!token) throw new Error("❌ Токен не знайдено.");
@@ -40,12 +36,10 @@ const JuryMemberProfile = () => {
       }
     } catch (error) {
       setError(error.message);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchAgenda = async () => {
+  const fetchAgenda = useCallback(async () => {
     try {
       const token = getAuthToken();
       if (!token) throw new Error("❌ Токен не знайдено.");
@@ -62,7 +56,18 @@ const JuryMemberProfile = () => {
     } catch (error) {
       setError(error.message);
     }
-  };
+  }, [sortBy]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      await fetchJuryMember();
+      await fetchAgenda();
+      setIsLoading(false);
+    };
+
+    fetchData();
+  }, [fetchJuryMember, fetchAgenda]); // 🔥 Додали всі залежності
 
   const handleVote = async (agendaId) => {
     try {
@@ -115,7 +120,7 @@ const JuryMemberProfile = () => {
     <Layout style={{ padding: "20px", background: "#f4f6f8" }}>
       <Title level={3}>👤 Профіль журі</Title>
 
-      {loading ? (
+      {isLoading ? (
         <Spin size="large" />
       ) : error ? (
         <Alert message={`❌ ${error}`} type="error" showIcon />
@@ -131,7 +136,7 @@ const JuryMemberProfile = () => {
 
           <Title level={4} style={{ marginTop: 20 }}>📅 Порядок денний</Title>
           <Select
-            defaultValue={sortBy}
+            value={sortBy}
             style={{ width: 200, marginBottom: 20 }}
             onChange={handleSortChange}
           >
@@ -200,7 +205,7 @@ const JuryMemberProfile = () => {
                     </Button>
                   </>
                 ) : (
-                  <Button type="default" disabled>
+                  <Button type="default" disabled style={{ marginTop: 10 }}>
                     Голосування закрито
                   </Button>
                 )}

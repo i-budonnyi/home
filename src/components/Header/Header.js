@@ -9,13 +9,6 @@ const Header = () => {
   const [userName, setUserName] = useState(null);
   const [userId, setUserId] = useState(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetchUserProfile(token);
-    }
-  }, []);
-
   const fetchUserProfile = async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
@@ -49,6 +42,13 @@ const Header = () => {
     setUserId(null);
     navigate('/');
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchUserProfile(token);
+    }
+  }, [fetchUserProfile]); // 🔥 додали fetchUserProfile в залежності
 
   return (
     <header

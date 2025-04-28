@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Layout, Form, Input, Button, message, Typography, Alert, Select } from "antd";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; // 🔥 useParams видалено
 
 const { Title } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
-const API_APPLICATION_URL = "http://192.168.0.116:5000/api/applicationRoutes"; // ✅ API для заявок
+// ✅ Оновлений шлях до бекенду Render
+const API_APPLICATION_URL = "https://idea-backend.onrender.com/api/applicationRoutes";
 
 const Applications = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
   const [application, setApplication] = useState({
     title: "",
     content: "",
     user_id: null,
     idea_id: null,
-    type: "idea", // ✅ Додаємо тип заявки за замовчуванням
+    type: "idea", // ✅ Тип заявки
   });
   const [idea, setIdea] = useState(null);
 
@@ -63,17 +63,17 @@ const Applications = () => {
         title: application.title,
         content: application.content,
         idea_id: application.idea_id || null,
-        type: application.type, // ✅ Передаємо тип заявки
+        type: application.type,
       });
 
       const submitResponse = await axios.post(
-        API_APPLICATION_URL, // ✅ Використовуємо `/api/applicationRoutes`
+        API_APPLICATION_URL,
         {
           user_id: application.user_id,
           title: application.title,
           content: application.content,
           idea_id: application.idea_id || null,
-          type: application.type, // ✅ Обов’язковий параметр
+          type: application.type,
         },
         {
           headers: {
@@ -93,11 +93,9 @@ const Applications = () => {
       }
     } catch (err) {
       console.error("❌ Помилка створення заявки:", err);
-
       if (err.response) {
         console.error("🔴 Деталі помилки сервера:", err.response.data);
       }
-
       message.error(err.response?.data?.message || "❌ Виникла помилка.");
     }
   };

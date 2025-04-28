@@ -23,11 +23,13 @@ const { Content } = Layout;
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-const API_BLOG_URL = "http://192.168.0.116:5000/api/blogRoutes";
-const API_PROBLEMS_URL = "http://192.168.0.116:5000/api/problems";
-const API_LIKE_URL = "http://192.168.0.116:5000/api/likeRoutes";
-const API_COMMENT_URL = "http://192.168.0.116:5000/api/commentRoutes";
-const API_SUBSCRIBE_URL = "http://192.168.0.116:5000/api/subscriptionRoutes";
+// ОНОВЛЕНО ПІД RENDER
+const API_BASE = "https://idea-backend.onrender.com/api";
+const API_BLOG_URL = `${API_BASE}/blogRoutes`;
+const API_PROBLEMS_URL = `${API_BASE}/problems`;
+const API_LIKE_URL = `${API_BASE}/likeRoutes`;
+const API_COMMENT_URL = `${API_BASE}/commentRoutes`;
+const API_SUBSCRIBE_URL = `${API_BASE}/subscriptionRoutes`;
 
 const BlogPage = () => {
   const [entries, setEntries] = useState([]);
@@ -38,12 +40,6 @@ const BlogPage = () => {
   const [newComment, setNewComment] = useState({});
   const [userId, setUserId] = useState(null);
   const [filteredType, setFilteredType] = useState("all");
-
-  useEffect(() => {
-    fetchUserId();
-    fetchAllEntries();
-    fetchSubscriptions();
-  }, []);
 
   const getAuthToken = () => localStorage.getItem("token");
 
@@ -194,12 +190,20 @@ const BlogPage = () => {
   const filteredEntries =
     filteredType === "all" ? entries : entries.filter((e) => e.entryType === filteredType);
 
+  // 🔥 Виправлений useEffect з залежностями
+  useEffect(() => {
+    fetchUserId();
+    fetchAllEntries();
+    fetchSubscriptions();
+  }, []);
+
   return (
     <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
       {isLoading ? (
         <Skeleton active />
       ) : (
         <>
+          {/* Фільтри */}
           <div style={{ marginBottom: "20px", textAlign: "center" }}>
             <Title level={5}>Фільтрувати за типом:</Title>
             <Space>
@@ -215,6 +219,7 @@ const BlogPage = () => {
             </Space>
           </div>
 
+          {/* Карти */}
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
             {filteredEntries.map((entry) => (
               <Card key={entry.id} hoverable style={{ borderRadius: 10 }}>
@@ -229,16 +234,15 @@ const BlogPage = () => {
                   </Button>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-                  <Tag color={getTagColor(entry.entryType)}>
-                    {entry.entryType.toUpperCase()}
-                  </Tag>
-                  <Text strong style={{ color: "#555" }}>Автор: {entry.authorname || "Невідомий"}</Text>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+                  <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
+                  <Text strong>Автор: {entry.authorname || "Невідомий"}</Text>
                 </div>
 
                 <Divider style={{ margin: "8px 0" }} />
                 <Text>{entry.description || "Без опису"}</Text>
 
+                {/* Лайки */}
                 <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
                   <Space>
                     <Button type="text" onClick={() => toggleLike(entry)}>
@@ -252,9 +256,9 @@ const BlogPage = () => {
                   </Space>
                 </div>
 
+                {/* Коментарі */}
                 <Divider />
-
-                <div style={{ marginBottom: "16px" }}>
+                <div>
                   <Title level={5}>Коментарі:</Title>
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {commentsData[entry.id]?.length ? (
@@ -262,14 +266,9 @@ const BlogPage = () => {
                         <Card
                           key={comment.id}
                           size="small"
-                          style={{
-                            backgroundColor: "#fafafa",
-                            border: "1px solid #eee",
-                            borderRadius: "6px",
-                            padding: "12px",
-                          }}
+                          style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}
                         >
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <Text strong>{comment.authorName || "Анонім"}</Text>
                             <Text type="secondary" style={{ fontSize: "12px" }}>
                               {new Date(comment.createdAt).toLocaleString("uk-UA")}
@@ -282,26 +281,26 @@ const BlogPage = () => {
                       <Text type="secondary">Коментарів ще немає.</Text>
                     )}
                   </Space>
-                </div>
 
-                <div style={{ marginTop: "12px" }}>
-                  <Text strong>Додати коментар:</Text>
-                  <TextArea
-                    rows={2}
-                    value={newComment[entry.id] || ""}
-                    onChange={(e) =>
-                      setNewComment({ ...newComment, [entry.id]: e.target.value })
-                    }
-                    placeholder="Напишіть коментар..."
-                    style={{ marginTop: "8px", marginBottom: "8px" }}
-                  />
-                  <Button
-                    type="primary"
-                    icon={<SendOutlined />}
-                    onClick={() => handleCommentSubmit(entry)}
-                  >
-                    Відправити
-                  </Button>
+                  <div style={{ marginTop: "12px" }}>
+                    <Text strong>Додати коментар:</Text>
+                    <TextArea
+                      rows={2}
+                      value={newComment[entry.id] || ""}
+                      onChange={(e) =>
+                        setNewComment({ ...newComment, [entry.id]: e.target.value })
+                      }
+                      placeholder="Напишіть коментар..."
+                      style={{ marginTop: "8px", marginBottom: "8px" }}
+                    />
+                    <Button
+                      type="primary"
+                      icon={<SendOutlined />}
+                      onClick={() => handleCommentSubmit(entry)}
+                    >
+                      Відправити
+                    </Button>
+                  </div>
                 </div>
               </Card>
             ))}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import {
   Layout,
@@ -11,6 +11,7 @@ import {
   DatePicker,
   message,
   Typography,
+  Skeleton,
 } from "antd";
 
 const { Title } = Typography;
@@ -23,7 +24,7 @@ const API_AGENDA_URL = "https://idea-backend.onrender.com/api/agendaRoutes";
 
 const JurySecretaryProfile = () => {
   const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // 🔥 перейменовано на isLoading
   const [agendaModalOpen, setAgendaModalOpen] = useState(false);
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState(null);
@@ -32,21 +33,7 @@ const JurySecretaryProfile = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  const getSecretaryId = () => {
-    let secretaryId = localStorage.getItem("secretary_id");
-    if (!secretaryId) {
-      fetchSecretaryData();
-      secretaryId = localStorage.getItem("secretary_id");
-    }
-    return secretaryId;
-  };
-
-  useEffect(() => {
-    fetchSecretaryData();
-    fetchApplications();
-  }, []);
-
-  const fetchSecretaryData = async () => {
+  const fetchSecretaryData = useCallback(async () => {
     try {
       const token = getAuthToken();
       const response = await axios.get(`${API_SECRETARY_URL}/secretaries`, {
@@ -60,9 +47,9 @@ const JurySecretaryProfile = () => {
     } catch (error) {
       message.error("❌ Не вдалося завантажити секретаря.");
     }
-  };
+  }, []);
 
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     try {
       const token = getAuthToken();
       const response = await axios.get(`${API_APPLICATION_URL}/`, {
@@ -73,9 +60,23 @@ const JurySecretaryProfile = () => {
     } catch (error) {
       message.error("❌ Не вдалося отримати заявки.");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
+  }, []);
+
+  const getSecretaryId = () => {
+    let secretaryId = localStorage.getItem("secretary_id");
+    if (!secretaryId) {
+      fetchSecretaryData();
+      secretaryId = localStorage.getItem("secretary_id");
+    }
+    return secretaryId;
   };
+
+  useEffect(() => {
+    fetchSecretaryData();
+    fetchApplications();
+  }, [fetchSecretaryData, fetchApplications]); // 🔥 додали в залежності
 
   const openAgendaModal = (application) => {
     setSelectedApplication(application);
@@ -147,19 +148,26 @@ const JurySecretaryProfile = () => {
   return (
     <Layout style={{ padding: "20px", background: "#f4f6f8" }}>
       <Title level={3} style={{ marginTop: "20px" }}>📌 Подані ідеї</Title>
-      <List
-        dataSource={applications}
-        renderItem={(application) => (
-          <List.Item key={application.id}>
-            <Card title={application.title} style={{ width: "100%" }}>
-              <p><strong>Автор:</strong> {application.first_name} {application.last_name}</p>
-              <p><strong>Опис:</strong> {application.content}</p>
-              <Button type="primary" onClick={() => openReturnModal(application)}>🔄 Повернути заявку</Button>
-              <Button type="default" onClick={() => openAgendaModal(application)} style={{ marginLeft: "10px" }}>📅 Призначити засідання</Button>
-            </Card>
-          </List.Item>
-        )}
-      />
+      
+      {isLoading ? (
+        <Skeleton active />
+      ) : (
+        <List
+          dataSource={applications}
+          renderItem={(application) => (
+            <List.Item key={application.id}>
+              <Card title={application.title} style={{ width: "100%" }}>
+                <p><strong>Автор:</strong> {application.first_name} {application.last_name}</p>
+                <p><strong>Опис:</strong> {application.content}</p>
+                <Button type="primary" onClick={() => openReturnModal(application)}>🔄 Повернути заявку</Button>
+                <Button type="default" onClick={() => openAgendaModal(application)} style={{ marginLeft: "10px" }}>
+                  📅 Призначити засідання
+                </Button>
+              </Card>
+            </List.Item>
+          )}
+        />
+      )}
 
       {/* Модальне вікно: Призначити засідання */}
       <Modal title="📅 Призначити засідання" open={agendaModalOpen} onCancel={closeAgendaModal} onOk={formAgenda.submit}>

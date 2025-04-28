@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Layout, List, Card, Typography, Skeleton, Alert, Button, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
@@ -17,7 +17,8 @@ const IdeasSubmissionPage = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  const fetchUserProblems = async () => {
+  // 🔥 Обгорнули fetchUserProblems у useCallback щоб не було помилки залежностей
+  const fetchUserProblems = useCallback(async () => {
     try {
       const token = getAuthToken();
       if (!token) {
@@ -41,11 +42,11 @@ const IdeasSubmissionPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchUserProblems();
-  }, []);
+  }, [fetchUserProblems]); // ✅ Додали fetchUserProblems в залежності
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -63,11 +64,13 @@ const IdeasSubmissionPage = () => {
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f8" }}>
       <Header style={{ background: "#003366", textAlign: "center", padding: "15px" }}>
-        <Title style={{ color: "white", fontSize: "24px" }}>Мої подані проблеми</Title>
+        <Title style={{ color: "white", fontSize: "24px", margin: 0 }}>
+          Мої подані проблеми
+        </Title>
       </Header>
 
       <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
-        {error && <Alert message={error} type="error" showIcon />}
+        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: "20px" }} />}
         {isLoading ? (
           <Skeleton active />
         ) : (
@@ -78,7 +81,7 @@ const IdeasSubmissionPage = () => {
               <List.Item>
                 <Card
                   hoverable
-                  title={<Title level={4}>{problem.title}</Title>}
+                  title={<Title level={4} style={{ marginBottom: 0 }}>{problem.title}</Title>}
                   style={{
                     width: "100%",
                     borderRadius: "10px",
@@ -88,11 +91,14 @@ const IdeasSubmissionPage = () => {
                 >
                   <Text>{problem.description || "Без опису"}</Text>
                   <br />
-                  <Tag color={getStatusColor(problem.status)} style={{ marginTop: "10px", fontSize: "14px" }}>
+                  <Tag
+                    color={getStatusColor(problem.status)}
+                    style={{ marginTop: "10px", fontSize: "14px" }}
+                  >
                     {problem.status ? problem.status.toUpperCase() : "НЕ ВКАЗАНО"}
                   </Tag>
                   <br />
-                  <Text type="secondary" style={{ fontSize: "14px", marginTop: "5px" }}>
+                  <Text type="secondary" style={{ fontSize: "14px" }}>
                     Автор: {problem.author_first_name} {problem.author_last_name}
                   </Text>
                   <br />

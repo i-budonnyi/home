@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Layout, List, Card, Typography, Skeleton, Alert, Button, Tag, Input, Form, message } from "antd";
+import { Layout, List, Card, Typography, Skeleton, Alert, Button, Tag, Input, message } from "antd"; // 🔥 Form видалено
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
