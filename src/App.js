@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import HomePage from './components/HomePage';
 import LoginPage from './components/Login';
 import Register from './components/Register';
@@ -17,15 +17,15 @@ import Logout from './components/Logout';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import BlogPage from './components/BlogPage';
 import AmbassadorPage from './components/AmbassadorPage';
-import Applications from './components/applications/applications'; // Якщо файл називається `applications.js`
+import Applications from './components/applications/applications';
 import JurySecretaryProfile from './components/JurySecretaryProfile/JurySecretaryProfile';
 import JuryVotingPage from './components/JuryVotingPage/JuryVotingPage';
 import PMProjectsPage from './components/PMProjectsPage/PMProjectsPage';
 import { UserProvider } from './components/context/UserContext';
 
-const App = () => {
-  return (
-    <UserProvider> {/* Обгортання всього застосунку в UserContext */}
+const App = () => (
+  <UserProvider>
+    <BrowserRouter> {/* 🔥 Додаємо обгортку Router */}
       <Header />
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -49,8 +49,8 @@ const App = () => {
         <Route path="/pm-projects" element={<PMProjectsPage />} />
       </Routes>
       <Footer />
-    </UserProvider>
-  );
-};
+    </BrowserRouter>
+  </UserProvider>
+);
 
 export default App;
