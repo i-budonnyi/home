@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// ✅ НОВА правильна адреса бекенду
-const API_URL = "https://idea-backend.onrender.com/api/authRoutes/login";
+// ✅ Виправлена правильна адреса бекенду
+const API_URL = "https://backend-avtologistika.onrender.com/api/authRoutes/login"; // 🔥 тут правильний бекенд!
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -11,29 +11,22 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      navigate("/");
-    }
-  }, [navigate]);
-
   const handleLogin = async () => {
     setError("");
     setIsLoading(true);
 
     try {
-      const res = await fetch(API_URL, {
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      const data = await response.json(); // ⬅️ РОЗПАРСИТИ JSON одразу!
 
-      if (!res.ok) {
+      if (!response.ok) {
         throw new Error(data.message || "Помилка логіну");
       }
 
@@ -45,10 +38,13 @@ const LoginPage = () => {
         ambassador: "/ambassadors",
         jury_secretary: "/jury-secretary",
         jury_member: "/jury",
-        worker: "/worker",
       };
 
-      navigate(redirects[data.user.role] || "/");
+      if (data.user.role === "worker") {
+        navigate("/worker"); // 🔥 без ід!
+      } else {
+        navigate(redirects[data.user.role] || "/");
+      }
     } catch (err) {
       setError(err.message || "Невідома помилка");
     } finally {
