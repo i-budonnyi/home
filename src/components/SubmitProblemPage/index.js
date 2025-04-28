@@ -1,1 +1,1 @@
-﻿export { default } from './SubmitProblemPage';
+export { default } from './SubmitProblemPage';

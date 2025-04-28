@@ -1,7 +1,8 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'http://192.168.0.116:5000/api/userRoutes';
+// Нова правильна адреса API
+const API_BASE_URL = 'https://idea-backend.onrender.com/api/userRoutes'; // <-- тут замінили
 
 const Header = () => {
   const navigate = useNavigate();
@@ -15,7 +16,6 @@ const Header = () => {
     }
   }, []);
 
-  // Функція отримання профілю
   const fetchUserProfile = async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {

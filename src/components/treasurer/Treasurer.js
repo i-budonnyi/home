@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const Treasurer = () => {
@@ -10,38 +10,34 @@ const Treasurer = () => {
     email: '',
   });
 
-  // Базовий URL для API
-  const API_URL = 'http://localhost:5000/api';
+  // ✅ Виправлений Базовий URL для API
+  const API_URL = 'https://idea-backend.onrender.com/api';
 
-  // Отримати список платежів
   const fetchPayments = async () => {
     try {
       const response = await axios.get(`${API_URL}/payments`);
       setPayments(response.data);
     } catch (error) {
-      console.error('Помилка отримання платежів:', error);
+      console.error('❌ Помилка отримання платежів:', error);
     }
   };
 
-  // Додати новий платіж
   const addPayment = async (e) => {
     e.preventDefault();
     try {
       await axios.post(`${API_URL}/payments`, form);
-      alert('Платіж успішно додано!');
+      alert('✅ Платіж успішно додано!');
       setForm({ first_name: '', last_name: '', phone: '', email: '' });
-      fetchPayments();
+      fetchPayments(); // Оновити список після додавання
     } catch (error) {
-      console.error('Помилка додавання платежу:', error);
+      console.error('❌ Помилка додавання платежу:', error);
     }
   };
 
-  // Завантажити дані при першому рендері
   useEffect(() => {
     fetchPayments();
   }, []);
 
-  // Обробка зміни полів форми
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -60,7 +56,7 @@ const Treasurer = () => {
           value={form.first_name}
           onChange={handleChange}
           required
-          style={{ marginRight: '10px' }}
+          style={{ marginRight: '10px', padding: '8px' }}
         />
         <input
           type="text"
@@ -69,7 +65,7 @@ const Treasurer = () => {
           value={form.last_name}
           onChange={handleChange}
           required
-          style={{ marginRight: '10px' }}
+          style={{ marginRight: '10px', padding: '8px' }}
         />
         <input
           type="text"
@@ -78,7 +74,7 @@ const Treasurer = () => {
           value={form.phone}
           onChange={handleChange}
           required
-          style={{ marginRight: '10px' }}
+          style={{ marginRight: '10px', padding: '8px' }}
         />
         <input
           type="email"
@@ -87,9 +83,11 @@ const Treasurer = () => {
           value={form.email}
           onChange={handleChange}
           required
-          style={{ marginRight: '10px' }}
+          style={{ marginRight: '10px', padding: '8px' }}
         />
-        <button type="submit">Додати</button>
+        <button type="submit" style={{ padding: '10px 20px', cursor: 'pointer' }}>
+          Додати
+        </button>
       </form>
 
       {/* Таблиця з платежами */}

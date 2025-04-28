@@ -1,7 +1,8 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = "http://192.168.0.116:5000/api/authRoutes"; // Базовий маршрут для API
+// ✅ НОВА правильна адреса бекенду
+const API_URL = "https://idea-backend.onrender.com/api/authRoutes";
 
 const apiRequest = async (endpoint, method = "GET", data = null) => {
   console.log("🔍 [REST API] Запит до сервера:", endpoint, method, data);
@@ -73,7 +74,7 @@ const RegisterPage = () => {
         email,
         password,
         phone,
-        role_id: 2, // Призначення ролі за замовчуванням
+        role_id: 2, // Роль за замовчуванням
       });
 
       setSuccess(data.message || "Реєстрація успішна!");

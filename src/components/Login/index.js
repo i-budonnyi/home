@@ -1,4 +1,4 @@
-﻿// src/components/Login/index.js
+// src/components/Login/index.js
 import LoginPage from './LoginPage';
 
 export default LoginPage;

@@ -1,1 +1,1 @@
-﻿export { default } from './SubmitIdeaPage';
+export { default } from './SubmitIdeaPage';

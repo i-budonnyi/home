@@ -1,3 +1,3 @@
-﻿import UpdateProfilePage from './UpdateProfilePage';
+import UpdateProfilePage from './UpdateProfilePage';
 
 export default UpdateProfilePage;

@@ -1,1 +1,1 @@
-﻿export { default } from './MyProjectsPage';
+export { default } from './MyProjectsPage';

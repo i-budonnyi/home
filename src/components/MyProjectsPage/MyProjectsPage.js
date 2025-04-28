@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Layout, List, Card, Typography, Skeleton, Alert, Button, Tag, Input, Form, message } from "antd";
 import { useNavigate } from "react-router-dom";
@@ -7,8 +7,9 @@ const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 const { TextArea } = Input;
 
-const API_IDEA_URL = "http://192.168.0.116:5000/api/ideaRoutes";
-const API_FEEDBACK_URL = "http://192.168.0.116:5000/api/feedbackRoutes";
+// ✅ НОВІ правильні шляхи
+const API_IDEA_URL = "https://idea-backend.onrender.com/api/ideaRoutes";
+const API_FEEDBACK_URL = "https://idea-backend.onrender.com/api/feedbackRoutes";
 
 const MyProjectsPage = () => {
   const [ideas, setIdeas] = useState([]);
@@ -103,7 +104,7 @@ const MyProjectsPage = () => {
       );
       message.success("✅ Коментар успішно додано.");
       setCommentText((prev) => ({ ...prev, [ideaId]: "" }));
-      fetchComments(ideaId, token); // Перезавантажуємо коментарі після додавання
+      fetchComments(ideaId, token);
     } catch (error) {
       console.error("❌ ПОМИЛКА ДОДАВАННЯ КОМЕНТАРЯ", error.message);
       message.error("❌ Сталася помилка при додаванні коментаря.");

@@ -1,4 +1,4 @@
-﻿// src/components/Footer/index.js
+// src/components/Footer/index.js
 import Footer from './Footer';
 
 export default Footer;

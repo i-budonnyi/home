@@ -1,11 +1,12 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Layout, Card, Typography, Spin, Alert, Button, Select, Input, DatePicker, message } from "antd";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const API_BASE_URL = "http://192.168.0.116:5000/api";
+// ✅ НОВІ правильні шляхи до API
+const API_BASE_URL = "https://idea-backend.onrender.com/api";
 const API_JURY_MEMBER = `${API_BASE_URL}/juryPanelRoutes/me`;
 const API_AGENDA_ALL = `${API_BASE_URL}/agendaRoutes/`;
 const API_VOTE = `${API_BASE_URL}/juryVoting/vote`;
@@ -97,7 +98,7 @@ const JuryMemberProfile = () => {
 
       if (response.status === 201) {
         message.success("✅ Голос успішно збережено!");
-        fetchAgenda(); // 🔄 Оновлюємо список після голосування
+        fetchAgenda();
       } else {
         throw new Error(`❌ Сервер повернув статус: ${response.status}`);
       }

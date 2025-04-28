@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Layout, List, Card, Typography, Skeleton, Alert, Button, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
-const API_PROBLEM_URL = "http://192.168.0.116:5000/api/problems"; // ✅ Шлях до API
+// ✅ Нова правильна адреса на Render
+const API_PROBLEM_URL = "https://idea-backend.onrender.com/api/problems";
 
 const IdeasSubmissionPage = () => {
   const [problems, setProblems] = useState([]);
@@ -14,10 +15,8 @@ const IdeasSubmissionPage = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // ✅ Отримати токен авторизації
   const getAuthToken = () => localStorage.getItem("token");
 
-  // ✅ Отримати проблеми користувача
   const fetchUserProblems = async () => {
     try {
       const token = getAuthToken();
@@ -48,7 +47,6 @@ const IdeasSubmissionPage = () => {
     fetchUserProblems();
   }, []);
 
-  // ✅ Функція для визначення кольору статусу
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":

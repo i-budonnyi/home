@@ -1,8 +1,8 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-// ✅ Відносний шлях (працює і на Netlify, і локально через proxy)
-const API_URL = "/api/authRoutes/login";
+// ✅ НОВА правильна адреса бекенду
+const API_URL = "https://idea-backend.onrender.com/api/authRoutes/login";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -13,46 +13,44 @@ const LoginPage = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) navigate("/worker");
+    if (token) {
+      navigate("/");
+    }
   }, [navigate]);
 
   const handleLogin = async () => {
     setError("");
     setIsLoading(true);
 
-    if (!email || !password) {
-      setError("Введіть email і пароль.");
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      const response = await fetch(API_URL, {
+      const res = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ email, password }),
       });
 
-      const contentType = response.headers.get("content-type");
+      const data = await res.json();
 
-      let result;
-      if (contentType && contentType.includes("application/json")) {
-        result = await response.json();
-      } else {
-        const text = await response.text();
-        throw new Error("Сервер повернув некоректну відповідь (не JSON): " + text);
+      if (!res.ok) {
+        throw new Error(data.message || "Помилка логіну");
       }
 
-      if (!response.ok) {
-        throw new Error(result.message || "Помилка сервера");
-      }
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-      localStorage.setItem("token", result.token);
-      localStorage.setItem("user", JSON.stringify(result.user));
-      navigate("/worker");
+      const redirects = {
+        project_manager: "/pm-projects",
+        ambassador: "/ambassadors",
+        jury_secretary: "/jury-secretary",
+        jury_member: "/jury",
+        worker: "/worker",
+      };
+
+      navigate(redirects[data.user.role] || "/");
     } catch (err) {
-      console.error("[Login] Помилка:", err);
-      setError(err.message || "Невідома помилка.");
+      setError(err.message || "Невідома помилка");
     } finally {
       setIsLoading(false);
     }

@@ -1,4 +1,4 @@
-﻿// src/components/IdeasPlatform/index.js
+// src/components/IdeasPlatform/index.js
 
 import IdeasPlatform from './IdeasPlatform';
 

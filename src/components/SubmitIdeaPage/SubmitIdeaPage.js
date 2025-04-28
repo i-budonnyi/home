@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Layout,
   Form,
@@ -14,9 +14,10 @@ import { useNavigate } from "react-router-dom";
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-const USER_API_BASE_URL = "http://192.168.0.116:5000/api/userRoutes";
-const IDEA_API_BASE_URL = "http://192.168.0.116:5000/api/ideaRoutes";
-const AMBASSADOR_API_BASE_URL = "http://192.168.0.116:5000/api/ambassadorRoutes";
+// ✅ НОВІ правильні шляхи
+const USER_API_BASE_URL = "https://idea-backend.onrender.com/api/userRoutes";
+const IDEA_API_BASE_URL = "https://idea-backend.onrender.com/api/ideaRoutes";
+const AMBASSADOR_API_BASE_URL = "https://idea-backend.onrender.com/api/ambassadorRoutes";
 
 const SubmitIdeaPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);

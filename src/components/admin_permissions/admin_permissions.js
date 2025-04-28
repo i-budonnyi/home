@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom';
 
-const App = () => {
+const AdminPermissionsPage = () => {
   const [permissions, setPermissions] = useState([]);
   const [adminId, setAdminId] = useState('');
   const [permissionId, setPermissionId] = useState('');
   const [deleteAdminId, setDeleteAdminId] = useState('');
   const [deletePermissionId, setDeletePermissionId] = useState('');
 
-  // Базовий URL вашого API
   const API_URL = 'http://192.168.0.116:5000/api';
 
-  // Функція для отримання всіх прав
   const fetchAdminPermissions = async () => {
     try {
       const response = await fetch(`${API_URL}/admin_permissions`);
@@ -22,7 +19,6 @@ const App = () => {
     }
   };
 
-  // Функція для призначення нового права
   const handleCreatePermission = async (e) => {
     e.preventDefault();
     const payload = {
@@ -41,13 +37,12 @@ const App = () => {
       });
       const result = await response.json();
       alert('Permission assigned: ' + JSON.stringify(result));
-      fetchAdminPermissions(); // Оновлюємо список після додавання
+      fetchAdminPermissions();
     } catch (error) {
       console.error('Error creating permission:', error);
     }
   };
 
-  // Функція для видалення права
   const handleDeletePermission = async (e) => {
     e.preventDefault();
     try {
@@ -57,7 +52,7 @@ const App = () => {
       );
       if (response.status === 204) {
         alert('Permission deleted successfully');
-        fetchAdminPermissions(); // Оновлюємо список після видалення
+        fetchAdminPermissions();
       } else {
         const error = await response.json();
         alert('Error deleting permission: ' + JSON.stringify(error));
@@ -67,7 +62,6 @@ const App = () => {
     }
   };
 
-  // Завантажуємо дані при першому рендерингу
   useEffect(() => {
     fetchAdminPermissions();
   }, []);
@@ -78,7 +72,6 @@ const App = () => {
         <h1 style={{ color: '#4CAF50' }}>Admin Permissions</h1>
       </header>
 
-      {/* Перегляд прав */}
       <section>
         <h2>All Admin Permissions</h2>
         <table
@@ -127,7 +120,6 @@ const App = () => {
         </button>
       </section>
 
-      {/* Призначення прав */}
       <section>
         <h2>Assign Permissions</h2>
         <form onSubmit={handleCreatePermission}>
@@ -169,7 +161,6 @@ const App = () => {
         </form>
       </section>
 
-      {/* Видалення прав */}
       <section>
         <h2>Delete Permissions</h2>
         <form onSubmit={handleDeletePermission}>
@@ -214,4 +205,4 @@ const App = () => {
   );
 };
 
-ReactDOM.render(<App />, document.getElementById('root'));
+export default AdminPermissionsPage;

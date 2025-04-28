@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout,
@@ -24,7 +24,8 @@ import axios from "axios";
 const { Content, Sider } = Layout;
 const { Title, Text } = Typography;
 
-const API_BASE_URL = "http://192.168.0.116:5000/api/userRoutes/";
+// Виправлена адреса на Render
+const API_BASE_URL = "https://your-backend-service-name.onrender.com/api/userRoutes/";
 
 const WorkerPage = () => {
   const [userData, setUserData] = useState(null);

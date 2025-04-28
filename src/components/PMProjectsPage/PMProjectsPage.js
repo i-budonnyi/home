@@ -1,9 +1,9 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 
-// Два окремі API URL
-const API_PM_URL = "http://192.168.0.116:5000/api/projectManagerRoutes";
-const API_JURY_URL = "http://192.168.0.116:5000/api/juryDecisions";
+// ✅ НОВІ правильні шляхи до API
+const API_PM_URL = "https://idea-backend.onrender.com/api/projectManagerRoutes";
+const API_JURY_URL = "https://idea-backend.onrender.com/api/juryDecisions";
 
 const PMProjectsPage = () => {
     const [pm, setPM] = useState(null);
@@ -11,7 +11,6 @@ const PMProjectsPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Отримання токена з локального сховища
     const token = localStorage.getItem("token");
 
     useEffect(() => {

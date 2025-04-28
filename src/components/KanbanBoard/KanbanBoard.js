@@ -1,6 +1,9 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import axios from 'axios';
+
+// ✅ Нова правильна адреса сервера
+const API_BASE_URL = 'https://idea-backend.onrender.com/api/tasks';
 
 const KanbanBoard = () => {
   const [tasks, setTasks] = useState({
@@ -13,7 +16,7 @@ const KanbanBoard = () => {
 
   // Завантаження завдань з бекенду
   useEffect(() => {
-    axios.get('http://192.168.0.116:5000/api/tasks') // Замість цього вкажіть свій API endpoint
+    axios.get(API_BASE_URL)
       .then((response) => {
         setTasks(response.data);
         setLoading(false);
@@ -24,33 +27,27 @@ const KanbanBoard = () => {
       });
   }, []);
 
-  // Функція для обробки завершення перетягування
   const handleDragEnd = (result) => {
     const { destination, source } = result;
-
-    if (!destination) return; // Якщо елемент не переміщено
-
-    // Якщо завдання переміщено в тій самій колонці
+    if (!destination) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
     const sourceColumn = source.droppableId;
     const destinationColumn = destination.droppableId;
     const sourceTasks = Array.from(tasks[sourceColumn]);
-    const [movedTask] = sourceTasks.splice(source.index, 1); // Витягуємо завдання з початкової колонки
+    const [movedTask] = sourceTasks.splice(source.index, 1);
 
     const destinationTasks = Array.from(tasks[destinationColumn]);
-    destinationTasks.splice(destination.index, 0, movedTask); // Додаємо завдання в нову колонку
+    destinationTasks.splice(destination.index, 0, movedTask);
 
-    // Оновлення стану та збереження змін на бекенді
     const updatedTasks = {
       ...tasks,
       [sourceColumn]: sourceTasks,
       [destinationColumn]: destinationTasks,
     };
     setTasks(updatedTasks);
-    
-    // Викликаємо API для збереження нової позиції завдання на сервері
-    axios.put('http://192.168.0.116:5000/api/tasks', updatedTasks)
+
+    axios.put(API_BASE_URL, updatedTasks)
       .then(response => {
         console.log('Завдання оновлено на сервері');
       })
@@ -59,24 +56,22 @@ const KanbanBoard = () => {
       });
   };
 
-  // Додавання нового завдання
   const addNewTask = () => {
     if (!newTaskContent) return;
 
     const newTask = {
-      id: `${Date.now()}`, // Використовуємо timestamp як ID
+      id: `${Date.now()}`,
       content: newTaskContent,
     };
 
     const updatedTasks = {
       ...tasks,
-      todo: [...tasks.todo, newTask], // Додаємо нове завдання до колонки "To Do"
+      todo: [...tasks.todo, newTask],
     };
     setTasks(updatedTasks);
     setNewTaskContent('');
 
-    // Збереження нового завдання на сервері
-    axios.post('http://192.168.0.116:5000/api/tasks', newTask)
+    axios.post(API_BASE_URL, newTask)
       .then(response => {
         console.log('Завдання додано на сервері');
       })
@@ -85,14 +80,12 @@ const KanbanBoard = () => {
       });
   };
 
-  // Видалення завдання
   const deleteTask = (taskId, column) => {
     const updatedColumn = tasks[column].filter(task => task.id !== taskId);
     const updatedTasks = { ...tasks, [column]: updatedColumn };
     setTasks(updatedTasks);
 
-    // Видалення завдання з серверу
-    axios.delete(`http://192.168.0.116:5000/api/tasks/${taskId}`)
+    axios.delete(`${API_BASE_URL}/${taskId}`)
       .then(response => {
         console.log('Завдання видалено на сервері');
       })

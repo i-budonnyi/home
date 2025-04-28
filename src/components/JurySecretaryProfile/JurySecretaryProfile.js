@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Layout,
@@ -15,10 +15,11 @@ import {
 
 const { Title } = Typography;
 
-const API_SECRETARY_URL = "http://192.168.0.116:5000/api/secretaryRoutes";
-const API_APPLICATION_URL = "http://192.168.0.116:5000/api/applicationRoutes";
-const API_RETURN_URL = "http://192.168.0.116:5000/api/applicationReturnsRoutes";
-const API_AGENDA_URL = "http://192.168.0.116:5000/api/agendaRoutes";
+// ✅ НОВІ правильні адреси до API на Render
+const API_SECRETARY_URL = "https://idea-backend.onrender.com/api/secretaryRoutes";
+const API_APPLICATION_URL = "https://idea-backend.onrender.com/api/applicationRoutes";
+const API_RETURN_URL = "https://idea-backend.onrender.com/api/applicationReturnsRoutes";
+const API_AGENDA_URL = "https://idea-backend.onrender.com/api/agendaRoutes";
 
 const JurySecretaryProfile = () => {
   const [applications, setApplications] = useState([]);
@@ -31,7 +32,6 @@ const JurySecretaryProfile = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  // 📌 Отримання ID секретаря
   const getSecretaryId = () => {
     let secretaryId = localStorage.getItem("secretary_id");
     if (!secretaryId) {
@@ -46,7 +46,6 @@ const JurySecretaryProfile = () => {
     fetchApplications();
   }, []);
 
-  // 📌 Отримання секретаря
   const fetchSecretaryData = async () => {
     try {
       const token = getAuthToken();
@@ -63,7 +62,6 @@ const JurySecretaryProfile = () => {
     }
   };
 
-  // 📌 Отримання заявок
   const fetchApplications = async () => {
     try {
       const token = getAuthToken();
@@ -79,14 +77,12 @@ const JurySecretaryProfile = () => {
     }
   };
 
-  // 📌 Відкриття модалки для засідання
   const openAgendaModal = (application) => {
     setSelectedApplication(application);
     formAgenda.resetFields();
     setAgendaModalOpen(true);
   };
 
-  // 📌 Відкриття модалки для повернення заявки
   const openReturnModal = (application) => {
     setSelectedApplication(application);
     formReturn.resetFields();
@@ -96,7 +92,6 @@ const JurySecretaryProfile = () => {
   const closeAgendaModal = () => setAgendaModalOpen(false);
   const closeReturnModal = () => setReturnModalOpen(false);
 
-  // 📌 Призначення засідання
   const handleAgendaSubmit = async () => {
     try {
       const secretaryId = getSecretaryId();
@@ -127,7 +122,6 @@ const JurySecretaryProfile = () => {
     }
   };
 
-  // 📌 Повернення заявки
   const handleReturnSubmit = async () => {
     try {
       const values = await formReturn.validateFields();

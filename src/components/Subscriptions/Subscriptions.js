@@ -1,21 +1,20 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Layout, List, Card, Typography, Skeleton, Alert, Tag } from "antd";
 
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 
-const API_SUBSCRIPTIONS_URL = "http://192.168.0.116:5000/api/subscriptionRoutes/user-subscriptions"; // ✅ Правильний шлях до API
+// ✅ НОВИЙ правильний API шлях
+const API_SUBSCRIPTIONS_URL = "https://idea-backend.onrender.com/api/subscriptionRoutes/user-subscriptions";
 
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ Отримати токен
   const getAuthToken = () => localStorage.getItem("token");
 
-  // ✅ Отримати підписки користувача
   const fetchUserSubscriptions = async () => {
     try {
       const token = getAuthToken();
@@ -48,7 +47,6 @@ const Subscriptions = () => {
     fetchUserSubscriptions();
   }, []);
 
-  // ✅ Функція для визначення кольору статусу
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
@@ -94,7 +92,6 @@ const Subscriptions = () => {
                     {subscription.status ? subscription.status.toUpperCase() : "НЕ ВКАЗАНО"}
                   </Tag>
                   <br />
-                  {/* ✅ Відображення автора */}
                   <Text type="secondary" style={{ fontSize: "14px", marginTop: "5px" }}>
                     Автор:{" "}
                     {subscription.author_first_name && subscription.author_last_name
