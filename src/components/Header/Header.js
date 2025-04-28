@@ -1,15 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react'; // 🔥 Додали useCallback
 import { useNavigate } from 'react-router-dom';
 
 // Нова правильна адреса API
-const API_BASE_URL = 'https://idea-backend.onrender.com/api/userRoutes'; // <-- тут замінили
+const API_BASE_URL = 'https://idea-backend.onrender.com/api/userRoutes';
 
 const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [userId, setUserId] = useState(null);
 
-  const fetchUserProfile = async (token) => {
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setUserName(null);
+    setUserId(null);
+    navigate('/');
+  };
+
+  // 🔥 Обгорнули fetchUserProfile у useCallback
+  const fetchUserProfile = useCallback(async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
         method: 'GET',
@@ -34,21 +42,14 @@ const Header = () => {
       console.error('[ERROR] Помилка отримання профілю:', error.message);
       handleLogout();
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setUserName(null);
-    setUserId(null);
-    navigate('/');
-  };
+  }, [navigate]); // 🔥 або пустий масив [] якщо handleLogout не міняється
 
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       fetchUserProfile(token);
     }
-  }, [fetchUserProfile]); // 🔥 додали fetchUserProfile в залежності
+  }, [fetchUserProfile]); // 🔥 тепер все правильно
 
   return (
     <header
