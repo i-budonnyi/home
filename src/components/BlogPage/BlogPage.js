@@ -57,6 +57,19 @@ const BlogPage = () => {
     }
   }, [userId]);
 
+  const fetchComments = useCallback(async (entry) => {
+    try {
+      const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
+      if (!response.data || !Array.isArray(response.data.comments)) return;
+      setCommentsData((prev) => ({
+        ...prev,
+        [entry.id]: response.data.comments,
+      }));
+    } catch (err) {
+      console.error(`❌ Помилка коментарів:`, err);
+    }
+  }, []);
+
   const fetchUserId = useCallback(() => {
     try {
       const token = getAuthToken();
@@ -96,7 +109,7 @@ const BlogPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchLikes]);
+  }, [fetchLikes, fetchComments]); // 🔥 Виправлено залежності тут
 
   const fetchSubscriptions = useCallback(async () => {
     try {
@@ -108,19 +121,6 @@ const BlogPage = () => {
       setSubscribedEntries(subscriptions);
     } catch (err) {
       console.error("❌ Помилка підписок:", err);
-    }
-  }, []);
-
-  const fetchComments = useCallback(async (entry) => {
-    try {
-      const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
-      if (!response.data || !Array.isArray(response.data.comments)) return;
-      setCommentsData((prev) => ({
-        ...prev,
-        [entry.id]: response.data.comments,
-      }));
-    } catch (err) {
-      console.error(`❌ Помилка коментарів:`, err);
     }
   }, []);
 
@@ -286,9 +286,7 @@ const BlogPage = () => {
                     <TextArea
                       rows={2}
                       value={newComment[entry.id] || ""}
-                      onChange={(e) =>
-                        setNewComment({ ...newComment, [entry.id]: e.target.value })
-                      }
+                      onChange={(e) => setNewComment({ ...newComment, [entry.id]: e.target.value })}
                       placeholder="Напишіть коментар..."
                       style={{ marginTop: "8px", marginBottom: "8px" }}
                     />
