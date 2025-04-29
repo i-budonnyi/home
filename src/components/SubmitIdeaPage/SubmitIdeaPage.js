@@ -24,25 +24,18 @@ const SubmitIdeaPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("📡 Запит на профіль користувача...");
         const resProfile = await fetch(`${API_BASE}/userRoutes/profile`, {
           headers: getAuthHeaders(),
         });
-        console.log("🛰 Відповідь профілю:", resProfile.status);
         if (!resProfile.ok) throw new Error(`HTTP ${resProfile.status}`);
         const profile = await resProfile.json();
         setUserId(profile.id);
-        console.log("✅ userId:", profile.id);
 
-        console.log("📡 Запит на амбасадорів...");
-        const resAmb = await fetch(`${API_BASE}/ambassadorRoutes`, {
+        const resAmb = await fetch(`${API_BASE}/ambassadors`, {
           headers: getAuthHeaders(),
         });
-        console.log("🛰 Відповідь амбасадорів:", resAmb.status);
         if (!resAmb.ok) throw new Error(`HTTP ${resAmb.status}`);
         const data = await resAmb.json();
-        console.log("📦 Амбасадори:", data);
-
         if (Array.isArray(data)) {
           setAmbassadors(
             data.map((amb) => ({
@@ -50,8 +43,6 @@ const SubmitIdeaPage = () => {
               name: `${amb.first_name} ${amb.last_name}`,
             }))
           );
-        } else {
-          console.warn("⚠️ Очікував масив, але отримано:", data);
         }
       } catch (err) {
         console.error("❌ Помилка завантаження даних:", err);
@@ -72,9 +63,7 @@ const SubmitIdeaPage = () => {
         ambassador_id: values.ambassadorId || null,
       };
 
-      console.log("📤 Відправка ідеї:", payload);
-
-      const res = await fetch(`${API_BASE}/ideaRoutes`, {
+      const res = await fetch(`${API_BASE}/`, {
         method: "POST",
         headers: {
           ...getAuthHeaders(),
@@ -82,8 +71,6 @@ const SubmitIdeaPage = () => {
         },
         body: JSON.stringify(payload),
       });
-
-      console.log("🛰 Відповідь на подання:", res.status);
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setMessage("✅ Ідея успішно подана!");
