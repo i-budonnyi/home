@@ -1,7 +1,37 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = "https://idea-backend.onrender.com/api/authRoutes/register";
+const API_URL = "https://idea-backend.onrender.com/api/authRoutes";
+
+// Додаємо функцію для декодування юнікоду
+const decodeUnicode = (str) => {
+  try {
+    return decodeURIComponent(JSON.parse('"' + str.replace(/"/g, '\\"') + '"'));
+  } catch (e) {
+    console.error("[Unicode Decode Error]:", e.message);
+    return str;
+  }
+};
+
+const apiRequest = async (endpoint, method = "GET", data = null) => {
+  try {
+    const response = await fetch(`${API_URL}/${endpoint}`, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: data ? JSON.stringify(data) : null,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP Error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("[API ERROR]:", error.message);
+    throw error;
+  }
+};
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -9,8 +39,8 @@ const RegisterPage = () => {
     first_name: "",
     last_name: "",
     email: "",
-    password: "",
     phone: "",
+    password: "",
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -18,7 +48,7 @@ const RegisterPage = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleRegister = async (e) => {
@@ -29,146 +59,154 @@ const RegisterPage = () => {
 
     const { first_name, last_name, email, password, phone } = formData;
 
-    if (!first_name || !last_name || !email || !password || !phone) {
-      setError("\u0412\u0441\u0456 \u043F\u043E\u043B\u044F \u043E\u0431\u043E\u0432'\u044F\u0437\u043A\u043E\u0432\u0456!");
+    if (!first_name || !last_name || !email || !phone || !password) {
+      setError("Будь ласка, заповніть всі поля.");
       setIsLoading(false);
       return;
     }
 
     try {
-      const response = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          first_name,
-          last_name,
-          email,
-          password,
-          phone,
-          role_id: 2,
-        }),
+      const data = await apiRequest("register", "POST", {
+        first_name,
+        last_name,
+        email,
+        password,
+        phone,
+        role_id: 2,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "\u041F\u043E\u043C\u0438\u043B\u043A\u0430 \u0440\u0435\u0454\u0441\u0442\u0440\u0430\u0446\u0456\u0457");
-      }
-
-      const result = await response.json();
-      setSuccess(result.message || "\u0420\u0435\u0454\u0441\u0442\u0440\u0430\u0446\u0456\u044F \u0443\u0441\u043F\u0456\u0448\u043D\u0430!");
-      setTimeout(() => navigate("/worker"), 1500);
+      // Використовуємо decodeUnicode перед відображенням
+      setSuccess(decodeUnicode(data.message || "Реєстрація успішна!"));
+      setTimeout(() => navigate("/worker"), 2000);
     } catch (err) {
-      setError(err.message || "\u0421\u0442\u0430\u043B\u0430\u0441\u044F \u043D\u0435\u0432\u0456\u0434\u043E\u043C\u0430 \u043F\u043E\u043C\u0438\u043B\u043A\u0430.");
+      setError(err.message || "Сталася помилка при реєстрації.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-        backgroundColor: "#f0f8ff",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "#fff",
-          padding: "30px",
-          borderRadius: "8px",
-          boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-          maxWidth: "500px",
-          width: "100%",
-        }}
-      >
-        <h1 style={{ textAlign: "center", color: "#333" }}>\u0420\u0435\u0454\u0441\u0442\u0440\u0430\u0446\u0456\u044F</h1>
-        <form
-          onSubmit={handleRegister}
-          style={{ display: "flex", flexDirection: "column", gap: "15px" }}
-        >
-          <div style={{ display: "flex", gap: "15px" }}>
+    <div style={styles.page}>
+      <div style={styles.formContainer}>
+        <h1 style={styles.title}>Реєстрація</h1>
+        <form onSubmit={handleRegister} style={styles.form}>
+          <div style={styles.row}>
             <input
               type="text"
               name="first_name"
-              placeholder="\u0406\u043C'\u044F"
+              placeholder="Ім'я"
               value={formData.first_name}
               onChange={handleInputChange}
+              style={styles.input}
               required
-              style={inputStyle}
             />
             <input
               type="text"
               name="last_name"
-              placeholder="\u041F\u0440\u0456\u0437\u0432\u0438\u0449\u0435"
+              placeholder="Прізвище"
               value={formData.last_name}
               onChange={handleInputChange}
+              style={styles.input}
               required
-              style={inputStyle}
             />
           </div>
-          <div style={{ display: "flex", gap: "15px" }}>
+          <div style={styles.row}>
             <input
               type="email"
               name="email"
               placeholder="Email"
               value={formData.email}
               onChange={handleInputChange}
+              style={styles.input}
               required
-              style={inputStyle}
             />
             <input
               type="text"
               name="phone"
-              placeholder="\u0422\u0435\u043B\u0435\u0444\u043E\u043D"
+              placeholder="Телефон"
               value={formData.phone}
               onChange={handleInputChange}
+              style={styles.input}
               required
-              style={inputStyle}
             />
           </div>
           <input
             type="password"
             name="password"
-            placeholder="\u041F\u0430\u0440\u043E\u043B\u044C"
+            placeholder="Пароль"
             value={formData.password}
             onChange={handleInputChange}
+            style={styles.input}
             required
-            style={inputStyle}
           />
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={{
-              padding: "12px",
-              backgroundColor: isLoading ? "#cccccc" : "#007bff",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px",
-              cursor: isLoading ? "not-allowed" : "pointer",
-              fontWeight: "bold",
-              fontSize: "16px",
-            }}
-          >
-            {isLoading ? "\u0417\u0430\u0432\u0430\u043D\u0442\u0430\u0436\u0435\u043D\u043D\u044F..." : "\u0417\u0430\u0440\u0435\u0454\u0441\u0442\u0440\u0443\u0432\u0430\u0442\u0438\u0441\u044F"}
+          <button type="submit" style={styles.button} disabled={isLoading}>
+            {isLoading ? "Завантаження..." : "Зареєструватися"}
           </button>
-          {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
-          {success && <p style={{ color: "green", textAlign: "center" }}>{success}</p>}
+          {error && <p style={styles.error}>{error}</p>}
+          {success && <p style={styles.success}>{success}</p>}
         </form>
       </div>
     </div>
   );
 };
 
-const inputStyle = {
-  flex: 1,
-  padding: "10px",
-  border: "1px solid #ddd",
-  borderRadius: "5px",
+const styles = {
+  page: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: "100vh",
+    backgroundColor: "#f0f8ff",
+  },
+  formContainer: {
+    backgroundColor: "#ffffff",
+    padding: "30px",
+    borderRadius: "10px",
+    boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+    maxWidth: "500px",
+    width: "100%",
+  },
+  title: {
+    textAlign: "center",
+    marginBottom: "20px",
+    color: "#333333",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "15px",
+  },
+  row: {
+    display: "flex",
+    gap: "15px",
+  },
+  input: {
+    flex: 1,
+    padding: "10px",
+    border: "1px solid #ddd",
+    borderRadius: "5px",
+    fontSize: "16px",
+  },
+  button: {
+    padding: "12px",
+    backgroundColor: "#007bff",
+    color: "#ffffff",
+    fontWeight: "bold",
+    border: "none",
+    borderRadius: "5px",
+    fontSize: "16px",
+    cursor: "pointer",
+  },
+  error: {
+    color: "red",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
+  success: {
+    color: "green",
+    textAlign: "center",
+    fontWeight: "bold",
+  },
 };
 
 export default RegisterPage;
