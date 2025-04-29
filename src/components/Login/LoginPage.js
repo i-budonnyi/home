@@ -1,8 +1,9 @@
 import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { UserContext } from "../context/UserContext"; // 🔥 підключаємо контекст користувача
+import { UserContext } from "../context/UserContext";
 
-const API_URL = "https://backend-avtologistika.onrender.com/api/authRoutes/login";
+// ✅ Правильна адреса без /api/authRoutes, бо в бекенді маршрут /login
+const API_URL = "https://backend-avtologistika.onrender.com/login";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
@@ -10,7 +11,7 @@ const LoginPage = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { setUser } = useContext(UserContext); // ⬅️ Ось що треба!
+  const { setUser } = useContext(UserContext);
 
   const handleLogin = async () => {
     setError("");
@@ -25,7 +26,10 @@ const LoginPage = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type");
+      const data = contentType?.includes("application/json")
+        ? await response.json()
+        : { message: await response.text() };
 
       if (!response.ok) {
         throw new Error(data.message || "Помилка логіну");
@@ -33,7 +37,7 @@ const LoginPage = () => {
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      setUser(data.user); // 🔥 Оновити глобального користувача тут!
+      setUser(data.user);
 
       const redirects = {
         project_manager: "/pm-projects",
@@ -48,6 +52,7 @@ const LoginPage = () => {
         navigate(redirects[data.user.role] || "/");
       }
     } catch (err) {
+      console.error("[LOGIN ERROR]:", err);
       setError(err.message || "Невідома помилка");
     } finally {
       setIsLoading(false);
