@@ -1,23 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  Layout,
-  Form,
-  Input,
-  Select,
-  Button,
-  Alert,
-  Typography,
-} from "antd";
+import { Layout, Form, Input, Select, Button, Alert, Typography } from "antd";
 import { BulbOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-// ✅ НОВІ правильні шляхи
+// ✅ Оновлені шляхи
 const USER_API_BASE_URL = "https://idea-backend.onrender.com/api/userRoutes";
 const IDEA_API_BASE_URL = "https://idea-backend.onrender.com/api/ideaRoutes";
-const AMBASSADOR_API_BASE_URL = "https://idea-backend.onrender.com/api/ambassadorRoutes";
+const AMBASSADOR_API_BASE_URL = "https://idea-backend.onrender.com/api/ambassadorRoutes"; // ⚡ Додали
 
 const SubmitIdeaPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);
@@ -33,7 +25,6 @@ const SubmitIdeaPage = () => {
     return { Authorization: `Bearer ${token}` };
   };
 
-  // 🔥 Обгорнули в useCallback
   const fetchUserId = useCallback(async () => {
     try {
       const response = await fetch(`${USER_API_BASE_URL}/profile`, {
@@ -73,7 +64,6 @@ const SubmitIdeaPage = () => {
         title: values.title,
         description: values.description,
         ambassador_id: values.ambassadorId || null,
-        user_id: userId,
       };
       const response = await fetch(`${IDEA_API_BASE_URL}`, {
         method: "POST",
@@ -100,7 +90,7 @@ const SubmitIdeaPage = () => {
       await fetchAmbassadors();
     };
     fetchData();
-  }, [fetchUserId, fetchAmbassadors]); // 🔥 Додано обидві залежності!
+  }, [fetchUserId, fetchAmbassadors]);
 
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f9" }}>
@@ -111,7 +101,6 @@ const SubmitIdeaPage = () => {
       </Header>
 
       <Content style={{ padding: "40px 20px", position: "relative" }}>
-        {/* Повернутись кнопка */}
         <div style={{ position: "absolute", left: "20px", top: "40px" }}>
           <Button
             type="link"
@@ -129,14 +118,7 @@ const SubmitIdeaPage = () => {
           </Button>
         </div>
 
-        {/* Форма по центру */}
-        <div
-          style={{
-            maxWidth: "600px",
-            margin: "0 auto",
-            paddingTop: "20px",
-          }}
-        >
+        <div style={{ maxWidth: "600px", margin: "0 auto", paddingTop: "20px" }}>
           <Form form={form} layout="vertical" onFinish={handleSubmit}>
             {message && (
               <Alert
