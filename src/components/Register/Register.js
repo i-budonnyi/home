@@ -22,7 +22,7 @@ const apiRequest = async (endpoint, method = "GET", data = null) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
+      await response.text(); // 🟢 видалено unused errorText
       throw new Error(`HTTP Error: ${response.status}`);
     }
 
@@ -75,7 +75,6 @@ const RegisterPage = () => {
         role_id: 2,
       });
 
-      // Використовуємо decodeUnicode перед відображенням
       setSuccess(decodeUnicode(data.message || "Реєстрація успішна!"));
       setTimeout(() => navigate("/worker"), 2000);
     } catch (err) {
