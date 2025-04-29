@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = "https://idea-backend.onrender.com";
+const API_URL = "https://backend-avtologistika.onrender.com"; // 🔧 виправлено
 
 const decodeUnicode = (str) => {
   try {
