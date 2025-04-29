@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout, Form, Input, Select, Button, Alert, Typography } from "antd";
 import { BulbOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -6,10 +6,7 @@ import { useNavigate } from "react-router-dom";
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-// ✅ Оновлені шляхи
-const USER_API_BASE_URL = "https://idea-backend.onrender.com/api/userRoutes";
-const IDEA_API_BASE_URL = "https://idea-backend.onrender.com/api/ideaRoutes";
-const AMBASSADOR_API_BASE_URL = "https://idea-backend.onrender.com/api/ambassadorRoutes"; // ⚡ Додали
+const API_BASE = "https://idea-backend.onrender.com/api";
 
 const SubmitIdeaPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);
@@ -21,51 +18,67 @@ const SubmitIdeaPage = () => {
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
-    if (!token) return {};
-    return { Authorization: `Bearer ${token}` };
+    return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  const fetchUserId = useCallback(async () => {
+  const fetchUserId = async () => {
     try {
-      const response = await fetch(`${USER_API_BASE_URL}/profile`, {
+      console.log("📡 Відправляємо запит на /userRoutes/profile...");
+      const res = await fetch(`${API_BASE}/userRoutes/profile`, {
         headers: getAuthHeaders(),
       });
-      if (!response.ok) throw new Error("Помилка отримання user_id.");
-      const data = await response.json();
-      setUserId(data.id);
-    } catch (error) {
-      console.error("[ERROR] Не вдалося отримати user_id:", error);
-    }
-  }, []);
+      console.log("🛰 Отримано відповідь:", res.status);
 
-  const fetchAmbassadors = useCallback(async () => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setUserId(data.id);
+      console.log("✅ Отримано userId:", data.id);
+    } catch (err) {
+      console.error("❌ Помилка отримання user_id:", err);
+    }
+  };
+
+  const fetchAmbassadors = async () => {
     try {
-      const response = await fetch(`${AMBASSADOR_API_BASE_URL}`, {
+      console.log("📡 Відправляємо запит на /ambassadorRoutes...");
+      const res = await fetch(`${API_BASE}/ambassadorRoutes`, {
         headers: getAuthHeaders(),
       });
-      if (!response.ok) throw new Error(`Помилка отримання амбасадорів: ${response.status}`);
-      const data = await response.json();
-      setAmbassadors(
-        data.map((ambassador) => ({
-          id: ambassador.id,
-          name: `${ambassador.first_name} ${ambassador.last_name}`,
-        }))
-      );
-    } catch (error) {
-      console.error("[ERROR] Помилка отримання амбасадорів:", error);
+      console.log("🛰 Отримано відповідь:", res.status);
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      console.log("📦 Отримані амбасадори:", data);
+
+      if (Array.isArray(data)) {
+        setAmbassadors(
+          data.map((amb) => ({
+            id: amb.id,
+            name: `${amb.first_name} ${amb.last_name}`,
+          }))
+        );
+      } else {
+        console.warn("⚠️ Очікував масив, але отримав:", data);
+      }
+    } catch (err) {
+      console.error("❌ Помилка отримання амбасадорів:", err);
     }
-  }, []);
+  };
 
   const handleSubmit = async (values) => {
     try {
       setIsSubmitting(true);
-      if (!userId) throw new Error("Ви не авторизовані!");
+      if (!userId) throw new Error("Ви не авторизовані");
+
       const payload = {
         title: values.title,
         description: values.description,
         ambassador_id: values.ambassadorId || null,
       };
-      const response = await fetch(`${IDEA_API_BASE_URL}`, {
+
+      console.log("📤 Відправляємо нову ідею:", payload);
+
+      const res = await fetch(`${API_BASE}/ideaRoutes`, {
         method: "POST",
         headers: {
           ...getAuthHeaders(),
@@ -73,11 +86,13 @@ const SubmitIdeaPage = () => {
         },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error(`Помилка подання ідеї: ${response.status}`);
+      console.log("🛰 Отримано відповідь на ідею:", res.status);
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setMessage("✅ Ідея успішно подана!");
       form.resetFields();
-    } catch (error) {
-      console.error("[ERROR] Помилка подання ідеї:", error);
+    } catch (err) {
+      console.error("❌ Помилка подання ідеї:", err);
       setMessage("❌ Помилка подання ідеї.");
     } finally {
       setIsSubmitting(false);
@@ -85,12 +100,9 @@ const SubmitIdeaPage = () => {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      await fetchUserId();
-      await fetchAmbassadors();
-    };
-    fetchData();
-  }, [fetchUserId, fetchAmbassadors]);
+    fetchUserId();
+    fetchAmbassadors();
+  }, []);
 
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f9" }}>
@@ -144,9 +156,9 @@ const SubmitIdeaPage = () => {
             </Form.Item>
             <Form.Item label="Обрати амбасадора" name="ambassadorId">
               <Select placeholder="Оберіть амбасадора" allowClear>
-                {ambassadors.map((ambassador) => (
-                  <Select.Option key={ambassador.id} value={ambassador.id}>
-                    {ambassador.name}
+                {ambassadors.map((amb) => (
+                  <Select.Option key={amb.id} value={amb.id}>
+                    {amb.name}
                   </Select.Option>
                 ))}
               </Select>
