@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 const API_URL = "https://idea-backend.onrender.com/api/authRoutes";
 
-// Додаємо функцію для декодування юнікоду
+// Функція для декодування Unicode
 const decodeUnicode = (str) => {
   try {
     return decodeURIComponent(JSON.parse('"' + str.replace(/"/g, '\\"') + '"'));
@@ -15,14 +15,19 @@ const decodeUnicode = (str) => {
 
 const apiRequest = async (endpoint, method = "GET", data = null) => {
   try {
-    const response = await fetch(`${API_URL}/${endpoint}`, {
+    const options = {
       method,
       headers: { "Content-Type": "application/json" },
-      body: data ? JSON.stringify(data) : null,
-    });
+    };
+
+    if (data && method !== "GET") {
+      options.body = JSON.stringify(data);
+    }
+
+    const response = await fetch(`${API_URL}/${endpoint}`, options);
 
     if (!response.ok) {
-      await response.text(); // 🟢 видалено unused errorText
+      await response.text();
       throw new Error(`HTTP Error: ${response.status}`);
     }
 
