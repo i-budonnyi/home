@@ -1,40 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = "https://idea-backend.onrender.com/api/authRoutes";
+const API_URL = "https://idea-backend.onrender.com";
 
-// Функція для декодування Unicode
 const decodeUnicode = (str) => {
   try {
     return decodeURIComponent(JSON.parse('"' + str.replace(/"/g, '\\"') + '"'));
   } catch (e) {
     console.error("[Unicode Decode Error]:", e.message);
     return str;
-  }
-};
-
-const apiRequest = async (endpoint, method = "GET", data = null) => {
-  try {
-    const options = {
-      method,
-      headers: { "Content-Type": "application/json" },
-    };
-
-    if (data && method !== "GET") {
-      options.body = JSON.stringify(data);
-    }
-
-    const response = await fetch(`${API_URL}/${endpoint}`, options);
-
-    if (!response.ok) {
-      await response.text();
-      throw new Error(`HTTP Error: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("[API ERROR]:", error.message);
-    throw error;
   }
 };
 
@@ -71,15 +45,27 @@ const RegisterPage = () => {
     }
 
     try {
-      const data = await apiRequest("register", "POST", {
-        first_name,
-        last_name,
-        email,
-        password,
-        phone,
-        role_id: 2,
+      const response = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          first_name,
+          last_name,
+          email,
+          password,
+          phone,
+          role_id: 2,
+        }),
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${decodeUnicode(errorText)}`);
+      }
+
+      const data = await response.json();
       setSuccess(decodeUnicode(data.message || "Реєстрація успішна!"));
       setTimeout(() => navigate("/worker"), 2000);
     } catch (err) {
