@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-// ✅ Базовий URL з /api
 const API_BASE = "https://idea-backend.onrender.com/api";
 
 const SubmitIdeaPage = () => {
@@ -18,18 +17,35 @@ const SubmitIdeaPage = () => {
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
+    if (!token) console.warn("⚠️ Токен не знайдено у localStorage");
     return token ? { Authorization: `Bearer ${token}` } : {};
+  };
+
+  const getUserIdFromLocalStorage = () => {
+    try {
+      const userData = JSON.parse(localStorage.getItem("user"));
+      console.log("👤 User із localStorage:", userData);
+      return userData?.id || null;
+    } catch (err) {
+      console.error("❌ Неможливо зчитати user з localStorage:", err);
+      return null;
+    }
   };
 
   useEffect(() => {
     const fetchAmbassadors = async () => {
       try {
+        console.log("🌐 Запит амбасадорів:", `${API_BASE}/ideaRoutes/ambassadors`);
         const res = await fetch(`${API_BASE}/ideaRoutes/ambassadors`, {
           headers: getAuthHeaders(),
         });
+
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+        console.log("📦 Отримано амбасадорів:", data);
+
         if (!Array.isArray(data)) throw new Error("Амбасадори не є масивом");
+
         setAmbassadors(
           data.map((amb) => ({
             id: amb.id,
@@ -46,6 +62,12 @@ const SubmitIdeaPage = () => {
   }, []);
 
   const handleSubmit = async (values) => {
+    const userId = getUserIdFromLocalStorage();
+    if (!userId) {
+      setMessage("❌ Ви не авторизовані. Спробуйте увійти ще раз.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
@@ -53,9 +75,11 @@ const SubmitIdeaPage = () => {
         title: values.title,
         description: values.description,
         ambassador_id: values.ambassadorId || null,
+        user_id: userId,
       };
 
-      console.log("📤 Відправка ідеї:", payload);
+      console.log("📤 Відправка ідеї на:", `${API_BASE}/ideaRoutes`);
+      console.log("📦 Payload:", payload);
 
       const res = await fetch(`${API_BASE}/ideaRoutes`, {
         method: "POST",
@@ -66,10 +90,10 @@ const SubmitIdeaPage = () => {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`HTTP ${res.status} – ${errText}`);
-      }
+      const responseText = await res.text();
+      console.log("📥 Відповідь від сервера:", res.status, responseText);
+
+      if (!res.ok) throw new Error(`HTTP ${res.status} – ${responseText}`);
 
       setMessage("✅ Ідея успішно подана!");
       form.resetFields();
