@@ -18,21 +18,24 @@ const SubmitIdeaPage = () => {
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
+    if (!token) {
+      console.warn("⚠️ Токен не знайдено у localStorage");
+    }
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 🔹 Отримуємо профіль
         const resProfile = await fetch(`${API_BASE}/userRoutes/profile`, {
           headers: getAuthHeaders(),
         });
         if (!resProfile.ok) throw new Error(`HTTP ${resProfile.status} при отриманні профілю`);
         const profile = await resProfile.json();
+        console.log("👤 Профіль користувача:", profile);
+        if (!profile?.id) throw new Error("⛔ Отримано профіль без ID");
         setUserId(profile.id);
 
-        // 🔹 Отримуємо амбасадорів
         const resAmb = await fetch(`${API_BASE}/ambassadorRoutes`, {
           headers: getAuthHeaders(),
         });
@@ -62,13 +65,18 @@ const SubmitIdeaPage = () => {
   const handleSubmit = async (values) => {
     try {
       setIsSubmitting(true);
-      if (!userId) throw new Error("Ви не авторизовані");
+      if (!userId) {
+        setMessage("❌ Ви не авторизовані. Спробуйте ще раз або увійдіть заново.");
+        return;
+      }
 
       const payload = {
         title: values.title,
         description: values.description,
         ambassador_id: values.ambassadorId || null,
       };
+
+      console.log("📤 Відправка ідеї:", payload);
 
       const res = await fetch(`${API_BASE}/ideaRoutes`, {
         method: "POST",
