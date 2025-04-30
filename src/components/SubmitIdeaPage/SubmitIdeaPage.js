@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-// ✅ ОНОВЛЕНИЙ базовий URL без "/api"
 const API_BASE = "https://idea-backend.onrender.com";
 
 const SubmitIdeaPage = () => {
@@ -25,18 +24,22 @@ const SubmitIdeaPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // 🔹 Отримуємо профіль
         const resProfile = await fetch(`${API_BASE}/userRoutes/profile`, {
           headers: getAuthHeaders(),
         });
-        if (!resProfile.ok) throw new Error(`HTTP ${resProfile.status}`);
+        if (!resProfile.ok) throw new Error(`HTTP ${resProfile.status} при отриманні профілю`);
         const profile = await resProfile.json();
         setUserId(profile.id);
 
+        // 🔹 Отримуємо амбасадорів
         const resAmb = await fetch(`${API_BASE}/ambassadorRoutes`, {
           headers: getAuthHeaders(),
         });
-        if (!resAmb.ok) throw new Error(`HTTP ${resAmb.status}`);
+        if (!resAmb.ok) throw new Error(`HTTP ${resAmb.status} при отриманні амбасадорів`);
         const data = await resAmb.json();
+        console.log("📦 Амбасадори:", data);
+
         if (Array.isArray(data)) {
           setAmbassadors(
             data.map((amb) => ({
@@ -44,9 +47,12 @@ const SubmitIdeaPage = () => {
               name: `${amb.first_name} ${amb.last_name}`,
             }))
           );
+        } else {
+          throw new Error("⛔ Неправильний формат амбасадорів з бекенду");
         }
       } catch (err) {
         console.error("❌ Помилка завантаження даних:", err);
+        setMessage("❌ Не вдалося завантажити профіль або амбасадорів.");
       }
     };
 
@@ -73,7 +79,7 @@ const SubmitIdeaPage = () => {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status} при поданні ідеї`);
       setMessage("✅ Ідея успішно подана!");
       form.resetFields();
     } catch (err) {
@@ -87,9 +93,7 @@ const SubmitIdeaPage = () => {
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f9" }}>
       <Header style={{ background: "#003366", textAlign: "center", padding: "16px 0" }}>
-        <Title level={3} style={{ color: "#fff", margin: 0 }}>
-          Подати ідею
-        </Title>
+        <Title level={3} style={{ color: "#fff", margin: 0 }}>Подати ідею</Title>
       </Header>
 
       <Content style={{ padding: "40px 20px", position: "relative" }}>
