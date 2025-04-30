@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-const API_BASE = "https://idea-backend.onrender.com/api"; // ← повернув /api
+// ✅ Базовий URL з /api
+const API_BASE = "https://idea-backend.onrender.com/api";
 
 const SubmitIdeaPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);
@@ -20,19 +21,10 @@ const SubmitIdeaPage = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  const getUserIdFromLocalStorage = () => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user"));
-      return userData?.id || null;
-    } catch {
-      return null;
-    }
-  };
-
   useEffect(() => {
     const fetchAmbassadors = async () => {
       try {
-        const res = await fetch(`${API_BASE}/ambassadorRoutes`, {
+        const res = await fetch(`${API_BASE}/ideaRoutes/ambassadors`, {
           headers: getAuthHeaders(),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -54,12 +46,6 @@ const SubmitIdeaPage = () => {
   }, []);
 
   const handleSubmit = async (values) => {
-    const userId = getUserIdFromLocalStorage();
-    if (!userId) {
-      setMessage("❌ Ви не авторизовані. Спробуйте увійти ще раз.");
-      return;
-    }
-
     try {
       setIsSubmitting(true);
 
@@ -67,7 +53,6 @@ const SubmitIdeaPage = () => {
         title: values.title,
         description: values.description,
         ambassador_id: values.ambassadorId || null,
-        user_id: userId,
       };
 
       console.log("📤 Відправка ідеї:", payload);
@@ -81,7 +66,11 @@ const SubmitIdeaPage = () => {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status} – ${errText}`);
+      }
+
       setMessage("✅ Ідея успішно подана!");
       form.resetFields();
     } catch (err) {
