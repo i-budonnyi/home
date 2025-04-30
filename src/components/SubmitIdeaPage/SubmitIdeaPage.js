@@ -33,7 +33,16 @@ const SubmitIdeaPage = () => {
   };
 
   useEffect(() => {
-    const fetchAmbassadors = async () => {
+    const init = async () => {
+      try {
+        console.log("⏰ Пробую розбудити Render через /ping...");
+        const pingRes = await fetch(`${API_BASE}/ping`);
+        const pingData = await pingRes.json();
+        console.log("✅ Відповідь на /ping:", pingData);
+      } catch (err) {
+        console.warn("⚠️ /ping не вдалося:", err);
+      }
+
       try {
         console.log("🌐 Запит амбасадорів:", `${API_BASE}/ideaRoutes/ambassadors`);
         const res = await fetch(`${API_BASE}/ideaRoutes/ambassadors`, {
@@ -58,7 +67,7 @@ const SubmitIdeaPage = () => {
       }
     };
 
-    fetchAmbassadors();
+    init();
   }, []);
 
   const handleSubmit = async (values) => {
