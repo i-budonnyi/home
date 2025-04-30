@@ -14,10 +14,10 @@ import { useNavigate } from "react-router-dom";
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-// ✅ НОВІ правильні шляхи
-const USER_API_BASE_URL = "https://idea-backend.onrender.com/api/userRoutes";
-const PROBLEM_API_BASE_URL = "https://idea-backend.onrender.com/api/problems";
-const AMBASSADOR_API_BASE_URL = "https://idea-backend.onrender.com/api/problems/ambassadors";
+// ✅ Виправлені шляхи (без /api/)
+const USER_API_BASE_URL = "https://idea-backend.onrender.com/userRoutes";
+const PROBLEM_API_BASE_URL = "https://idea-backend.onrender.com/problems";
+const AMBASSADOR_API_BASE_URL = "https://idea-backend.onrender.com/ambassadorRoutes";
 
 const SubmitProblemPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);
@@ -33,7 +33,6 @@ const SubmitProblemPage = () => {
     return { Authorization: `Bearer ${token}` };
   };
 
-  // 🔥 Обгортаємо запити у useCallback
   const fetchUserId = useCallback(async () => {
     try {
       const response = await fetch(`${USER_API_BASE_URL}/profile`, {
@@ -100,7 +99,7 @@ const SubmitProblemPage = () => {
       await fetchAmbassadors();
     };
     fetchData();
-  }, [fetchUserId, fetchAmbassadors]); // 🔥 Додали залежності
+  }, [fetchUserId, fetchAmbassadors]);
 
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f9" }}>
@@ -111,7 +110,6 @@ const SubmitProblemPage = () => {
       </Header>
 
       <Content style={{ padding: "40px 20px", position: "relative" }}>
-        {/* Повернутись зліва, фіксовано */}
         <div style={{ position: "absolute", left: "20px", top: "40px" }}>
           <Button
             type="link"
@@ -129,14 +127,7 @@ const SubmitProblemPage = () => {
           </Button>
         </div>
 
-        {/* Центрована форма */}
-        <div
-          style={{
-            maxWidth: "600px",
-            margin: "0 auto",
-            paddingTop: "20px",
-          }}
-        >
+        <div style={{ maxWidth: "600px", margin: "0 auto", paddingTop: "20px" }}>
           <Form form={form} layout="vertical" onFinish={handleSubmit}>
             {message && (
               <Alert

@@ -5,8 +5,8 @@ import { Layout, List, Card, Typography, Skeleton, Alert, Tag } from "antd";
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 
-// ✅ НОВИЙ правильний API шлях
-const API_SUBSCRIPTIONS_URL = "https://idea-backend.onrender.com/api/subscriptionRoutes/user-subscriptions";
+// ✅ Виправлений шлях — без /api
+const API_SUBSCRIPTIONS_URL = "https://idea-backend.onrender.com/subscriptionRoutes/user-subscriptions";
 
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -15,7 +15,6 @@ const Subscriptions = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  // 🔥 Обгорнули fetchUserSubscriptions у useCallback
   const fetchUserSubscriptions = useCallback(async () => {
     try {
       const token = getAuthToken();
@@ -42,11 +41,11 @@ const Subscriptions = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []); // пусті залежності тут норм
+  }, []);
 
   useEffect(() => {
     fetchUserSubscriptions();
-  }, [fetchUserSubscriptions]); // 🔥 додали fetchUserSubscriptions у залежності
+  }, [fetchUserSubscriptions]);
 
   const getStatusColor = (status) => {
     switch (status) {

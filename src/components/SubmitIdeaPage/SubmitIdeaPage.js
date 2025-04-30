@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-const API_BASE = "https://idea-backend.onrender.com/api";
+// ✅ ОНОВЛЕНИЙ базовий URL без "/api"
+const API_BASE = "https://idea-backend.onrender.com";
 
 const SubmitIdeaPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);
@@ -31,7 +32,7 @@ const SubmitIdeaPage = () => {
         const profile = await resProfile.json();
         setUserId(profile.id);
 
-        const resAmb = await fetch(`${API_BASE}/ambassadors`, {
+        const resAmb = await fetch(`${API_BASE}/ambassadorRoutes`, {
           headers: getAuthHeaders(),
         });
         if (!resAmb.ok) throw new Error(`HTTP ${resAmb.status}`);
@@ -63,7 +64,7 @@ const SubmitIdeaPage = () => {
         ambassador_id: values.ambassadorId || null,
       };
 
-      const res = await fetch(`${API_BASE}/`, {
+      const res = await fetch(`${API_BASE}/ideaRoutes`, {
         method: "POST",
         headers: {
           ...getAuthHeaders(),
