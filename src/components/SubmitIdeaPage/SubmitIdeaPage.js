@@ -19,7 +19,6 @@ const SubmitIdeaPage = () => {
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
-    if (!token) console.warn("⚠️ Токен не знайдено у localStorage");
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
@@ -33,33 +32,6 @@ const SubmitIdeaPage = () => {
     }
   };
 
-  const tryFetchAmbassadors = async (retries = 5, delay = 2000) => {
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        const res = await fetch(`${API_BASE}/ideaRoutes/ambassadors`, {
-          headers: getAuthHeaders(),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        if (!Array.isArray(data)) throw new Error("Амбасадори не масив");
-
-        setAmbassadors(data.map((amb) => ({
-          id: amb.id,
-          name: `${amb.first_name} ${amb.last_name}`,
-        })));
-        setLoadingAmbassadors(false);
-        return;
-      } catch (err) {
-        if (attempt < retries) {
-          await new Promise((res) => setTimeout(res, delay));
-        } else {
-          setLoadingAmbassadors(false);
-          setMessage("❌ Не вдалося завантажити амбасадорів.");
-        }
-      }
-    }
-  };
-
   useEffect(() => {
     const init = async () => {
       try {
@@ -67,7 +39,35 @@ const SubmitIdeaPage = () => {
       } catch (err) {
         console.warn("❌ /ping не вдалося:", err.message);
       }
-      await tryFetchAmbassadors();
+
+      // 🔁 Логіка запиту з retry:
+      const retries = 5;
+      const delay = 2000;
+
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          const res = await fetch(`${API_BASE}/ideaRoutes/ambassadors`, {
+            headers: getAuthHeaders(),
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          if (!Array.isArray(data)) throw new Error("Амбасадори не масив");
+
+          setAmbassadors(data.map((amb) => ({
+            id: amb.id,
+            name: `${amb.first_name} ${amb.last_name}`,
+          })));
+          setLoadingAmbassadors(false);
+          return;
+        } catch (err) {
+          if (attempt < retries) {
+            await new Promise((res) => setTimeout(res, delay));
+          } else {
+            setLoadingAmbassadors(false);
+            setMessage("❌ Не вдалося завантажити амбасадорів.");
+          }
+        }
+      }
     };
 
     init();
@@ -82,7 +82,6 @@ const SubmitIdeaPage = () => {
 
     try {
       setIsSubmitting(true);
-
       const payload = {
         title: values.title,
         description: values.description,
