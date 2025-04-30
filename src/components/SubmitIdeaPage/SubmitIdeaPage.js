@@ -6,11 +6,10 @@ import { useNavigate } from "react-router-dom";
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-const API_BASE = "https://idea-backend.onrender.com";
+const API_BASE = "https://idea-backend.onrender.com/api"; // ← повернув /api
 
 const SubmitIdeaPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);
-  const [userId, setUserId] = useState(null);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form] = Form.useForm();
@@ -18,62 +17,57 @@ const SubmitIdeaPage = () => {
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      console.warn("⚠️ Токен не знайдено у localStorage");
-    }
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
+  const getUserIdFromLocalStorage = () => {
+    try {
+      const userData = JSON.parse(localStorage.getItem("user"));
+      return userData?.id || null;
+    } catch {
+      return null;
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAmbassadors = async () => {
       try {
-        const resProfile = await fetch(`${API_BASE}/userRoutes/profile`, {
+        const res = await fetch(`${API_BASE}/ambassadorRoutes`, {
           headers: getAuthHeaders(),
         });
-        if (!resProfile.ok) throw new Error(`HTTP ${resProfile.status} при отриманні профілю`);
-        const profile = await resProfile.json();
-        console.log("👤 Профіль користувача:", profile);
-        if (!profile?.id) throw new Error("⛔ Отримано профіль без ID");
-        setUserId(profile.id);
-
-        const resAmb = await fetch(`${API_BASE}/ambassadorRoutes`, {
-          headers: getAuthHeaders(),
-        });
-        if (!resAmb.ok) throw new Error(`HTTP ${resAmb.status} при отриманні амбасадорів`);
-        const data = await resAmb.json();
-        console.log("📦 Амбасадори:", data);
-
-        if (Array.isArray(data)) {
-          setAmbassadors(
-            data.map((amb) => ({
-              id: amb.id,
-              name: `${amb.first_name} ${amb.last_name}`,
-            }))
-          );
-        } else {
-          throw new Error("⛔ Неправильний формат амбасадорів з бекенду");
-        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error("Амбасадори не є масивом");
+        setAmbassadors(
+          data.map((amb) => ({
+            id: amb.id,
+            name: `${amb.first_name} ${amb.last_name}`,
+          }))
+        );
       } catch (err) {
-        console.error("❌ Помилка завантаження даних:", err);
-        setMessage("❌ Не вдалося завантажити профіль або амбасадорів.");
+        console.error("❌ Не вдалося завантажити амбасадорів:", err);
+        setMessage("❌ Не вдалося завантажити амбасадорів.");
       }
     };
 
-    fetchData();
+    fetchAmbassadors();
   }, []);
 
   const handleSubmit = async (values) => {
+    const userId = getUserIdFromLocalStorage();
+    if (!userId) {
+      setMessage("❌ Ви не авторизовані. Спробуйте увійти ще раз.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      if (!userId) {
-        setMessage("❌ Ви не авторизовані. Спробуйте ще раз або увійдіть заново.");
-        return;
-      }
 
       const payload = {
         title: values.title,
         description: values.description,
         ambassador_id: values.ambassadorId || null,
+        user_id: userId,
       };
 
       console.log("📤 Відправка ідеї:", payload);
@@ -87,7 +81,7 @@ const SubmitIdeaPage = () => {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status} при поданні ідеї`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setMessage("✅ Ідея успішно подана!");
       form.resetFields();
     } catch (err) {
