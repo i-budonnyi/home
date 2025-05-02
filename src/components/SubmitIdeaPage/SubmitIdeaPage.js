@@ -7,7 +7,7 @@ const { Header, Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
 
-const API_BASE = "https://idea-backend.onrender.com/api";
+const API_BASE = "https://backend-avtologistika.onrender.com/api/ideaRoutes";
 
 const SubmitIdeaPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);
@@ -22,89 +22,56 @@ const SubmitIdeaPage = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
-  const getUserIdFromLocalStorage = () => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user"));
-      return userData?.id || null;
-    } catch (err) {
-      console.error("❌ Неможливо зчитати user з localStorage:", err);
-      return null;
-    }
-  };
-
   useEffect(() => {
-    const init = async () => {
+    const loadAmbassadors = async () => {
       try {
-        await fetch(`${API_BASE}/ping`, { cache: "no-store" });
-      } catch (err) {
-        console.warn("❌ /ping не вдалося:", err.message);
-      }
-
-      // 🔁 Логіка запиту з retry:
-      const retries = 5;
-      const delay = 2000;
-
-      for (let attempt = 1; attempt <= retries; attempt++) {
-        try {
-          const res = await fetch(`${API_BASE}/ideaRoutes/ambassadors`, {
-            headers: getAuthHeaders(),
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          if (!Array.isArray(data)) throw new Error("Амбасадори не масив");
-
-          setAmbassadors(data.map((amb) => ({
+        const res = await fetch(`${API_BASE}/ambassadors`, {
+          headers: getAuthHeaders(),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setAmbassadors(
+          data.map((amb) => ({
             id: amb.id,
             name: `${amb.first_name} ${amb.last_name}`,
-          })));
-          setLoadingAmbassadors(false);
-          return;
-        } catch (err) {
-          if (attempt < retries) {
-            await new Promise((res) => setTimeout(res, delay));
-          } else {
-            setLoadingAmbassadors(false);
-            setMessage("❌ Не вдалося завантажити амбасадорів.");
-          }
-        }
+          }))
+        );
+      } catch (err) {
+        console.error("❌ Амбасадори не завантажені:", err);
+        setMessage("❌ Не вдалося завантажити амбасадорів.");
+      } finally {
+        setLoadingAmbassadors(false);
       }
     };
 
-    init();
+    loadAmbassadors();
   }, []);
 
   const handleSubmit = async (values) => {
-    const userId = getUserIdFromLocalStorage();
-    if (!userId) {
-      setMessage("❌ Ви не авторизовані. Спробуйте увійти ще раз.");
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       const payload = {
         title: values.title,
         description: values.description,
         ambassador_id: values.ambassadorId || null,
-        user_id: userId,
       };
 
-      const res = await fetch(`${API_BASE}/ideaRoutes`, {
+      const res = await fetch(`${API_BASE}`, {
         method: "POST",
         headers: {
-          ...getAuthHeaders(),
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(payload),
       });
 
       const responseText = await res.text();
-      if (!res.ok) throw new Error(`HTTP ${res.status} – ${responseText}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${responseText}`);
 
       setMessage("✅ Ідея успішно подана!");
       form.resetFields();
     } catch (err) {
-      console.error("❌ Помилка подання:", err);
+      console.error("❌ Помилка подання ідеї:", err);
       setMessage("❌ Помилка подання ідеї.");
     } finally {
       setIsSubmitting(false);
