@@ -23,7 +23,7 @@ const { Content } = Layout;
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
-const API_BASE = "https://idea-backend.onrender.com/api";
+const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const API_BLOG_URL = `${API_BASE}/blogRoutes`;
 const API_PROBLEMS_URL = `${API_BASE}/problems`;
 const API_LIKE_URL = `${API_BASE}/likeRoutes`;
@@ -42,20 +42,35 @@ const BlogPage = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  const fetchLikes = useCallback(async (entry) => {
+  const fetchUserId = useCallback(() => {
     try {
-      const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
-      setLikesData((prev) => ({
-        ...prev,
-        [entry.id]: {
-          likesCount: response.data.likesCount || 0,
-          userLiked: response.data.likedBy?.some((user) => user.user_id === userId),
-        },
-      }));
-    } catch (err) {
-      console.error(`❌ Помилка отримання лайків:`, err);
+      const token = getAuthToken();
+      if (!token) return;
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      const decoded = JSON.parse(atob(token.split(".")[1]));
+      setUserId(decoded?.user_id || decoded?.id || null);
+    } catch (error) {
+      console.error("❌ ПОМИЛКА отримання ID користувача:", error.message);
     }
-  }, [userId]);
+  }, []);
+
+  const fetchLikes = useCallback(
+    async (entry) => {
+      try {
+        const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
+        setLikesData((prev) => ({
+          ...prev,
+          [entry.id]: {
+            likesCount: response.data.likesCount || 0,
+            userLiked: response.data.likedBy?.some((user) => user.user_id === userId),
+          },
+        }));
+      } catch (err) {
+        console.error(`❌ Помилка отримання лайків:`, err);
+      }
+    },
+    [userId]
+  );
 
   const fetchComments = useCallback(async (entry) => {
     try {
@@ -70,18 +85,6 @@ const BlogPage = () => {
     }
   }, []);
 
-  const fetchUserId = useCallback(() => {
-    try {
-      const token = getAuthToken();
-      if (!token) return;
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      const decoded = JSON.parse(atob(token.split(".")[1]));
-      setUserId(decoded?.user_id || decoded?.id || null);
-    } catch (error) {
-      console.error("❌ ПОМИЛКА отримання ID користувача:", error.message);
-    }
-  }, []);
-
   const fetchAllEntries = useCallback(async () => {
     try {
       const [blogsRes, problemsRes] = await Promise.all([
@@ -89,17 +92,29 @@ const BlogPage = () => {
         axios.get(`${API_PROBLEMS_URL}`),
       ]);
 
-      const blogs = blogsRes.data?.blogs?.map((b) => ({ ...b, entryType: "blog" })) || [];
-      const ideas = blogsRes.data?.ideas?.map((i) => ({ ...i, entryType: "idea" })) || [];
+      const blogs = blogsRes.data?.blogs?.map((b) => ({
+        ...b,
+        entryType: "blog",
+        authorname: b.author_first_name || b.author || "Невідомий",
+      })) || [];
+
+      const ideas = blogsRes.data?.ideas?.map((i) => ({
+        ...i,
+        entryType: "idea",
+        authorname: i.author_first_name || i.author || "Невідомий",
+      })) || [];
+
       const problems = problemsRes.data?.map((p) => ({
         ...p,
         entryType: "problem",
         authorname: p.author || "Невідомий",
       })) || [];
 
-      const allEntries = [...blogs, ...ideas, ...problems];
-      setEntries(allEntries);
+      const allEntries = [...blogs, ...ideas, ...problems].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
 
+      setEntries(allEntries);
       allEntries.forEach((entry) => {
         fetchLikes(entry);
         fetchComments(entry);
@@ -109,7 +124,7 @@ const BlogPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchLikes, fetchComments]); // 🔥 Виправлено залежності тут
+  }, [fetchLikes, fetchComments]);
 
   const fetchSubscriptions = useCallback(async () => {
     try {
@@ -123,6 +138,17 @@ const BlogPage = () => {
       console.error("❌ Помилка підписок:", err);
     }
   }, []);
+
+  useEffect(() => {
+    fetchUserId();
+  }, [fetchUserId]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchAllEntries();
+      fetchSubscriptions();
+    }
+  }, [userId, fetchAllEntries, fetchSubscriptions]);
 
   const toggleLike = async (entry) => {
     try {
@@ -189,19 +215,12 @@ const BlogPage = () => {
   const filteredEntries =
     filteredType === "all" ? entries : entries.filter((e) => e.entryType === filteredType);
 
-  useEffect(() => {
-    fetchUserId();
-    fetchAllEntries();
-    fetchSubscriptions();
-  }, [fetchUserId, fetchAllEntries, fetchSubscriptions]);
-
   return (
     <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
       {isLoading ? (
         <Skeleton active />
       ) : (
         <>
-          {/* Фільтри */}
           <div style={{ marginBottom: "20px", textAlign: "center" }}>
             <Title level={5}>Фільтрувати за типом:</Title>
             <Space>
@@ -217,7 +236,6 @@ const BlogPage = () => {
             </Space>
           </div>
 
-          {/* Записи */}
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
             {filteredEntries.map((entry) => (
               <Card key={entry.id} hoverable style={{ borderRadius: 10 }}>
@@ -234,13 +252,12 @@ const BlogPage = () => {
 
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
                   <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
-                  <Text strong>Автор: {entry.authorname || "Невідомий"}</Text>
+                  <Text strong>Автор: {entry.authorname || entry.author || "Невідомий"}</Text>
                 </div>
 
                 <Divider style={{ margin: "8px 0" }} />
                 <Text>{entry.description || "Без опису"}</Text>
 
-                {/* Лайки */}
                 <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
                   <Space>
                     <Button type="text" onClick={() => toggleLike(entry)}>
@@ -254,7 +271,6 @@ const BlogPage = () => {
                   </Space>
                 </div>
 
-                {/* Коментарі */}
                 <Divider />
                 <div>
                   <Title level={5}>Коментарі:</Title>
@@ -280,7 +296,6 @@ const BlogPage = () => {
                     )}
                   </Space>
 
-                  {/* Додати коментар */}
                   <div style={{ marginTop: "12px" }}>
                     <Text strong>Додати коментар:</Text>
                     <TextArea
