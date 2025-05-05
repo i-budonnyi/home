@@ -89,45 +89,67 @@ const BlogPage = () => {
   }, []);
 
   const fetchAllEntries = useCallback(async () => {
-    try {
-      const [blogsRes, problemsRes] = await Promise.all([
-        axios.get(`${API_BLOG_URL}/entries`),
-        axios.get(`${API_PROBLEMS_URL}`),
-      ]);
+  try {
+    const [blogsRes, problemsRes] = await Promise.all([
+      axios.get(`${API_BLOG_URL}/entries`),
+      axios.get(`${API_PROBLEMS_URL}`),
+    ]);
 
-      const blogs = blogsRes.data?.blogs?.map((b) => ({
+    let blogs = [];
+    let ideas = [];
+
+    // 👉 Перевірка, якщо бекенд повертає один масив entries без поділу
+    if (Array.isArray(blogsRes.data?.entries)) {
+      blogsRes.data.entries.forEach((entry) => {
+        if (entry.entryType === "blog") {
+          blogs.push({
+            ...entry,
+            entryType: "blog",
+            authorname: `${entry.author_first_name || ""} ${entry.author_last_name || ""}`.trim() || entry.author_email || "Невідомий",
+          });
+        } else if (entry.entryType === "idea") {
+          ideas.push({
+            ...entry,
+            entryType: "idea",
+            authorname: `${entry.author_first_name || ""} ${entry.author_last_name || ""}`.trim() || entry.author_email || "Невідомий",
+          });
+        }
+      });
+    } else {
+      blogs = blogsRes.data?.blogs?.map((b) => ({
         ...b,
         entryType: "blog",
         authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author_email || "Невідомий",
       })) || [];
 
-      const ideas = blogsRes.data?.ideas?.map((i) => ({
+      ideas = blogsRes.data?.ideas?.map((i) => ({
         ...i,
         entryType: "idea",
         authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author_email || "Невідомий",
       })) || [];
-
-      const problems = problemsRes.data?.map((p) => ({
-        ...p,
-        entryType: "problem",
-        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author || "Невідомий",
-      })) || [];
-
-      const allEntries = [...blogs, ...ideas, ...problems].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-
-      setEntries(allEntries);
-      allEntries.forEach((entry) => {
-        fetchLikes(entry);
-        fetchComments(entry);
-      });
-    } catch (err) {
-      console.error("❌ Не вдалося завантажити дані:", err);
-    } finally {
-      setIsLoading(false);
     }
-  }, [fetchLikes, fetchComments]);
+
+    const problems = problemsRes.data?.map((p) => ({
+      ...p,
+      entryType: "problem",
+      authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author || "Невідомий",
+    })) || [];
+
+    const allEntries = [...blogs, ...ideas, ...problems].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+
+    setEntries(allEntries);
+    allEntries.forEach((entry) => {
+      fetchLikes(entry);
+      fetchComments(entry);
+    });
+  } catch (err) {
+    console.error("❌ Не вдалося завантажити дані:", err);
+  } finally {
+    setIsLoading(false);
+  }
+}, [fetchLikes, fetchComments]);
 
   const fetchSubscriptions = useCallback(async () => {
     try {
