@@ -1,14 +1,26 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { Layout, List, Card, Typography, Skeleton, Alert, Button, Tag, Input, message } from "antd";
+import {
+  Layout,
+  List,
+  Card,
+  Typography,
+  Skeleton,
+  Alert,
+  Button,
+  Tag,
+  Input,
+  message,
+} from "antd";
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 const { TextArea } = Input;
 
-const API_IDEA_URL = "https://idea-backend.onrender.com/api/ideaRoutes";
-const API_FEEDBACK_URL = "https://idea-backend.onrender.com/api/feedbackRoutes";
+// 🔧 Виправлені URL-и
+const API_IDEA_URL = "https://backend-avtologistika.onrender.com/api/ideaRoutes";
+const API_FEEDBACK_URL = "https://backend-avtologistika.onrender.com/api/feedbackRoutes";
 
 const MyProjectsPage = () => {
   const [ideas, setIdeas] = useState([]);
@@ -40,7 +52,10 @@ const MyProjectsPage = () => {
         setIdeaAuthors((prev) => ({ ...prev, [ideaId]: response.data }));
       }
     } catch {
-      setIdeaAuthors((prev) => ({ ...prev, [ideaId]: { first_name: "Невідомий", last_name: "" } }));
+      setIdeaAuthors((prev) => ({
+        ...prev,
+        [ideaId]: { first_name: "Невідомий", last_name: "" },
+      }));
     }
   }, []);
 
@@ -52,7 +67,9 @@ const MyProjectsPage = () => {
       if (response.status === 200) {
         setComments((prev) => ({
           ...prev,
-          [ideaId]: response.data.length > 0 ? response.data : [{ text: "Коментарів поки що немає." }],
+          [ideaId]: response.data.length > 0
+            ? response.data
+            : [{ text: "Коментарів поки що немає." }],
         }));
       }
     } catch {
@@ -134,15 +151,26 @@ const MyProjectsPage = () => {
             renderItem={(idea) => (
               <List.Item>
                 <Card hoverable title={<Title level={4}>{idea.title}</Title>} style={{ width: "100%" }}>
-                  <Text strong>Автор:</Text> {ideaAuthors[idea.id]?.first_name} {ideaAuthors[idea.id]?.last_name}
+                  <Text strong>Автор:</Text>{" "}
+                  {ideaAuthors[idea.id]?.first_name} {ideaAuthors[idea.id]?.last_name}
                   <br />
-                  <Tag color={idea.status === "approved" ? "green" : idea.status === "pending" ? "orange" : "red"}>
+                  <Tag color={
+                    idea.status === "approved"
+                      ? "green"
+                      : idea.status === "pending"
+                      ? "orange"
+                      : "red"
+                  }>
                     {idea.status.toUpperCase()}
                   </Tag>
                   <br />
                   <Text>{idea.description || "Без опису"}</Text>
                   <br />
-                  <Button type="primary" onClick={() => handleSelectIdea(idea)} style={{ marginTop: "10px" }}>
+                  <Button
+                    type="primary"
+                    onClick={() => handleSelectIdea(idea)}
+                    style={{ marginTop: "10px" }}
+                  >
                     📌 Відкрити заявку
                   </Button>
 
@@ -156,16 +184,18 @@ const MyProjectsPage = () => {
                         renderItem={(comment) => (
                           <List.Item>
                             <Text strong>
-                              {comment.sender_first_name} {comment.sender_last_name}:
-                            </Text>{" "}
-                            {comment.text}
+                              {comment.sender_first_name || ""} {comment.sender_last_name || ""}
+                            </Text>
+                            {": "}{comment.text}
                           </List.Item>
                         )}
                       />
                       <TextArea
                         rows={4}
                         value={commentText[idea.id] || ""}
-                        onChange={(e) => setCommentText((prev) => ({ ...prev, [idea.id]: e.target.value }))}
+                        onChange={(e) =>
+                          setCommentText((prev) => ({ ...prev, [idea.id]: e.target.value }))
+                        }
                         placeholder="Напишіть ваш коментар..."
                         style={{ marginTop: "10px" }}
                       />
