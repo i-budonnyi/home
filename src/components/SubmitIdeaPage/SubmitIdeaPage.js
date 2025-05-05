@@ -32,11 +32,12 @@ const SubmitIdeaPage = () => {
       }
 
       try {
-        await new Promise((res) => setTimeout(res, 1000)); // 🕒 Додано затримку 1с
-
+        await new Promise((res) => setTimeout(res, 1000)); // 🕒 Додано затримку
         const res = await fetch(`${API_BASE}/ambassadors`, { headers });
+
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+
         setAmbassadors(
           data.map((amb) => ({
             id: amb.id,
@@ -122,6 +123,7 @@ const SubmitIdeaPage = () => {
                 style={{ marginBottom: "20px" }}
               />
             )}
+
             <Form.Item
               label="Назва ідеї"
               name="title"
@@ -129,6 +131,7 @@ const SubmitIdeaPage = () => {
             >
               <Input />
             </Form.Item>
+
             <Form.Item
               label="Опис ідеї"
               name="description"
@@ -136,6 +139,7 @@ const SubmitIdeaPage = () => {
             >
               <Input.TextArea rows={4} />
             </Form.Item>
+
             <Form.Item label="Обрати амбасадора" name="ambassadorId">
               {loadingAmbassadors ? (
                 <Spin tip="Завантаження амбасадорів..." />
@@ -149,6 +153,7 @@ const SubmitIdeaPage = () => {
                 </Select>
               )}
             </Form.Item>
+
             <Form.Item>
               <Button
                 type="primary"
