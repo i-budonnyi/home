@@ -7,7 +7,7 @@ const { Header, Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
 
-const API_BASE = "https://backend-avtologistika.onrender.com/api";
+const API_BASE = "https://backend-avtologistika.onrender.com/api/ideaRoutes";
 
 const SubmitIdeaPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);
@@ -22,33 +22,54 @@ const SubmitIdeaPage = () => {
     return token ? { Authorization: `Bearer ${token}` } : null;
   };
 
+  const getUserId = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("user"));
+      return user?.id || null;
+    } catch {
+      return null;
+    }
+  };
+
   useEffect(() => {
     const loadAmbassadors = async () => {
       const headers = getAuthHeaders();
       if (!headers) {
-        console.warn("⛔ Токен не знайдено. Пропущено запит амбасадорів.");
+        setMessage("⛔ Ви не авторизовані");
         setLoadingAmbassadors(false);
         return;
       }
 
+      // 🟡 Пінг Render
       try {
-        await new Promise((res) => setTimeout(res, 1000)); // 🕒 Додано затримку
-        const res = await fetch(`${API_BASE}/ambassadors`, { headers });
+        await fetch(`${API_BASE}/ping`).catch(() => {});
+      } catch {}
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+      const retries = 4;
+      const delay = 1500;
 
-        setAmbassadors(
-          data.map((amb) => ({
-            id: amb.id,
-            name: `${amb.first_name} ${amb.last_name}`,
-          }))
-        );
-      } catch (err) {
-        console.error("❌ Амбасадори не завантажені:", err);
-        setMessage("❌ Не вдалося завантажити амбасадорів.");
-      } finally {
-        setLoadingAmbassadors(false);
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          const res = await fetch(`${API_BASE}/ambassadors`, { headers });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          setAmbassadors(
+            data.map((amb) => ({
+              id: amb.id,
+              name: `${amb.first_name} ${amb.last_name}`,
+            }))
+          );
+          setLoadingAmbassadors(false);
+          return;
+        } catch (err) {
+          console.warn(`❌ Спроба ${attempt} не вдала:`, err.message);
+          if (attempt < retries) {
+            await new Promise((res) => setTimeout(res, delay));
+          } else {
+            setMessage("❌ Не вдалося завантажити амбасадорів.");
+            setLoadingAmbassadors(false);
+          }
+        }
       }
     };
 
@@ -56,18 +77,23 @@ const SubmitIdeaPage = () => {
   }, []);
 
   const handleSubmit = async (values) => {
+    const userId = getUserId();
+    const headers = getAuthHeaders();
+    if (!headers || !userId) {
+      setMessage("❌ Ви не авторизовані.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      const headers = getAuthHeaders();
-      if (!headers) throw new Error("⛔ Немає токена.");
-
       const payload = {
         title: values.title,
         description: values.description,
         ambassador_id: values.ambassadorId || null,
+        user_id: userId,
       };
 
-      const res = await fetch(`${API_BASE}/ideaRoutes`, {
+      const res = await fetch(`${API_BASE}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -76,13 +102,13 @@ const SubmitIdeaPage = () => {
         body: JSON.stringify(payload),
       });
 
-      const responseText = await res.text();
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${responseText}`);
+      const text = await res.text();
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${text}`);
 
       setMessage("✅ Ідея успішно подана!");
       form.resetFields();
     } catch (err) {
-      console.error("❌ Помилка подання ідеї:", err);
+      console.error("❌ Помилка подання:", err);
       setMessage("❌ Помилка подання ідеї.");
     } finally {
       setIsSubmitting(false);
@@ -123,7 +149,6 @@ const SubmitIdeaPage = () => {
                 style={{ marginBottom: "20px" }}
               />
             )}
-
             <Form.Item
               label="Назва ідеї"
               name="title"
@@ -131,7 +156,6 @@ const SubmitIdeaPage = () => {
             >
               <Input />
             </Form.Item>
-
             <Form.Item
               label="Опис ідеї"
               name="description"
@@ -139,7 +163,6 @@ const SubmitIdeaPage = () => {
             >
               <Input.TextArea rows={4} />
             </Form.Item>
-
             <Form.Item label="Обрати амбасадора" name="ambassadorId">
               {loadingAmbassadors ? (
                 <Spin tip="Завантаження амбасадорів..." />
@@ -153,7 +176,6 @@ const SubmitIdeaPage = () => {
                 </Select>
               )}
             </Form.Item>
-
             <Form.Item>
               <Button
                 type="primary"
