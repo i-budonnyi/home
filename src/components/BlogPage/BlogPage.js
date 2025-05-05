@@ -95,13 +95,13 @@ const BlogPage = () => {
       const blogs = blogsRes.data?.blogs?.map((b) => ({
         ...b,
         entryType: "blog",
-        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author || "Невідомий",
+        authorname: b.authorName || "Невідомий",
       })) || [];
 
       const ideas = blogsRes.data?.ideas?.map((i) => ({
         ...i,
         entryType: "idea",
-        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author || "Невідомий",
+        authorname: i.authorName || "Невідомий",
       })) || [];
 
       const problems = problemsRes.data?.map((p) => ({
