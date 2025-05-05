@@ -95,19 +95,19 @@ const BlogPage = () => {
       const blogs = blogsRes.data?.blogs?.map((b) => ({
         ...b,
         entryType: "blog",
-        authorname: b.author_first_name || b.author || "Невідомий",
+        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author || "Невідомий",
       })) || [];
 
       const ideas = blogsRes.data?.ideas?.map((i) => ({
         ...i,
         entryType: "idea",
-        authorname: i.author_first_name || i.author || "Невідомий",
+        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author || "Невідомий",
       })) || [];
 
       const problems = problemsRes.data?.map((p) => ({
         ...p,
         entryType: "problem",
-        authorname: p.author || "Невідомий",
+        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author || "Невідомий",
       })) || [];
 
       const allEntries = [...blogs, ...ideas, ...problems].sort(
@@ -252,7 +252,7 @@ const BlogPage = () => {
 
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
                   <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
-                  <Text strong>Автор: {entry.authorname || entry.author || "Невідомий"}</Text>
+                  <Text strong>Автор: {entry.authorname}</Text>
                 </div>
 
                 <Divider style={{ margin: "8px 0" }} />
@@ -283,7 +283,9 @@ const BlogPage = () => {
                           style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}
                         >
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <Text strong>{comment.authorName || "Анонім"}</Text>
+                            <Text strong>
+                              {`${comment.authorFirstName || ""} ${comment.authorLastName || ""}`.trim() || "Анонім"}
+                            </Text>
                             <Text type="secondary" style={{ fontSize: "12px" }}>
                               {new Date(comment.createdAt).toLocaleString("uk-UA")}
                             </Text>

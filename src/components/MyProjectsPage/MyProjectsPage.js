@@ -18,14 +18,12 @@ const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 const { TextArea } = Input;
 
-// 🔧 Виправлені URL-и
 const API_IDEA_URL = "https://backend-avtologistika.onrender.com/api/ideaRoutes";
 const API_FEEDBACK_URL = "https://backend-avtologistika.onrender.com/api/feedbackRoutes";
 
 const MyProjectsPage = () => {
   const [ideas, setIdeas] = useState([]);
   const [comments, setComments] = useState({});
-  const [ideaAuthors, setIdeaAuthors] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [commentText, setCommentText] = useState({});
@@ -41,22 +39,6 @@ const MyProjectsPage = () => {
       return false;
     }
     return token;
-  }, []);
-
-  const fetchIdeaAuthor = useCallback(async (ideaId, token) => {
-    try {
-      const response = await axios.get(`${API_IDEA_URL}/idea-author?idea_id=${ideaId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.status === 200) {
-        setIdeaAuthors((prev) => ({ ...prev, [ideaId]: response.data }));
-      }
-    } catch {
-      setIdeaAuthors((prev) => ({
-        ...prev,
-        [ideaId]: { first_name: "Невідомий", last_name: "" },
-      }));
-    }
   }, []);
 
   const fetchComments = useCallback(async (ideaId, token) => {
@@ -93,7 +75,6 @@ const MyProjectsPage = () => {
         setIdeas(response.data);
         response.data.forEach((idea) => {
           fetchComments(idea.id, token);
-          fetchIdeaAuthor(idea.id, token);
         });
       }
     } catch {
@@ -101,7 +82,7 @@ const MyProjectsPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [validateAuthToken, fetchComments, fetchIdeaAuthor]);
+  }, [validateAuthToken, fetchComments]);
 
   const handleAddComment = async (ideaId) => {
     if (!commentText[ideaId]?.trim()) {
@@ -152,7 +133,7 @@ const MyProjectsPage = () => {
               <List.Item>
                 <Card hoverable title={<Title level={4}>{idea.title}</Title>} style={{ width: "100%" }}>
                   <Text strong>Автор:</Text>{" "}
-                  {ideaAuthors[idea.id]?.first_name} {ideaAuthors[idea.id]?.last_name}
+                  {idea.author_first_name || "Невідомий"} {idea.author_last_name || ""}
                   <br />
                   <Tag color={
                     idea.status === "approved"
@@ -161,7 +142,7 @@ const MyProjectsPage = () => {
                       ? "orange"
                       : "red"
                   }>
-                    {idea.status.toUpperCase()}
+                    {idea.status?.toUpperCase()}
                   </Tag>
                   <br />
                   <Text>{idea.description || "Без опису"}</Text>
@@ -184,7 +165,7 @@ const MyProjectsPage = () => {
                         renderItem={(comment) => (
                           <List.Item>
                             <Text strong>
-                              {comment.sender_first_name || ""} {comment.sender_last_name || ""}
+                              {comment.sender_first_name || "Анонім"} {comment.sender_last_name || ""}
                             </Text>
                             {": "}{comment.text}
                           </List.Item>

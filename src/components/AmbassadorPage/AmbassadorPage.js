@@ -4,11 +4,11 @@ import { Layout, Card, Typography, message, Spin, Button, Input, List } from "an
 
 const { Title } = Typography;
 
-// ✅ API-шляхи
-const API_BASE = "http://192.168.0.116:5000/api/ambassadorRoutes";
+// ✅ Актуальні шляхи до Render-бекенду
+const API_BASE = "https://backend-avtologistika.onrender.com/api/ambassadorRoutes";
 const API_PROFILE = `${API_BASE}/profile`;
-const API_SELECTED_IDEAS = "http://192.168.0.116:5000/api/ideaRoutes/selected-ambassador-ideas"; 
-const API_FEEDBACK = "http://192.168.0.116:5000/api/feedbackRoutes"; 
+const API_SELECTED_IDEAS = "https://backend-avtologistika.onrender.com/api/ideaRoutes/selected-ambassador-ideas"; 
+const API_FEEDBACK = "https://backend-avtologistika.onrender.com/api/feedbackRoutes"; 
 
 const AmbassadorProfile = () => {
   const [ambassador, setAmbassador] = useState(null);
@@ -28,9 +28,7 @@ const AmbassadorProfile = () => {
       setLoading(true);
       setError(null);
       const token = getAuthToken();
-      if (!token) {
-        throw new Error("❌ Необхідно авторизуватися.");
-      }
+      if (!token) throw new Error("❌ Необхідно авторизуватися.");
       const response = await axios.get(API_PROFILE, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -53,9 +51,7 @@ const AmbassadorProfile = () => {
     try {
       setLoadingSelectedIdeas(true);
       const token = getAuthToken();
-      if (!token) {
-        throw new Error("❌ Необхідно авторизуватися.");
-      }
+      if (!token) throw new Error("❌ Необхідно авторизуватися.");
       const response = await axios.get(`${API_SELECTED_IDEAS}/${ambassador.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -76,16 +72,11 @@ const AmbassadorProfile = () => {
     try {
       const token = getAuthToken();
       const response = await axios.get(`${API_FEEDBACK}/list`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         params: { idea_id: ideaId },
       });
       if (response.status === 200) {
-        setComments((prev) => ({
-          ...prev,
-          [ideaId]: response.data,
-        }));
+        setComments((prev) => ({ ...prev, [ideaId]: response.data }));
       } else {
         message.error("❌ Не вдалося завантажити коментарі.");
       }
@@ -100,24 +91,16 @@ const AmbassadorProfile = () => {
       message.error("❌ Коментар не може бути порожнім.");
       return;
     }
-    if (!ideaId) {
-      message.error("❌ Необхідно вказати ID ідеї.");
-      return;
-    }
     try {
       const token = getAuthToken();
       await axios.post(
         `${API_FEEDBACK}/add`,
         { idea_id: ideaId, text: newComment },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       message.success("✅ Коментар успішно додано.");
       setNewComment("");
-      fetchComments(ideaId); // Оновлення коментарів після додавання нового
+      fetchComments(ideaId);
     } catch (error) {
       console.error("❌ ПОМИЛКА ДОДАВАННЯ КОМЕНТАРЯ", error.message);
       message.error("❌ Сталася помилка при додаванні коментаря.");
@@ -125,8 +108,8 @@ const AmbassadorProfile = () => {
   };
 
   const handleSelectIdea = (ideaId) => {
-    setSelectedIdeaId(ideaId); // Зберігаємо вибрану ідею
-    fetchComments(ideaId); // Завантажуємо коментарі для цієї ідеї
+    setSelectedIdeaId(ideaId);
+    fetchComments(ideaId);
   };
 
   const handleShowDetails = () => {

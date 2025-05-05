@@ -14,10 +14,10 @@ import { useNavigate } from "react-router-dom";
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-// ✅ Виправлені шляхи (без /api/)
-const USER_API_BASE_URL = "https://idea-backend.onrender.com/userRoutes";
-const PROBLEM_API_BASE_URL = "https://idea-backend.onrender.com/problems";
-const AMBASSADOR_API_BASE_URL = "https://idea-backend.onrender.com/ambassadorRoutes";
+const API_BASE = "https://backend-avtologistika.onrender.com/api";
+const USER_API_URL = `${API_BASE}/userRoutes`;
+const PROBLEM_API_URL = `${API_BASE}/problems`;
+const AMBASSADOR_API_URL = `${API_BASE}/ambassadorRoutes`;
 
 const SubmitProblemPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);
@@ -29,52 +29,53 @@ const SubmitProblemPage = () => {
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
-    if (!token) return {};
-    return { Authorization: `Bearer ${token}` };
+    return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
   const fetchUserId = useCallback(async () => {
     try {
-      const response = await fetch(`${USER_API_BASE_URL}/profile`, {
+      const response = await fetch(`${USER_API_URL}/profile`, {
         headers: getAuthHeaders(),
       });
-      if (!response.ok) throw new Error("Помилка отримання user_id.");
+      if (!response.ok) throw new Error("Помилка отримання профілю.");
       const data = await response.json();
-      setUserId(data.id);
-    } catch (error) {
-      console.error("❌ Не вдалося отримати user_id:", error);
+      setUserId(data?.id || data?.user_id);
+    } catch (err) {
+      console.error("❌ Не вдалося отримати user_id:", err);
     }
   }, []);
 
   const fetchAmbassadors = useCallback(async () => {
     try {
-      const response = await fetch(`${AMBASSADOR_API_BASE_URL}`, {
+      const response = await fetch(AMBASSADOR_API_URL, {
         headers: getAuthHeaders(),
       });
-      if (!response.ok) throw new Error(`Помилка отримання амбасадорів: ${response.status}`);
+      if (!response.ok) throw new Error("Помилка отримання амбасадорів.");
       const data = await response.json();
       setAmbassadors(
-        data.map((ambassador) => ({
-          id: ambassador.id,
-          name: `${ambassador.first_name} ${ambassador.last_name}`,
+        data.map((amb) => ({
+          id: amb.id,
+          name: `${amb.first_name} ${amb.last_name}`,
         }))
       );
-    } catch (error) {
-      console.error("❌ Помилка отримання амбасадорів:", error);
+    } catch (err) {
+      console.error("❌ Амбасадори не завантажені:", err);
     }
   }, []);
 
   const handleSubmit = async (values) => {
     try {
       setIsSubmitting(true);
-      if (!userId) throw new Error("Ви не авторизовані!");
+      if (!userId) throw new Error("⛔ Ви не авторизовані.");
+
       const payload = {
         title: values.title,
         description: values.description,
         ambassador_id: values.ambassadorId || null,
         user_id: userId,
       };
-      const response = await fetch(`${PROBLEM_API_BASE_URL}`, {
+
+      const response = await fetch(PROBLEM_API_URL, {
         method: "POST",
         headers: {
           ...getAuthHeaders(),
@@ -82,31 +83,27 @@ const SubmitProblemPage = () => {
         },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error(`Помилка подання проблеми: ${response.status}`);
-      setMessage("✅ Проблема успішно подана!");
+
+      if (!response.ok) throw new Error(`Помилка подання: ${response.status}`);
+      setMessage("✅ Проблему успішно подано!");
       form.resetFields();
-    } catch (error) {
-      console.error("❌ Помилка подання:", error);
-      setMessage("❌ Помилка подання проблеми.");
+    } catch (err) {
+      console.error("❌ Помилка подання проблеми:", err);
+      setMessage("❌ Не вдалося подати проблему.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      await fetchUserId();
-      await fetchAmbassadors();
-    };
-    fetchData();
+    fetchUserId();
+    fetchAmbassadors();
   }, [fetchUserId, fetchAmbassadors]);
 
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f9" }}>
       <Header style={{ background: "#003366", textAlign: "center", padding: "16px 0" }}>
-        <Title level={3} style={{ color: "#fff", margin: 0 }}>
-          Подати проблему
-        </Title>
+        <Title level={3} style={{ color: "#fff", margin: 0 }}>Подати проблему</Title>
       </Header>
 
       <Content style={{ padding: "40px 20px", position: "relative" }}>
@@ -153,9 +150,9 @@ const SubmitProblemPage = () => {
             </Form.Item>
             <Form.Item label="Обрати амбасадора" name="ambassadorId">
               <Select placeholder="Оберіть амбасадора" allowClear>
-                {ambassadors.map((ambassador) => (
-                  <Select.Option key={ambassador.id} value={ambassador.id}>
-                    {ambassador.name}
+                {ambassadors.map((amb) => (
+                  <Select.Option key={amb.id} value={amb.id}>
+                    {amb.name}
                   </Select.Option>
                 ))}
               </Select>

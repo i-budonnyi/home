@@ -5,8 +5,7 @@ import { Layout, List, Card, Typography, Skeleton, Alert, Tag } from "antd";
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 
-// ✅ Виправлений шлях — без /api
-const API_SUBSCRIPTIONS_URL = "https://idea-backend.onrender.com/subscriptionRoutes/user-subscriptions";
+const API_SUBSCRIPTIONS_URL = "https://backend-avtologistika.onrender.com/api/subscriptionRoutes/user-subscriptions";
 
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -18,26 +17,20 @@ const Subscriptions = () => {
   const fetchUserSubscriptions = useCallback(async () => {
     try {
       const token = getAuthToken();
-      if (!token) {
-        throw new Error("❌ Необхідна авторизація. Будь ласка, увійдіть у систему.");
-      }
+      if (!token) throw new Error("⛔ Необхідна авторизація.");
 
-      console.log("📢 Виконується API-запит до", API_SUBSCRIPTIONS_URL);
       const response = await axios.get(API_SUBSCRIPTIONS_URL, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("📩 Відповідь API:", response.data);
-
       if (response.status === 200 && response.data.subscriptions) {
-        console.log("✅ Отримані підписки:", response.data.subscriptions);
         setSubscriptions(response.data.subscriptions);
       } else {
-        throw new Error(response.data.message || "Не вдалося отримати підписки.");
+        throw new Error("❌ Не вдалося отримати підписки.");
       }
     } catch (err) {
-      console.error("❌ ПОМИЛКА у fetchUserSubscriptions:", err.response?.data || err.message);
-      setError(err.response?.data?.message || "❌ Не вдалося завантажити ваші підписки.");
+      console.error("❌ ПОМИЛКА:", err);
+      setError(err.response?.data?.message || err.message || "Сталася помилка.");
     } finally {
       setIsLoading(false);
     }
@@ -49,14 +42,10 @@ const Subscriptions = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending":
-        return "orange";
-      case "approved":
-        return "green";
-      case "rejected":
-        return "red";
-      default:
-        return "blue";
+      case "pending": return "orange";
+      case "approved": return "green";
+      case "rejected": return "red";
+      default: return "blue";
     }
   };
 
@@ -74,11 +63,11 @@ const Subscriptions = () => {
           <List
             grid={{ gutter: 20, column: 1 }}
             dataSource={subscriptions}
-            renderItem={(subscription) => (
+            renderItem={(sub) => (
               <List.Item>
                 <Card
                   hoverable
-                  title={<Title level={4}>{subscription.title || "Без назви"}</Title>}
+                  title={<Title level={4}>{sub.title || "Без назви"}</Title>}
                   style={{
                     width: "100%",
                     borderRadius: "10px",
@@ -86,17 +75,17 @@ const Subscriptions = () => {
                     background: "#ffffff",
                   }}
                 >
-                  <Text>{subscription.description || "Без опису"}</Text>
+                  <Text>{sub.description || "Без опису"}</Text>
                   <br />
-                  <Tag color={getStatusColor(subscription.status)} style={{ marginTop: "10px", fontSize: "14px" }}>
-                    {subscription.status ? subscription.status.toUpperCase() : "НЕ ВКАЗАНО"}
+                  <Tag color={getStatusColor(sub.status)} style={{ marginTop: "10px", fontSize: "14px" }}>
+                    {sub.status ? sub.status.toUpperCase() : "НЕ ВКАЗАНО"}
                   </Tag>
                   <br />
                   <Text type="secondary" style={{ fontSize: "14px", marginTop: "5px" }}>
                     Автор:{" "}
-                    {subscription.author_first_name && subscription.author_last_name
-                      ? `${subscription.author_first_name} ${subscription.author_last_name}`
-                      : "Невідомий"}
+                    {sub.author_first_name && sub.author_last_name
+                      ? `${sub.author_first_name} ${sub.author_last_name}`
+                      : sub.author || "Невідомий"}
                   </Text>
                 </Card>
               </List.Item>

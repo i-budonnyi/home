@@ -1,13 +1,21 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { Layout, List, Card, Typography, Skeleton, Alert, Button, Tag } from "antd";
+import {
+  Layout,
+  List,
+  Card,
+  Typography,
+  Skeleton,
+  Alert,
+  Button,
+  Tag,
+} from "antd";
 import { useNavigate } from "react-router-dom";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
 
-// ✅ Нова правильна адреса на Render
-const API_PROBLEM_URL = "https://idea-backend.onrender.com/api/problems";
+const API_PROBLEM_URL = "https://backend-avtologistika.onrender.com/api/problems";
 
 const IdeasSubmissionPage = () => {
   const [problems, setProblems] = useState([]);
@@ -17,7 +25,6 @@ const IdeasSubmissionPage = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  // 🔥 Обгорнули fetchUserProblems у useCallback щоб не було помилки залежностей
   const fetchUserProblems = useCallback(async () => {
     try {
       const token = getAuthToken();
@@ -25,13 +32,11 @@ const IdeasSubmissionPage = () => {
         throw new Error("❌ Необхідна авторизація. Будь ласка, увійдіть у систему.");
       }
 
-      console.log(`📢 Виконується API-запит до ${API_PROBLEM_URL}/user-problems...`);
       const response = await axios.get(`${API_PROBLEM_URL}/user-problems`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.status === 200 && Array.isArray(response.data)) {
-        console.log("✅ Отримані проблеми:", response.data);
         setProblems(response.data);
       } else {
         throw new Error(response.data.message || "Не вдалося отримати проблеми.");
@@ -46,7 +51,7 @@ const IdeasSubmissionPage = () => {
 
   useEffect(() => {
     fetchUserProblems();
-  }, [fetchUserProblems]); // ✅ Додали fetchUserProblems в залежності
+  }, [fetchUserProblems]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -70,7 +75,15 @@ const IdeasSubmissionPage = () => {
       </Header>
 
       <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
-        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: "20px" }} />}
+        {error && (
+          <Alert
+            message={error}
+            type="error"
+            showIcon
+            style={{ marginBottom: "20px" }}
+          />
+        )}
+
         {isLoading ? (
           <Skeleton active />
         ) : (
@@ -81,7 +94,11 @@ const IdeasSubmissionPage = () => {
               <List.Item>
                 <Card
                   hoverable
-                  title={<Title level={4} style={{ marginBottom: 0 }}>{problem.title}</Title>}
+                  title={
+                    <Title level={4} style={{ marginBottom: 0 }}>
+                      {problem.title || "Без назви"}
+                    </Title>
+                  }
                   style={{
                     width: "100%",
                     borderRadius: "10px",
@@ -99,7 +116,10 @@ const IdeasSubmissionPage = () => {
                   </Tag>
                   <br />
                   <Text type="secondary" style={{ fontSize: "14px" }}>
-                    Автор: {problem.author_first_name} {problem.author_last_name}
+                    Автор:{" "}
+                    {problem.author_first_name && problem.author_last_name
+                      ? `${problem.author_first_name} ${problem.author_last_name}`
+                      : "Невідомий"}
                   </Text>
                   <br />
                   <Button

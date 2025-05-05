@@ -2,16 +2,22 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE = "https://backend-avtologistika.onrender.com/api/admin";
+
 const AdminDashboard = () => {
-  const navigate = useNavigate(); // Added for redirecting to other pages
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [storageUsage, setStorageUsage] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fields for creating a new user
-  const [newUser, setNewUser] = useState({ username: "", email: "", password: "", role: "" });
+  const [newUser, setNewUser] = useState({
+    username: "",
+    email: "",
+    password: "",
+    role: "",
+  });
 
   useEffect(() => {
     const fetchAdminData = async () => {
@@ -19,42 +25,48 @@ const AdminDashboard = () => {
         setIsLoading(true);
         const token = localStorage.getItem("token");
 
-        // Check if token exists
         if (!token) {
-          setError("Please log in.");
-          navigate("/login"); // Redirect to login page
+          setError("❌ Авторизуйтесь, будь ласка.");
+          navigate("/login");
           return;
         }
 
-        // Fetching data from the backend
-        const [usersResponse, rolesResponse, storageResponse] = await Promise.all([
-          axios.get("/api/admin/users", { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get("/api/admin/roles", { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get("/api/admin/storage", { headers: { Authorization: `Bearer ${token}` } }),
+        const [usersRes, rolesRes, storageRes] = await Promise.all([
+          axios.get(`${API_BASE}/users`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${API_BASE}/roles`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get(`${API_BASE}/storage`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
         ]);
 
-        setUsers(usersResponse.data.users || []);
-        setRoles(rolesResponse.data.roles || []);
-        setStorageUsage(storageResponse.data || {});
+        setUsers(usersRes.data.users || []);
+        setRoles(rolesRes.data.roles || []);
+        setStorageUsage(storageRes.data || {});
       } catch (err) {
-        setError("Failed to load data.");
-        console.error(err);
+        console.error("❌ Помилка завантаження:", err);
+        setError("Не вдалося завантажити дані.");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchAdminData();
-  }, [navigate]); // Added "navigate" as a dependency
+  }, [navigate]);
 
-  // Handle changing user role
+  const getTokenHeader = () => ({
+    Authorization: `Bearer ${localStorage.getItem("token")}`,
+  });
+
   const handleChangeRole = async (userId, newRole) => {
     try {
-      const token = localStorage.getItem("token");
       await axios.post(
-        `/api/admin/users/${userId}/role`,
+        `${API_BASE}/users/${userId}/role`,
         { role: newRole },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: getTokenHeader() }
       );
       setUsers((prev) =>
         prev.map((user) =>
@@ -62,18 +74,16 @@ const AdminDashboard = () => {
         )
       );
     } catch (err) {
-      console.error("Error changing role:", err.message);
+      console.error("❌ Помилка зміни ролі:", err.message);
     }
   };
 
-  // Handle blocking/unblocking a user
   const handleBlockUser = async (userId, isBlocked) => {
     try {
-      const token = localStorage.getItem("token");
       await axios.post(
-        `/api/admin/users/${userId}/block`,
+        `${API_BASE}/users/${userId}/block`,
         { isBlocked },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: getTokenHeader() }
       );
       setUsers((prev) =>
         prev.map((user) =>
@@ -81,78 +91,76 @@ const AdminDashboard = () => {
         )
       );
     } catch (err) {
-      console.error("Error blocking user:", err.message);
+      console.error("❌ Помилка блокування:", err.message);
     }
   };
 
-  // Handle resetting user password
   const handleResetPassword = async (userId) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await axios.post(
-        `/api/admin/users/${userId}/reset-password`,
+        `${API_BASE}/users/${userId}/reset-password`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: getTokenHeader() }
       );
-      alert(`New password: ${response.data.newPassword}`);
+      alert(`Новий пароль: ${response.data.newPassword}`);
     } catch (err) {
-      console.error("Error resetting password:", err.message);
+      console.error("❌ Помилка скидання пароля:", err.message);
     }
   };
 
-  // Handle deleting a user
   const handleDeleteUser = async (userId) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`/api/admin/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      await axios.delete(`${API_BASE}/users/${userId}`, {
+        headers: getTokenHeader(),
       });
       setUsers((prev) => prev.filter((user) => user.id !== userId));
     } catch (err) {
-      console.error("Error deleting user:", err.message);
+      console.error("❌ Помилка видалення:", err.message);
     }
   };
 
-  // Handle creating a new user
   const handleCreateUser = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        "/api/admin/users",
-        newUser,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.post(`${API_BASE}/users`, newUser, {
+        headers: {
+          ...getTokenHeader(),
+          "Content-Type": "application/json",
+        },
+      });
       setUsers((prev) => [...prev, response.data.user]);
       setNewUser({ username: "", email: "", password: "", role: "" });
-      alert("User created successfully.");
+      alert("✅ Користувача створено.");
     } catch (err) {
-      console.error("Error creating user:", err.message);
+      console.error("❌ Помилка створення користувача:", err.message);
     }
   };
 
-  if (isLoading) return <h1>Loading...</h1>;
+  if (isLoading) return <h1>Завантаження...</h1>;
   if (error) return <h1 style={{ color: "red" }}>{error}</h1>;
 
   return (
     <div style={{ padding: "20px", fontFamily: "Arial, sans-serif" }}>
-      <h1>Admin Dashboard</h1>
+      <h1>Панель адміністратора</h1>
+
       <div style={{ marginBottom: "20px" }}>
-        <h2>Server Statistics</h2>
-        <p>Storage usage: {storageUsage.used || 0} / {storageUsage.total || 0} GB</p>
-        <p>Website load: {storageUsage.load || "Unknown"}%</p>
+        <h2>Статистика сервера</h2>
+        <p>
+          Використано памʼяті: {storageUsage.used || 0} / {storageUsage.total || 0} GB
+        </p>
+        <p>Навантаження сайту: {storageUsage.load || "?"}%</p>
       </div>
 
       <div style={{ marginBottom: "20px" }}>
-        <h2>Users</h2>
+        <h2>Користувачі</h2>
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Block</th>
-              <th>Actions</th>
+              <th>Імʼя</th>
+              <th>Пошта</th>
+              <th>Роль</th>
+              <th>Блок</th>
+              <th>Дії</th>
             </tr>
           </thead>
           <tbody>
@@ -174,16 +182,12 @@ const AdminDashboard = () => {
                 </td>
                 <td>
                   <button onClick={() => handleBlockUser(user.id, !user.isBlocked)}>
-                    {user.isBlocked ? "Unblock" : "Block"}
+                    {user.isBlocked ? "Розблокувати" : "Заблокувати"}
                   </button>
                 </td>
                 <td>
-                  <button onClick={() => handleResetPassword(user.id)}>
-                    Reset Password
-                  </button>
-                  <button onClick={() => handleDeleteUser(user.id)}>
-                    Delete
-                  </button>
+                  <button onClick={() => handleResetPassword(user.id)}>Скинути пароль</button>
+                  <button onClick={() => handleDeleteUser(user.id)}>Видалити</button>
                 </td>
               </tr>
             ))}
@@ -192,10 +196,10 @@ const AdminDashboard = () => {
       </div>
 
       <div>
-        <h2>Create New User</h2>
+        <h2>Створити нового користувача</h2>
         <form onSubmit={handleCreateUser}>
           <input
-            placeholder="Username"
+            placeholder="Імʼя"
             value={newUser.username}
             onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
             required
@@ -208,7 +212,7 @@ const AdminDashboard = () => {
             required
           />
           <input
-            placeholder="Password"
+            placeholder="Пароль"
             type="password"
             value={newUser.password}
             onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
@@ -219,14 +223,14 @@ const AdminDashboard = () => {
             onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
             required
           >
-            <option value="">Select Role</option>
+            <option value="">Оберіть роль</option>
             {roles.map((role) => (
               <option key={role} value={role}>
                 {role}
               </option>
             ))}
           </select>
-          <button type="submit">Create</button>
+          <button type="submit">Створити</button>
         </form>
       </div>
     </div>
