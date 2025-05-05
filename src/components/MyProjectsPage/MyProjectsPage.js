@@ -83,7 +83,7 @@ const MyProjectsPage = () => {
       });
 
       if (response.status === 200) {
-        setIdeas(response.data);
+        setIdeas(response.data.filter((idea) => idea.status !== "applied"));
         response.data.forEach((idea) => {
           fetchComments(idea.id, token);
         });
@@ -120,6 +120,13 @@ const MyProjectsPage = () => {
   const handleSelectIdea = (idea) => {
     localStorage.setItem("selectedIdea", JSON.stringify(idea));
     navigate(`/applications/${idea.id}`);
+  };
+
+  const formatName = (comment) => {
+    if (comment.sender_id === currentUserId) return "Ви";
+    if (comment.sender_first_name) return `${comment.sender_first_name} ${comment.sender_last_name || ""}`;
+    if (comment.sender_id) return `🕵️ User-${String(comment.sender_id).padStart(3, "0")}`;
+    return "Анонім";
   };
 
   useEffect(() => {
@@ -166,7 +173,6 @@ const MyProjectsPage = () => {
                     📌 Відкрити заявку
                   </Button>
 
-                  {/* Коментарі */}
                   {comments[idea.id] && (
                     <>
                       <List
@@ -175,16 +181,7 @@ const MyProjectsPage = () => {
                         dataSource={comments[idea.id]}
                         renderItem={(comment) => (
                           <List.Item>
-                            <Text strong>
-                              {comment.sender_id === currentUserId
-                                ? "Ви"
-                                : comment.sender_first_name
-                                ? `${comment.sender_first_name} ${comment.sender_last_name || ""}`
-                                : comment.sender_id
-                                ? `Користувач #${comment.sender_id}`
-                                : "Анонім"}
-                            </Text>
-                            {": "}{comment.text}
+                            <Text strong>{formatName(comment)}</Text>: {comment.text}
                           </List.Item>
                         )}
                       />
