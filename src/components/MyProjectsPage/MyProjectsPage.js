@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import axios from "axios";
 import {
   Layout,
@@ -30,6 +30,17 @@ const MyProjectsPage = () => {
   const navigate = useNavigate();
 
   const getAuthToken = () => localStorage.getItem("token");
+
+  const currentUserId = useMemo(() => {
+    try {
+      const token = getAuthToken();
+      if (!token) return null;
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.id;
+    } catch {
+      return null;
+    }
+  }, []);
 
   const validateAuthToken = useCallback(() => {
     const token = getAuthToken();
@@ -165,7 +176,13 @@ const MyProjectsPage = () => {
                         renderItem={(comment) => (
                           <List.Item>
                             <Text strong>
-                              {comment.sender_first_name || "Анонім"} {comment.sender_last_name || ""}
+                              {comment.sender_id === currentUserId
+                                ? "Ви"
+                                : comment.sender_first_name
+                                ? `${comment.sender_first_name} ${comment.sender_last_name || ""}`
+                                : comment.sender_id
+                                ? `Користувач #${comment.sender_id}`
+                                : "Анонім"}
                             </Text>
                             {": "}{comment.text}
                           </List.Item>
