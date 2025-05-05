@@ -16,15 +16,14 @@ import {
 
 const { Title } = Typography;
 
-// ✅ НОВІ правильні адреси до API на Render
-const API_SECRETARY_URL = "https://idea-backend.onrender.com/api/secretaryRoutes";
-const API_APPLICATION_URL = "https://idea-backend.onrender.com/api/applicationRoutes";
-const API_RETURN_URL = "https://idea-backend.onrender.com/api/applicationReturnsRoutes";
-const API_AGENDA_URL = "https://idea-backend.onrender.com/api/agendaRoutes";
+const API_SECRETARY_URL = "https://backend-avtologistika.onrender.com/api/secretaryRoutes";
+const API_APPLICATION_URL = "https://backend-avtologistika.onrender.com/api/applicationRoutes";
+const API_RETURN_URL = "https://backend-avtologistika.onrender.com/api/applicationReturnsRoutes";
+const API_AGENDA_URL = "https://backend-avtologistika.onrender.com/api/agendaRoutes";
 
 const JurySecretaryProfile = () => {
   const [applications, setApplications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true); // 🔥 перейменовано на isLoading
+  const [isLoading, setIsLoading] = useState(true);
   const [agendaModalOpen, setAgendaModalOpen] = useState(false);
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState(null);
@@ -76,7 +75,7 @@ const JurySecretaryProfile = () => {
   useEffect(() => {
     fetchSecretaryData();
     fetchApplications();
-  }, [fetchSecretaryData, fetchApplications]); // 🔥 додали в залежності
+  }, [fetchSecretaryData, fetchApplications]);
 
   const openAgendaModal = (application) => {
     setSelectedApplication(application);
@@ -148,7 +147,7 @@ const JurySecretaryProfile = () => {
   return (
     <Layout style={{ padding: "20px", background: "#f4f6f8" }}>
       <Title level={3} style={{ marginTop: "20px" }}>📌 Подані ідеї</Title>
-      
+
       {isLoading ? (
         <Skeleton active />
       ) : (
@@ -169,7 +168,6 @@ const JurySecretaryProfile = () => {
         />
       )}
 
-      {/* Модальне вікно: Призначити засідання */}
       <Modal title="📅 Призначити засідання" open={agendaModalOpen} onCancel={closeAgendaModal} onOk={formAgenda.submit}>
         <Form form={formAgenda} layout="vertical" onFinish={handleAgendaSubmit}>
           <Form.Item name="meeting_date" label="Дата засідання" rules={[{ required: true }]}>
@@ -181,7 +179,6 @@ const JurySecretaryProfile = () => {
         </Form>
       </Modal>
 
-      {/* Модальне вікно: Повернути заявку */}
       <Modal title="🔄 Повернення заявки" open={returnModalOpen} onCancel={closeReturnModal} onOk={formReturn.submit}>
         <Form form={formReturn} layout="vertical" onFinish={handleReturnSubmit}>
           <Form.Item name="comment" label="Причина повернення" rules={[{ required: true }]}>
