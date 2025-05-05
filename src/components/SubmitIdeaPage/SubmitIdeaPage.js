@@ -7,7 +7,8 @@ const { Header, Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
 
-const API_BASE = "https://backend-avtologistika.onrender.com/api/ideaRoutes";
+// 🔧 Виправлено BASE URL
+const API_BASE = "https://backend-avtologistika.onrender.com/api";
 
 const SubmitIdeaPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);
@@ -56,7 +57,7 @@ const SubmitIdeaPage = () => {
         ambassador_id: values.ambassadorId || null,
       };
 
-      const res = await fetch(`${API_BASE}`, {
+      const res = await fetch(`${API_BASE}/ideaRoutes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
