@@ -76,11 +76,9 @@ const BlogPage = () => {
     try {
       const token = getAuthToken();
       const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.data || !Array.isArray(response.data.comments)) return;
+      if (!Array.isArray(response.data.comments)) return;
       setCommentsData((prev) => ({
         ...prev,
         [entry.id]: response.data.comments,
@@ -217,7 +215,9 @@ const BlogPage = () => {
     }
   };
 
-  const filteredEntries = filteredType === "all" ? entries : entries.filter((e) => e.entryType === filteredType);
+  const filteredEntries = filteredType === "all"
+    ? entries
+    : entries.filter((e) => e.entryType === filteredType);
 
   return (
     <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
@@ -284,7 +284,11 @@ const BlogPage = () => {
                         <Card
                           key={comment.id}
                           size="small"
-                          style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}
+                          style={{
+                            backgroundColor: "#fafafa",
+                            border: "1px solid #eee",
+                            borderRadius: "6px",
+                          }}
                         >
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <Text strong>
