@@ -74,7 +74,12 @@ const BlogPage = () => {
 
   const fetchComments = useCallback(async (entry) => {
     try {
-      const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
+      const token = getAuthToken();
+      const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (!response.data || !Array.isArray(response.data.comments)) return;
       setCommentsData((prev) => ({
         ...prev,
@@ -212,8 +217,7 @@ const BlogPage = () => {
     }
   };
 
-  const filteredEntries =
-    filteredType === "all" ? entries : entries.filter((e) => e.entryType === filteredType);
+  const filteredEntries = filteredType === "all" ? entries : entries.filter((e) => e.entryType === filteredType);
 
   return (
     <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
@@ -284,7 +288,9 @@ const BlogPage = () => {
                         >
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <Text strong>
-                              {`${comment.authorFirstName || ""} ${comment.authorLastName || ""}`.trim() || "Анонім"}
+                              {(comment.authorFirstName || comment.authorLastName)
+                                ? `${comment.authorFirstName || ""} ${comment.authorLastName || ""}`.trim()
+                                : "Анонім"}
                             </Text>
                             <Text type="secondary" style={{ fontSize: "12px" }}>
                               {new Date(comment.createdAt).toLocaleString("uk-UA")}
