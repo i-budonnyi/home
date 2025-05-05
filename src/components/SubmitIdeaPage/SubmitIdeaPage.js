@@ -7,7 +7,6 @@ const { Header, Content } = Layout;
 const { Title } = Typography;
 const { Option } = Select;
 
-// 🔧 Виправлено BASE URL
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
 
 const SubmitIdeaPage = () => {
@@ -20,16 +19,22 @@ const SubmitIdeaPage = () => {
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    return token ? { Authorization: `Bearer ${token}` } : null;
   };
 
   useEffect(() => {
     const loadAmbassadors = async () => {
+      const headers = getAuthHeaders();
+      if (!headers) {
+        console.warn("⛔ Токен не знайдено. Пропущено запит амбасадорів.");
+        setLoadingAmbassadors(false);
+        return;
+      }
+
       try {
-        await new Promise((res) => setTimeout(res, 700)); // ⏳ Затримка для Render
-        const res = await fetch(`${API_BASE}/ambassadors`, {
-          headers: getAuthHeaders(),
-        });
+        await new Promise((res) => setTimeout(res, 1000)); // 🕒 Додано затримку 1с
+
+        const res = await fetch(`${API_BASE}/ambassadors`, { headers });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setAmbassadors(
@@ -52,6 +57,9 @@ const SubmitIdeaPage = () => {
   const handleSubmit = async (values) => {
     try {
       setIsSubmitting(true);
+      const headers = getAuthHeaders();
+      if (!headers) throw new Error("⛔ Немає токена.");
+
       const payload = {
         title: values.title,
         description: values.description,
@@ -62,7 +70,7 @@ const SubmitIdeaPage = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
+          ...headers,
         },
         body: JSON.stringify(payload),
       });
