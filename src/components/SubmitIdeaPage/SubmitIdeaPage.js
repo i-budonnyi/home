@@ -26,6 +26,7 @@ const SubmitIdeaPage = () => {
   useEffect(() => {
     const loadAmbassadors = async () => {
       try {
+        await new Promise((res) => setTimeout(res, 700)); // ⏳ Затримка для Render
         const res = await fetch(`${API_BASE}/ambassadors`, {
           headers: getAuthHeaders(),
         });
