@@ -90,30 +90,29 @@ const BlogPage = () => {
 
   const fetchAllEntries = useCallback(async () => {
     try {
-      const [blogsRes, problemsRes] = await Promise.all([
+      const [entriesRes, problemsRes] = await Promise.all([
         axios.get(`${API_BLOG_URL}/entries`),
         axios.get(`${API_PROBLEMS_URL}`),
       ]);
 
-      const blogs = blogsRes.data?.blogs?.map((b) => ({
-        ...b,
-        entryType: "blog",
-        authorname: b.authorName || "Невідомий",
-      })) || [];
-
-      const ideas = blogsRes.data?.ideas?.map((i) => ({
-        ...i,
-        entryType: "idea",
-        authorname: i.authorName || "Невідомий",
+      const apiEntries = entriesRes.data?.entries?.map((entry) => ({
+        ...entry,
+        authorname:
+          `${entry.author_first_name || ""} ${entry.author_last_name || ""}`.trim() ||
+          entry.author_email ||
+          "Невідомий",
       })) || [];
 
       const problems = problemsRes.data?.map((p) => ({
         ...p,
         entryType: "problem",
-        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author || "Невідомий",
+        authorname:
+          `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() ||
+          p.author ||
+          "Невідомий",
       })) || [];
 
-      const allEntries = [...blogs, ...ideas, ...problems].sort(
+      const allEntries = [...apiEntries, ...problems].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
 
