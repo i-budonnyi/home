@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Layout, Form, Input, Button, message, Typography, Alert, Select } from "antd";
-import { useNavigate } from "react-router-dom"; // 🔥 useParams видалено
+import { useNavigate } from "react-router-dom";
 
 const { Title } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
-// ✅ Оновлений шлях до бекенду Render
-const API_APPLICATION_URL = "https://idea-backend.onrender.com/api/applicationRoutes";
+// ✅ Актуальний шлях до бекенду
+const API_APPLICATION_URL = "https://backend-avtologistika.onrender.com/api/applicationRoutes";
 
 const Applications = () => {
   const navigate = useNavigate();
@@ -17,7 +17,7 @@ const Applications = () => {
     content: "",
     user_id: null,
     idea_id: null,
-    type: "idea", // ✅ Тип заявки
+    type: "idea",
   });
   const [idea, setIdea] = useState(null);
 
@@ -33,7 +33,6 @@ const Applications = () => {
       const parsedIdea = JSON.parse(savedIdea);
       console.log("📌 Отримано ідею з локального сховища:", parsedIdea);
       setIdea(parsedIdea);
-
       setApplication((prevApp) => ({
         ...prevApp,
         title: parsedIdea.title || "Без назви",
@@ -46,8 +45,10 @@ const Applications = () => {
 
   const handleSubmitApplication = async () => {
     try {
-      if (!application.user_id || !application.title || !application.content || !application.type) {
-        message.warning("❌ Дані заявки неповні. Переконайтеся, що всі поля заповнені.");
+      const { user_id, title, content, idea_id, type } = application;
+
+      if (!user_id || !title || !content || !type) {
+        message.warning("❌ Дані заявки неповні. Перевірте всі поля.");
         return;
       }
 
@@ -58,23 +59,9 @@ const Applications = () => {
       }
 
       console.log("📡 Відправка заявки...");
-      console.log("📤 Дані для відправки:", {
-        user_id: application.user_id,
-        title: application.title,
-        content: application.content,
-        idea_id: application.idea_id || null,
-        type: application.type,
-      });
-
       const submitResponse = await axios.post(
         API_APPLICATION_URL,
-        {
-          user_id: application.user_id,
-          title: application.title,
-          content: application.content,
-          idea_id: application.idea_id || null,
-          type: application.type,
-        },
+        { user_id, title, content, idea_id, type },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -82,8 +69,6 @@ const Applications = () => {
           },
         }
       );
-
-      console.log("✅ Відповідь сервера після відправки заявки:", submitResponse);
 
       if (submitResponse.status === 201 || submitResponse.status === 200) {
         message.success("✅ Заявку успішно створено!");
@@ -93,9 +78,6 @@ const Applications = () => {
       }
     } catch (err) {
       console.error("❌ Помилка створення заявки:", err);
-      if (err.response) {
-        console.error("🔴 Деталі помилки сервера:", err.response.data);
-      }
       message.error(err.response?.data?.message || "❌ Виникла помилка.");
     }
   };
@@ -107,7 +89,7 @@ const Applications = () => {
       {idea && (
         <Alert
           message={`Ідея: ${idea.title}`}
-          description={idea.content}
+          description={idea.description}
           type="info"
           showIcon
           style={{ marginBottom: "20px" }}
