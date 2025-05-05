@@ -90,29 +90,30 @@ const BlogPage = () => {
 
   const fetchAllEntries = useCallback(async () => {
     try {
-      const [entriesRes, problemsRes] = await Promise.all([
+      const [blogsRes, problemsRes] = await Promise.all([
         axios.get(`${API_BLOG_URL}/entries`),
         axios.get(`${API_PROBLEMS_URL}`),
       ]);
 
-      const apiEntries = entriesRes.data?.entries?.map((entry) => ({
-        ...entry,
-        authorname:
-          `${entry.author_first_name || ""} ${entry.author_last_name || ""}`.trim() ||
-          entry.author_email ||
-          "Невідомий",
+      const blogs = blogsRes.data?.blogs?.map((b) => ({
+        ...b,
+        entryType: "blog",
+        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author_email || "Невідомий",
+      })) || [];
+
+      const ideas = blogsRes.data?.ideas?.map((i) => ({
+        ...i,
+        entryType: "idea",
+        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author_email || "Невідомий",
       })) || [];
 
       const problems = problemsRes.data?.map((p) => ({
         ...p,
         entryType: "problem",
-        authorname:
-          `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() ||
-          p.author ||
-          "Невідомий",
+        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author || "Невідомий",
       })) || [];
 
-      const allEntries = [...apiEntries, ...problems].sort(
+      const allEntries = [...blogs, ...ideas, ...problems].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
 
