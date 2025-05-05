@@ -83,7 +83,7 @@ const MyProjectsPage = () => {
       });
 
       if (response.status === 200) {
-        setIdeas(response.data.filter((idea) => idea.status !== "applied"));
+        setIdeas(response.data); // без фільтрації
         response.data.forEach((idea) => {
           fetchComments(idea.id, token);
         });
@@ -158,6 +158,8 @@ const MyProjectsPage = () => {
                       ? "green"
                       : idea.status === "pending"
                       ? "orange"
+                      : idea.status === "applied"
+                      ? "blue"
                       : "red"
                   }>
                     {idea.status?.toUpperCase()}
@@ -165,13 +167,17 @@ const MyProjectsPage = () => {
                   <br />
                   <Text>{idea.description || "Без опису"}</Text>
                   <br />
-                  <Button
-                    type="primary"
-                    onClick={() => handleSelectIdea(idea)}
-                    style={{ marginTop: "10px" }}
-                  >
-                    📌 Відкрити заявку
-                  </Button>
+                  {idea.status === "applied" ? (
+                    <Tag color="blue" style={{ marginTop: "10px" }}>📨 Заявку вже подано</Tag>
+                  ) : (
+                    <Button
+                      type="primary"
+                      onClick={() => handleSelectIdea(idea)}
+                      style={{ marginTop: "10px" }}
+                    >
+                      📌 Відкрити заявку
+                    </Button>
+                  )}
 
                   {comments[idea.id] && (
                     <>
