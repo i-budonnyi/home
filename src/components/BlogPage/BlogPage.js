@@ -1,4 +1,3 @@
-// 🧠 Оновлений BlogPage.jsx з повним логуванням
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Layout,
@@ -46,11 +45,9 @@ const BlogPage = () => {
   const fetchUserId = useCallback(() => {
     try {
       const token = getAuthToken();
-      console.log("[DEBUG] Токен у localStorage:", token);
       if (!token) return;
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       const decoded = JSON.parse(atob(token.split(".")[1]));
-      console.log("[DEBUG] Декодований токен:", decoded);
       setUserId(decoded?.user_id || decoded?.id || null);
     } catch (error) {
       console.error("❌ ПОМИЛКА отримання ID користувача:", error.message);
@@ -78,12 +75,10 @@ const BlogPage = () => {
   const fetchComments = useCallback(async (entry) => {
     try {
       const token = getAuthToken();
-      console.log("[DEBUG] Токен перед запитом на коментарі:", token);
       if (!token) return;
       const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("[DEBUG] Коментарі отримано:", response.data);
       if (!Array.isArray(response.data.comments)) return;
       setCommentsData((prev) => ({
         ...prev,
@@ -91,6 +86,22 @@ const BlogPage = () => {
       }));
     } catch (err) {
       console.error(`[❌ Коментарі] ${entry.id}:`, err);
+    }
+  }, []);
+
+  const fetchSubscriptions = useCallback(async () => {
+    try {
+      const token = getAuthToken();
+      const response = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const subs = response.data.subscriptions.reduce((acc, sub) => {
+        acc[sub.blog_id || sub.idea_id || sub.problem_id] = true;
+        return acc;
+      }, {});
+      setSubscribedEntries(subs);
+    } catch (err) {
+      console.error("❌ Помилка підписок:", err);
     }
   }, []);
 
@@ -123,8 +134,8 @@ const BlogPage = () => {
       })) || [];
 
       const allEntries = [...blogs, ...ideas, ...problems].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
       setEntries(allEntries);
+
       allEntries.forEach((entry) => {
         fetchLikes(entry);
         fetchComments(entry);
@@ -141,27 +152,15 @@ const BlogPage = () => {
     if (!text) return;
     try {
       const token = getAuthToken();
-      console.log("[DEBUG] Токен перед відправкою:", token);
-      console.log("[DEBUG] Дані, що відправляються:", {
+      await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
         entry_type: entry.entryType,
         text,
-      });
-
-      await axios.post(
-        `${API_COMMENT_URL}/add`,
-        {
-          entry_id: entry.id,
-          entry_type: entry.entryType,
-          text,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      });
       setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
     } catch (err) {
@@ -181,9 +180,11 @@ const BlogPage = () => {
     }
   }, [userId, fetchAllEntries, fetchSubscriptions]);
 
-  // 🔁 Інші функції (лайки, підписки, getTagColor) не змінювались
-
-  return (<div>... UI ...</div>);
+  return (
+    <Content>
+      {/* ... решта UI залишити без змін ... */}
+    </Content>
+  );
 };
 
 export default BlogPage;
