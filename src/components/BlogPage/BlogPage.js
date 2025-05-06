@@ -19,6 +19,7 @@ const API_PROBLEMS_URL = `${API_BASE}/problems`;
 const API_LIKE_URL = `${API_BASE}/likeRoutes`;
 const API_COMMENT_URL = `${API_BASE}/commentRoutes`;
 const API_SUBSCRIBE_URL = `${API_BASE}/subscriptionRoutes`;
+const API_USER_URL = `${API_BASE}/users/profile`;
 
 const BlogPage = () => {
   const [entries, setEntries] = useState([]);
@@ -27,9 +28,27 @@ const BlogPage = () => {
   const [subscribedEntries, setSubscribedEntries] = useState({});
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
+  const [currentUserName, setCurrentUserName] = useState("Користувач");
   const [filteredType, setFilteredType] = useState("all");
 
   const getAuthToken = () => localStorage.getItem("token");
+
+  const fetchCurrentUser = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+
+      const response = await axios.get(API_USER_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const { first_name, last_name, email } = response.data || {};
+      const fullName = `${first_name || ""} ${last_name || ""}`.trim() || email || "Користувач";
+      setCurrentUserName(fullName);
+    } catch (err) {
+      console.error("❌ Поточний користувач:", err.message);
+    }
+  };
 
   const fetchLikes = useCallback(async (entry) => {
     try {
@@ -121,6 +140,7 @@ const BlogPage = () => {
   }, []);
 
   useEffect(() => {
+    fetchCurrentUser();
     fetchAllEntries();
     fetchSubscriptions();
   }, [fetchAllEntries, fetchSubscriptions]);
@@ -169,8 +189,6 @@ const BlogPage = () => {
         entry_type: entry.entryType,
         comment: comment,
       };
-
-      console.log("📤 Надсилаємо коментар:", payload);
 
       await axios.post(`${API_COMMENT_URL}/add`, payload, {
         headers: { Authorization: `Bearer ${token}` },
@@ -257,7 +275,7 @@ const BlogPage = () => {
                       commentsData[entry.id].map((comment) => (
                         <Card key={comment.id} size="small" style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <Text strong>{comment.authorName && comment.authorName.trim() !== "" ? comment.authorName.trim() : "Анонім"}</Text>
+                            <Text strong>{comment.authorName || "Невідомий"}</Text>
                             <Text type="secondary" style={{ fontSize: "12px" }}>
                               {!comment.createdAt || isNaN(Date.parse(comment.createdAt))
                                 ? "Невідома дата"
@@ -277,9 +295,7 @@ const BlogPage = () => {
                     <TextArea
                       rows={2}
                       value={newComment[entry.id] || ""}
-                      onChange={(e) =>
-                        setNewComment({ ...newComment, [entry.id]: e.target.value })
-                      }
+                      onChange={(e) => setNewComment({ ...newComment, [entry.id]: e.target.value })}
                       placeholder="Напишіть коментар..."
                       style={{ marginTop: "8px", marginBottom: "8px" }}
                     />
