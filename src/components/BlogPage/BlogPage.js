@@ -257,7 +257,7 @@ const BlogPage = () => {
                       commentsData[entry.id].map((comment) => (
                         <Card key={comment.id} size="small" style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <Text strong>{comment.authorName?.trim() || "Анонім"}</Text>
+                            <Text strong>{comment.authorName && comment.authorName.trim() !== "" ? comment.authorName.trim() : "Анонім"}</Text>
                             <Text type="secondary" style={{ fontSize: "12px" }}>{new Date(comment.createdAt).toLocaleString("uk-UA")}</Text>
                           </div>
                           <Text>{comment.text}</Text>
