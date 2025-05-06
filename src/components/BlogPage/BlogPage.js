@@ -62,7 +62,6 @@ const BlogPage = () => {
   const fetchComments = useCallback(async (entry) => {
     try {
       const token = getAuthToken();
-      if (!token) return;
       const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -79,7 +78,6 @@ const BlogPage = () => {
     try {
       const token = getAuthToken();
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-
       const [blogsRes, problemsRes] = await Promise.all([
         axios.get(`${API_BLOG_URL}/entries`, { headers }),
         axios.get(`${API_PROBLEMS_URL}`, { headers }),
@@ -122,7 +120,6 @@ const BlogPage = () => {
   const fetchSubscriptions = useCallback(async () => {
     try {
       const token = getAuthToken();
-      if (!token) return;
       const response = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -187,17 +184,16 @@ const BlogPage = () => {
       const payload = {
         entry_id: entry.id,
         entry_type: entry.entryType,
-        comment,
+        comment: comment,
         user_id: userId,
       };
 
       console.log("📤 Надсилаємо коментар:", payload);
 
-      const response = await axios.post(`${API_COMMENT_URL}/add`, payload, {
+      await axios.post(`${API_COMMENT_URL}/add`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("✅ Коментар додано:", response.data);
       setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
     } catch (err) {
