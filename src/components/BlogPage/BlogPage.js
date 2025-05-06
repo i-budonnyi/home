@@ -50,24 +50,27 @@ const BlogPage = () => {
       const decoded = JSON.parse(atob(token.split(".")[1]));
       setUserId(decoded?.user_id || decoded?.id || null);
     } catch (error) {
-      console.error("❌ ПОМИЛКА отримання ID користувача:", error.message);
+      console.error("❌ ПОМИЛКА токена:", error.message);
     }
   }, []);
 
-  const fetchLikes = useCallback(async (entry) => {
-    try {
-      const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
-      setLikesData((prev) => ({
-        ...prev,
-        [entry.id]: {
-          likesCount: response.data.likesCount || 0,
-          userLiked: response.data.likedBy?.some((user) => user.user_id === userId),
-        },
-      }));
-    } catch (err) {
-      console.error(`❌ Помилка отримання лайків:`, err);
-    }
-  }, [userId]);
+  const fetchLikes = useCallback(
+    async (entry) => {
+      try {
+        const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
+        setLikesData((prev) => ({
+          ...prev,
+          [entry.id]: {
+            likesCount: response.data.likesCount || 0,
+            userLiked: response.data.likedBy?.some((u) => u.user_id === userId),
+          },
+        }));
+      } catch (err) {
+        console.error("❌ Лайки:", err.message);
+      }
+    },
+    [userId]
+  );
 
   const fetchComments = useCallback(async (entry) => {
     try {
@@ -82,7 +85,7 @@ const BlogPage = () => {
         [entry.id]: response.data.comments,
       }));
     } catch (err) {
-      console.error(`❌ Помилка коментарів:`, err);
+      console.error("❌ Коментарі:", err.message);
     }
   }, []);
 
@@ -123,7 +126,7 @@ const BlogPage = () => {
         fetchComments(entry);
       });
     } catch (err) {
-      console.error("❌ Не вдалося завантажити дані:", err);
+      console.error("❌ Дані:", err.message);
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +145,7 @@ const BlogPage = () => {
       }, {});
       setSubscribedEntries(subscriptions);
     } catch (err) {
-      console.error("❌ Помилка підписок:", err);
+      console.error("❌ Підписки:", err.message);
     }
   }, []);
 
@@ -173,7 +176,7 @@ const BlogPage = () => {
       );
       fetchLikes(entry);
     } catch (err) {
-      console.error(`❌ Помилка лайкування:`, err);
+      console.error("❌ Лайк:", err.message);
       message.error("Не вдалося змінити лайк.");
     }
   };
@@ -195,39 +198,39 @@ const BlogPage = () => {
       }));
       message.success(response.data.message);
     } catch (err) {
-      console.error("❌ Помилка підписки/відписки:", err);
+      console.error("❌ Підписка:", err.message);
       message.error("Не вдалося виконати операцію.");
     }
   };
 
- const handleCommentSubmit = async (entry) => {
-  const comment = newComment[entry.id]?.trim(); // ✅ зміна тут
-  if (!comment) return;
+  const handleCommentSubmit = async (entry) => {
+    const comment = newComment[entry.id]?.trim();
+    if (!comment) return;
 
-  try {
-    const token = getAuthToken();
-    if (!token) throw new Error("Токен не знайдено");
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error("❌ Токен відсутній");
 
-    await axios.post(
-      `${API_COMMENT_URL}/add`,
-      {
-        entry_id: entry.id,
-        entry_type: entry.entryType,
-        comment, // ✅ замість text
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const response = await axios.post(
+        `${API_COMMENT_URL}/add`,
+        {
+          entry_id: entry.id,
+          entry_type: entry.entryType,
+          comment,
         },
-      }
-    );
-    setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
-    fetchComments(entry);
-  } catch (err) {
-    console.error("❌ Помилка додавання коментаря:", err);
-    message.error("Не вдалося додати коментар.");
-  }
-};
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      console.log("✅ Відповідь на коментар:", response.data);
+      setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
+      fetchComments(entry);
+    } catch (err) {
+      console.error("❌ Коментар:", err.response?.data || err.message);
+      message.error("Не вдалося додати коментар.");
+    }
+  };
 
   const getTagColor = (type) => {
     switch (type) {
@@ -334,7 +337,9 @@ const BlogPage = () => {
                     <TextArea
                       rows={2}
                       value={newComment[entry.id] || ""}
-                      onChange={(e) => setNewComment({ ...newComment, [entry.id]: e.target.value })}
+                      onChange={(e) =>
+                        setNewComment({ ...newComment, [entry.id]: e.target.value })
+                      }
                       placeholder="Напишіть коментар..."
                       style={{ marginTop: "8px", marginBottom: "8px" }}
                     />
