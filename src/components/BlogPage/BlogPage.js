@@ -1,22 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Layout,
-  Card,
-  Space,
   Typography,
-  Skeleton,
-  Button,
-  Tag,
   Input,
-  Divider,
   message,
 } from "antd";
-import {
-  HeartOutlined,
-  HeartFilled,
-  UserAddOutlined,
-  SendOutlined,
-} from "@ant-design/icons";
 import axios from "axios";
 
 const { Content } = Layout;
@@ -50,7 +38,7 @@ const BlogPage = () => {
       const decoded = JSON.parse(atob(token.split(".")[1]));
       setUserId(decoded?.user_id || decoded?.id || null);
     } catch (error) {
-      console.error("❌ ПОМИЛКА отримання ID користувача:", error.message);
+      console.error("\u274C \u041f\u041e\u041c\u0418\u041b\u041a\u0410 \u043e\u0442\u0440\u0438\u043c\u0430\u043d\u043d\u044f ID \u043a\u043e\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0430:", error.message);
     }
   }, []);
 
@@ -68,7 +56,7 @@ const BlogPage = () => {
         },
       }));
     } catch (err) {
-      console.error(`[❌ Лайки] ${entry.id}:`, err);
+      console.error(`[\u274C \u041b\u0430\u0439\u043a\u0438] ${entry.id}:`, err);
     }
   }, [userId]);
 
@@ -85,7 +73,7 @@ const BlogPage = () => {
         [entry.id]: response.data.comments,
       }));
     } catch (err) {
-      console.error(`[❌ Коментарі] ${entry.id}:`, err);
+      console.error(`[\u274C \u041a\u043e\u043c\u0435\u043d\u0442\u0430\u0440\u0456] ${entry.id}:`, err);
     }
   }, []);
 
@@ -101,7 +89,7 @@ const BlogPage = () => {
       }, {});
       setSubscribedEntries(subs);
     } catch (err) {
-      console.error("❌ Помилка підписок:", err);
+      console.error("\u274C \u041f\u043e\u043c\u0438\u043b\u043a\u0430 \u043f\u0456\u0434\u043f\u0438\u0441\u043e\u043a:", err);
     }
   }, []);
 
@@ -118,19 +106,19 @@ const BlogPage = () => {
       const blogs = blogsRes.data?.blogs?.map((b) => ({
         ...b,
         entryType: "blog",
-        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author_email || "Невідомий",
+        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author_email || "\u041d\u0435\u0432\u0456\u0434\u043e\u043c\u0438\u0439",
       })) || [];
 
       const ideas = blogsRes.data?.ideas?.map((i) => ({
         ...i,
         entryType: "idea",
-        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author_email || "Невідомий",
+        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author_email || "\u041d\u0435\u0432\u0456\u0434\u043e\u043c\u0438\u0439",
       })) || [];
 
       const problems = problemsRes.data?.map((p) => ({
         ...p,
         entryType: "problem",
-        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author || "Невідомий",
+        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author || "\u041d\u0435\u0432\u0456\u0434\u043e\u043c\u0438\u0439",
       })) || [];
 
       const allEntries = [...blogs, ...ideas, ...problems].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -141,7 +129,7 @@ const BlogPage = () => {
         fetchComments(entry);
       });
     } catch (err) {
-      console.error("❌ Завантаження записів:", err);
+      console.error("\u274C \u0417\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043d\u044f \u0437\u0430\u043f\u0438\u0441\u0456\u0432:", err);
     } finally {
       setIsLoading(false);
     }
@@ -164,8 +152,8 @@ const BlogPage = () => {
       setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
     } catch (err) {
-      console.error("❌ Помилка відправки коментаря:", err.response?.data || err.message);
-      message.error("Не вдалося додати коментар.");
+      console.error("\u274C \u041f\u043e\u043c\u0438\u043b\u043a\u0430 \u0432\u0456\u0434\u043f\u0440\u0430\u0432\u043a\u0438 \u043a\u043e\u043c\u0435\u043d\u0442\u0430\u0440\u044f:", err.response?.data || err.message);
+      message.error("\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0434\u043e\u0434\u0430\u0442\u0438 \u043a\u043e\u043c\u0435\u043d\u0442\u0430\u0440.");
     }
   };
 
@@ -182,7 +170,8 @@ const BlogPage = () => {
 
   return (
     <Content>
-      {/* ... решта UI залишити без змін ... */}
+      <Title level={3}>Сторінка блогу</Title>
+      {/* ТУТ БУДЕ РЕНДЕР КАРТОК ТА UI */}
     </Content>
   );
 };
