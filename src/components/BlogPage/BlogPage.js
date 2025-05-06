@@ -230,17 +230,13 @@ const BlogPage = () => {
       return;
     }
 
-    const payload = { entry_id, entry_type, comment };
+    const payload = { entry_id, entry_type, comment, user_id }; // 🟢 ДОДАНО user_id
 
     console.log("📤 Надсилаємо коментар:", payload);
 
-    const response = await axios.post(
-      `${API_COMMENT_URL}/add`,
-      payload,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const response = await axios.post(`${API_COMMENT_URL}/add`, payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     console.log("✅ Коментар додано:", response.data);
     setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
@@ -250,7 +246,6 @@ const BlogPage = () => {
     message.error("Не вдалося додати коментар.");
   }
 };
-
 
   const getTagColor = (type) => {
     switch (type) {
