@@ -1,21 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
-  Layout,
-  Card,
-  Space,
-  Typography,
-  Skeleton,
-  Button,
-  Tag,
-  Input,
-  Divider,
-  message,
+  Layout, Card, Space, Typography, Skeleton, Button,
+  Tag, Input, Divider, message
 } from "antd";
 import {
-  HeartOutlined,
-  HeartFilled,
-  UserAddOutlined,
-  SendOutlined,
+  HeartOutlined, HeartFilled,
+  UserAddOutlined, SendOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 
@@ -46,31 +36,28 @@ const BlogPage = () => {
     try {
       const token = getAuthToken();
       if (!token) return;
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       const decoded = JSON.parse(atob(token.split(".")[1]));
-      setUserId(decoded?.user_id || decoded?.id || null);
+      const id = decoded?.user_id || decoded?.id;
+      setUserId(id);
     } catch (error) {
       console.error("❌ ПОМИЛКА токена:", error.message);
     }
   }, []);
 
-  const fetchLikes = useCallback(
-    async (entry) => {
-      try {
-        const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
-        setLikesData((prev) => ({
-          ...prev,
-          [entry.id]: {
-            likesCount: response.data.likesCount || 0,
-            userLiked: response.data.likedBy?.some((u) => u.user_id === userId),
-          },
-        }));
-      } catch (err) {
-        console.error("❌ Лайки:", err.message);
-      }
-    },
-    [userId]
-  );
+  const fetchLikes = useCallback(async (entry) => {
+    try {
+      const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
+      setLikesData((prev) => ({
+        ...prev,
+        [entry.id]: {
+          likesCount: response.data.likesCount || 0,
+          userLiked: response.data.likedBy?.some((u) => u.user_id === userId),
+        },
+      }));
+    } catch (err) {
+      console.error("❌ Лайки:", err.message);
+    }
+  }, [userId]);
 
   const fetchComments = useCallback(async (entry) => {
     try {
@@ -79,10 +66,9 @@ const BlogPage = () => {
       const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!Array.isArray(response.data.comments)) return;
       setCommentsData((prev) => ({
         ...prev,
-        [entry.id]: response.data.comments,
+        [entry.id]: response.data.comments || [],
       }));
     } catch (err) {
       console.error("❌ Коментарі:", err.message);
@@ -149,9 +135,7 @@ const BlogPage = () => {
     }
   }, []);
 
-  useEffect(() => {
-    fetchUserId();
-  }, [fetchUserId]);
+  useEffect(() => { fetchUserId(); }, [fetchUserId]);
 
   useEffect(() => {
     if (userId) {
@@ -163,16 +147,10 @@ const BlogPage = () => {
   const toggleLike = async (entry) => {
     try {
       const token = getAuthToken();
-      if (!token) throw new Error("❌ Токен відсутній");
       await axios.post(
         `${API_LIKE_URL}/toggle-like`,
-        {
-          entry_id: entry.id,
-          entry_type: entry.entryType,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { entry_id: entry.id, entry_type: entry.entryType },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchLikes(entry);
     } catch (err) {
@@ -184,7 +162,6 @@ const BlogPage = () => {
   const handleSubscribe = async (entry) => {
     try {
       const token = getAuthToken();
-      if (!token) throw new Error("❌ Токен відсутній");
       const isSubscribed = subscribedEntries[entry.id];
       const response = await axios({
         method: isSubscribed ? "delete" : "post",
@@ -192,10 +169,7 @@ const BlogPage = () => {
         data: { entry_id: entry.id, entry_type: entry.entryType },
         headers: { Authorization: `Bearer ${token}` },
       });
-      setSubscribedEntries((prev) => ({
-        ...prev,
-        [entry.id]: !isSubscribed,
-      }));
+      setSubscribedEntries((prev) => ({ ...prev, [entry.id]: !isSubscribed }));
       message.success(response.data.message);
     } catch (err) {
       console.error("❌ Підписка:", err.message);
@@ -203,50 +177,33 @@ const BlogPage = () => {
     }
   };
 
- const handleCommentSubmit = async (entry) => {
-  const comment = newComment[entry.id]?.trim();
-  const entry_id = entry.id;
-  const entry_type = entry.entryType;
-  const token = getAuthToken();
+  const handleCommentSubmit = async (entry) => {
+    const comment = newComment[entry.id]?.trim();
+    if (!comment || !userId) return;
 
-  if (!comment || !entry_id || !entry_type || !token) {
-    console.error("❌ Відсутні обов'язкові поля", {
-      comment,
-      entry_id,
-      entry_type,
-      tokenPresent: Boolean(token),
-    });
-    message.error("Всі поля обов'язкові для додавання коментаря.");
-    return;
-  }
+    try {
+      const token = getAuthToken();
+      const payload = {
+        entry_id: entry.id,
+        entry_type: entry.entryType,
+        comment,
+        user_id: userId, // передається явно, бо бекенд вимагає всі 4 поля
+      };
 
-  try {
-    const decoded = JSON.parse(atob(token.split(".")[1]));
-    const user_id = decoded?.user_id || decoded?.id;
+      console.log("📤 Надсилаємо коментар:", payload);
 
-    if (!user_id) {
-      console.error("❌ Не вдалося отримати user_id з токена.");
-      message.error("Помилка авторизації.");
-      return;
+      const response = await axios.post(`${API_COMMENT_URL}/add`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log("✅ Коментар додано:", response.data);
+      setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
+      fetchComments(entry);
+    } catch (err) {
+      console.error("❌ Коментар — помилка:", err.response?.data || err.message);
+      message.error("Не вдалося додати коментар.");
     }
-
-    const payload = { entry_id, entry_type, comment, user_id }; // ⬅️ додаємо user_id
-
-    console.log("📤 Надсилаємо коментар:", payload);
-
-    const response = await axios.post(`${API_COMMENT_URL}/add`, payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    console.log("✅ Коментар додано:", response.data);
-    setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
-    fetchComments(entry);
-  } catch (err) {
-    console.error("❌ Коментар — помилка:", err.response?.data || err.message);
-    message.error("Не вдалося додати коментар.");
-  }
-};
-
+  };
 
   const getTagColor = (type) => {
     switch (type) {
@@ -307,11 +264,7 @@ const BlogPage = () => {
                 <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
                   <Space>
                     <Button type="text" onClick={() => toggleLike(entry)}>
-                      {likesData[entry.id]?.userLiked ? (
-                        <HeartFilled style={{ color: "red" }} />
-                      ) : (
-                        <HeartOutlined />
-                      )}
+                      {likesData[entry.id]?.userLiked ? <HeartFilled style={{ color: "red" }} /> : <HeartOutlined />}
                     </Button>
                     <Text>{likesData[entry.id]?.likesCount || 0} лайк(ів)</Text>
                   </Space>
@@ -323,22 +276,10 @@ const BlogPage = () => {
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {commentsData[entry.id]?.length ? (
                       commentsData[entry.id].map((comment) => (
-                        <Card
-                          key={comment.id}
-                          size="small"
-                          style={{
-                            backgroundColor: "#fafafa",
-                            border: "1px solid #eee",
-                            borderRadius: "6px",
-                          }}
-                        >
+                        <Card key={comment.id} size="small" style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <Text strong>
-                              {comment.authorName?.trim() || "Анонім"}
-                            </Text>
-                            <Text type="secondary" style={{ fontSize: "12px" }}>
-                              {new Date(comment.createdAt).toLocaleString("uk-UA")}
-                            </Text>
+                            <Text strong>{comment.authorName?.trim() || "Анонім"}</Text>
+                            <Text type="secondary" style={{ fontSize: "12px" }}>{new Date(comment.createdAt).toLocaleString("uk-UA")}</Text>
                           </div>
                           <Text>{comment.text}</Text>
                         </Card>
