@@ -177,33 +177,32 @@ const BlogPage = () => {
       message.error("Не вдалося виконати операцію.");
     }
   };
+const handleCommentSubmit = async (entry) => {
+  const comment = newComment[entry.id]?.trim();
+  if (!comment) return;
 
-  const handleCommentSubmit = async (entry) => {
-    const comment = newComment[entry.id]?.trim();
-    if (!comment || !userId) return;
+  try {
+    const token = getAuthToken();
 
-    try {
-      const token = getAuthToken();
-      const payload = {
-        entry_id: entry.id,
-        entry_type: entry.entryType,
-        comment: comment,
-        user_id: userId,
-      };
+    const payload = {
+      entry_id: entry.id,
+      entry_type: entry.entryType,
+      comment, // ✅ БЕЗ user_id
+    };
 
-      console.log("📤 Надсилаємо коментар:", payload);
+    console.log("📤 Надсилаємо коментар:", payload);
 
-      await axios.post(`${API_COMMENT_URL}/add`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    await axios.post(`${API_COMMENT_URL}/add`, payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
-      fetchComments(entry);
-    } catch (err) {
-      console.error("❌ Коментар — помилка:", err.response?.data || err.message);
-      message.error("Не вдалося додати коментар.");
-    }
-  };
+    setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
+    fetchComments(entry);
+  } catch (err) {
+    console.error("❌ Коментар — помилка:", err.response?.data || err.message);
+    message.error("Не вдалося додати коментар.");
+  }
+};
 
   const getTagColor = (type) => {
     switch (type) {
