@@ -56,7 +56,10 @@ const BlogPage = () => {
 
   const fetchLikes = useCallback(async (entry) => {
     try {
-      const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
+      const token = getAuthToken();
+      const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setLikesData((prev) => ({
         ...prev,
         [entry.id]: {
@@ -88,9 +91,10 @@ const BlogPage = () => {
 
   const fetchAllEntries = useCallback(async () => {
     try {
+      const token = getAuthToken();
       const [blogsRes, problemsRes] = await Promise.all([
         axios.get(`${API_BLOG_URL}/entries`, {
-          headers: { Authorization: `Bearer ${getAuthToken()}` },
+          headers: { Authorization: `Bearer ${token}` },
         }),
         axios.get(`${API_PROBLEMS_URL}`),
       ]);
@@ -314,9 +318,7 @@ const BlogPage = () => {
                         >
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <Text strong>
-                              {(comment.authorFirstName || comment.authorLastName)
-                                ? `${comment.authorFirstName || ""} ${comment.authorLastName || ""}`.trim()
-                                : "Анонім"}
+                              {(comment.authorName || "").trim() || "Анонім"}
                             </Text>
                             <Text type="secondary" style={{ fontSize: "12px" }}>
                               {new Date(comment.createdAt).toLocaleString("uk-UA")}
