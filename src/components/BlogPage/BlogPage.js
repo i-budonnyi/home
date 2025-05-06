@@ -200,33 +200,34 @@ const BlogPage = () => {
     }
   };
 
-  const handleCommentSubmit = async (entry) => {
-    const text = newComment[entry.id]?.trim();
-    if (!text) return;
-    try {
-      const token = getAuthToken();
-      if (!token) throw new Error("Токен не знайдено");
+ const handleCommentSubmit = async (entry) => {
+  const comment = newComment[entry.id]?.trim(); // ✅ зміна тут
+  if (!comment) return;
 
-      await axios.post(
-        `${API_COMMENT_URL}/add`,
-        {
-          entry_id: entry.id,
-          entry_type: entry.entryType,
-          text,
+  try {
+    const token = getAuthToken();
+    if (!token) throw new Error("Токен не знайдено");
+
+    await axios.post(
+      `${API_COMMENT_URL}/add`,
+      {
+        entry_id: entry.id,
+        entry_type: entry.entryType,
+        comment, // ✅ замість text
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
-      fetchComments(entry);
-    } catch (err) {
-      console.error("❌ Помилка додавання коментаря:", err);
-      message.error("Не вдалося додати коментар.");
-    }
-  };
+      }
+    );
+    setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
+    fetchComments(entry);
+  } catch (err) {
+    console.error("❌ Помилка додавання коментаря:", err);
+    message.error("Не вдалося додати коментар.");
+  }
+};
 
   const getTagColor = (type) => {
     switch (type) {
