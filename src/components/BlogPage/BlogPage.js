@@ -203,34 +203,54 @@ const BlogPage = () => {
     }
   };
 
-  const handleCommentSubmit = async (entry) => {
-    const comment = newComment[entry.id]?.trim();
-    if (!comment) return;
+ const handleCommentSubmit = async (entry) => {
+  const comment = newComment[entry.id]?.trim();
+  const entry_id = entry.id;
+  const entry_type = entry.entryType;
+  const token = getAuthToken();
 
-    try {
-      const token = getAuthToken();
-      if (!token) throw new Error("❌ Токен відсутній");
+  if (!comment || !entry_id || !entry_type || !token) {
+    console.error("❌ Відсутні обов'язкові поля", {
+      comment,
+      entry_id,
+      entry_type,
+      tokenPresent: Boolean(token),
+    });
+    message.error("Всі поля обов'язкові для додавання коментаря.");
+    return;
+  }
 
-      const response = await axios.post(
-        `${API_COMMENT_URL}/add`,
-        {
-          entry_id: entry.id,
-          entry_type: entry.entryType,
-          comment,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+  try {
+    const decoded = JSON.parse(atob(token.split(".")[1]));
+    const user_id = decoded?.user_id || decoded?.id;
 
-      console.log("✅ Відповідь на коментар:", response.data);
-      setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
-      fetchComments(entry);
-    } catch (err) {
-      console.error("❌ Коментар:", err.response?.data || err.message);
-      message.error("Не вдалося додати коментар.");
+    if (!user_id) {
+      console.error("❌ Не вдалося отримати user_id з токена.");
+      message.error("Помилка авторизації.");
+      return;
     }
-  };
+
+    const payload = { entry_id, entry_type, comment };
+
+    console.log("📤 Надсилаємо коментар:", payload);
+
+    const response = await axios.post(
+      `${API_COMMENT_URL}/add`,
+      payload,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    console.log("✅ Коментар додано:", response.data);
+    setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
+    fetchComments(entry);
+  } catch (err) {
+    console.error("❌ Коментар — помилка:", err.response?.data || err.message);
+    message.error("Не вдалося додати коментар.");
+  }
+};
+
 
   const getTagColor = (type) => {
     switch (type) {
