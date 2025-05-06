@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Layout, Card, Space, Typography, Skeleton, Button,
@@ -28,24 +27,9 @@ const BlogPage = () => {
   const [subscribedEntries, setSubscribedEntries] = useState({});
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
-  const [userId, setUserId] = useState(null);
   const [filteredType, setFilteredType] = useState("all");
 
   const getAuthToken = () => localStorage.getItem("token");
-
-  const fetchUserId = useCallback(() => {
-    try {
-      const token = getAuthToken();
-      if (!token) return;
-      const decoded = JSON.parse(atob(token.split(".")[1]));
-      const id = parseInt(decoded?.user_id || decoded?.id, 10);
-      if (!isNaN(id)) {
-        setUserId(id);
-      }
-    } catch (error) {
-      console.error("❌ ПОМИЛКА токена:", error.message);
-    }
-  }, []);
 
   const fetchLikes = useCallback(async (entry) => {
     try {
@@ -54,13 +38,13 @@ const BlogPage = () => {
         ...prev,
         [entry.id]: {
           likesCount: response.data.likesCount || 0,
-          userLiked: response.data.likedBy?.some((u) => u.user_id === userId),
+          userLiked: response.data.likedBy?.some((u) => u.user_id === response.data.currentUserId),
         },
       }));
     } catch (err) {
       console.error("❌ Лайки:", err.message);
     }
-  }, [userId]);
+  }, []);
 
   const fetchComments = useCallback(async (entry) => {
     try {
@@ -136,14 +120,10 @@ const BlogPage = () => {
     }
   }, []);
 
-  useEffect(() => { fetchUserId(); }, [fetchUserId]);
-
   useEffect(() => {
-    if (userId) {
-      fetchAllEntries();
-      fetchSubscriptions();
-    }
-  }, [userId, fetchAllEntries, fetchSubscriptions]);
+    fetchAllEntries();
+    fetchSubscriptions();
+  }, [fetchAllEntries, fetchSubscriptions]);
 
   const toggleLike = async (entry) => {
     try {
@@ -177,32 +157,32 @@ const BlogPage = () => {
       message.error("Не вдалося виконати операцію.");
     }
   };
-const handleCommentSubmit = async (entry) => {
-  const comment = newComment[entry.id]?.trim();
-  if (!comment) return;
 
-  try {
-    const token = getAuthToken();
+  const handleCommentSubmit = async (entry) => {
+    const comment = newComment[entry.id]?.trim();
+    if (!comment) return;
 
-    const payload = {
-      entry_id: entry.id,
-      entry_type: entry.entryType,
-      comment, // ✅ БЕЗ user_id
-    };
+    try {
+      const token = getAuthToken();
+      const payload = {
+        entry_id: entry.id,
+        entry_type: entry.entryType,
+        comment: comment,
+      };
 
-    console.log("📤 Надсилаємо коментар:", payload);
+      console.log("📤 Надсилаємо коментар:", payload);
 
-    await axios.post(`${API_COMMENT_URL}/add`, payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      await axios.post(`${API_COMMENT_URL}/add`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
-    fetchComments(entry);
-  } catch (err) {
-    console.error("❌ Коментар — помилка:", err.response?.data || err.message);
-    message.error("Не вдалося додати коментар.");
-  }
-};
+      setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
+      fetchComments(entry);
+    } catch (err) {
+      console.error("❌ Коментар — помилка:", err.response?.data || err.message);
+      message.error("Не вдалося додати коментар.");
+    }
+  };
 
   const getTagColor = (type) => {
     switch (type) {
