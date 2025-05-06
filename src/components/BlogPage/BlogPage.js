@@ -193,11 +193,23 @@ const BlogPage = () => {
     const text = newComment[entry.id]?.trim();
     if (!text) return;
     try {
-      await axios.post(`${API_COMMENT_URL}/add`, {
-        entry_id: entry.id,
-        entry_type: entry.entryType,
-        text,
-      });
+      const token = getAuthToken();
+      if (!token) throw new Error("Токен не знайдено");
+
+      await axios.post(
+        `${API_COMMENT_URL}/add`,
+        {
+          entry_id: entry.id,
+          entry_type: entry.entryType,
+          text,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
     } catch (err) {
