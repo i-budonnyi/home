@@ -230,7 +230,7 @@ const BlogPage = () => {
       return;
     }
 
-    const payload = { entry_id, entry_type, comment, user_id }; // 🟢 ДОДАНО user_id
+    const payload = { entry_id, entry_type, comment, user_id }; // ⬅️ додаємо user_id
 
     console.log("📤 Надсилаємо коментар:", payload);
 
@@ -246,6 +246,7 @@ const BlogPage = () => {
     message.error("Не вдалося додати коментар.");
   }
 };
+
 
   const getTagColor = (type) => {
     switch (type) {
