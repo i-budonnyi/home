@@ -314,9 +314,7 @@ const BlogPage = () => {
                         >
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <Text strong>
-                              {(comment.authorFirstName || comment.authorLastName)
-                                ? `${comment.authorFirstName || ""} ${comment.authorLastName || ""}`.trim()
-                                : "Анонім"}
+                              {comment.authorName?.trim() || "Анонім"}
                             </Text>
                             <Text type="secondary" style={{ fontSize: "12px" }}>
                               {new Date(comment.createdAt).toLocaleString("uk-UA")}
