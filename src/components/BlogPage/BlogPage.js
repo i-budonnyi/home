@@ -77,11 +77,12 @@ const BlogPage = () => {
 
   const fetchAllEntries = useCallback(async () => {
     try {
+      const token = getAuthToken();
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
       const [blogsRes, problemsRes] = await Promise.all([
-        axios.get(`${API_BLOG_URL}/entries`, {
-          headers: { Authorization: `Bearer ${getAuthToken()}` },
-        }),
-        axios.get(`${API_PROBLEMS_URL}`),
+        axios.get(`${API_BLOG_URL}/entries`, { headers }),
+        axios.get(`${API_PROBLEMS_URL}`, { headers }),
       ]);
 
       const blogs = blogsRes.data?.blogs?.map((b) => ({
@@ -187,7 +188,7 @@ const BlogPage = () => {
         entry_id: entry.id,
         entry_type: entry.entryType,
         comment,
-        user_id: userId, // передається явно, бо бекенд вимагає всі 4 поля
+        user_id: userId,
       };
 
       console.log("📤 Надсилаємо коментар:", payload);
