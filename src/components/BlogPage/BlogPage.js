@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Layout, Card, Space, Typography, Skeleton, Button,
@@ -37,8 +38,10 @@ const BlogPage = () => {
       const token = getAuthToken();
       if (!token) return;
       const decoded = JSON.parse(atob(token.split(".")[1]));
-      const id = decoded?.user_id || decoded?.id;
-      setUserId(id);
+      const id = parseInt(decoded?.user_id || decoded?.id, 10);
+      if (!isNaN(id)) {
+        setUserId(id);
+      }
     } catch (error) {
       console.error("❌ ПОМИЛКА токена:", error.message);
     }
