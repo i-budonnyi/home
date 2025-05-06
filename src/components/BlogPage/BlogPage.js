@@ -54,27 +54,25 @@ const BlogPage = () => {
     }
   }, []);
 
-  const fetchLikes = useCallback(
-    async (entry) => {
-      try {
-        const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
-        setLikesData((prev) => ({
-          ...prev,
-          [entry.id]: {
-            likesCount: response.data.likesCount || 0,
-            userLiked: response.data.likedBy?.some((user) => user.user_id === userId),
-          },
-        }));
-      } catch (err) {
-        console.error(`❌ Помилка отримання лайків:`, err);
-      }
-    },
-    [userId]
-  );
+  const fetchLikes = useCallback(async (entry) => {
+    try {
+      const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
+      setLikesData((prev) => ({
+        ...prev,
+        [entry.id]: {
+          likesCount: response.data.likesCount || 0,
+          userLiked: response.data.likedBy?.some((user) => user.user_id === userId),
+        },
+      }));
+    } catch (err) {
+      console.error(`❌ Помилка отримання лайків:`, err);
+    }
+  }, [userId]);
 
   const fetchComments = useCallback(async (entry) => {
     try {
       const token = getAuthToken();
+      if (!token) return;
       const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -91,7 +89,9 @@ const BlogPage = () => {
   const fetchAllEntries = useCallback(async () => {
     try {
       const [blogsRes, problemsRes] = await Promise.all([
-        axios.get(`${API_BLOG_URL}/entries`),
+        axios.get(`${API_BLOG_URL}/entries`, {
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
+        }),
         axios.get(`${API_PROBLEMS_URL}`),
       ]);
 
@@ -131,7 +131,11 @@ const BlogPage = () => {
 
   const fetchSubscriptions = useCallback(async () => {
     try {
-      const response = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`);
+      const token = getAuthToken();
+      if (!token) return;
+      const response = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const subscriptions = response.data.subscriptions.reduce((acc, sub) => {
         acc[sub.blog_id || sub.idea_id || sub.problem_id] = true;
         return acc;
@@ -155,12 +159,19 @@ const BlogPage = () => {
 
   const toggleLike = async (entry) => {
     try {
-      if (!entry.id || !entry.entryType) return;
-      const response = await axios.post(`${API_LIKE_URL}/toggle-like`, {
-        entry_id: entry.id,
-        entry_type: entry.entryType,
-      });
-      if (response.status === 200 || response.status === 201) fetchLikes(entry);
+      const token = getAuthToken();
+      if (!token) throw new Error("❌ Токен відсутній");
+      await axios.post(
+        `${API_LIKE_URL}/toggle-like`,
+        {
+          entry_id: entry.id,
+          entry_type: entry.entryType,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      fetchLikes(entry);
     } catch (err) {
       console.error(`❌ Помилка лайкування:`, err);
       message.error("Не вдалося змінити лайк.");
@@ -169,20 +180,20 @@ const BlogPage = () => {
 
   const handleSubscribe = async (entry) => {
     try {
+      const token = getAuthToken();
+      if (!token) throw new Error("❌ Токен відсутній");
       const isSubscribed = subscribedEntries[entry.id];
       const response = await axios({
         method: isSubscribed ? "delete" : "post",
         url: `${API_SUBSCRIBE_URL}/${isSubscribed ? "unsubscribe" : "subscribe"}`,
         data: { entry_id: entry.id, entry_type: entry.entryType },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (response.status === 200 || response.status === 201) {
-        setSubscribedEntries((prev) => ({
-          ...prev,
-          [entry.id]: !isSubscribed,
-        }));
-        message.success(response.data.message);
-      }
+      setSubscribedEntries((prev) => ({
+        ...prev,
+        [entry.id]: !isSubscribed,
+      }));
+      message.success(response.data.message);
     } catch (err) {
       console.error("❌ Помилка підписки/відписки:", err);
       message.error("Не вдалося виконати операцію.");
@@ -209,7 +220,6 @@ const BlogPage = () => {
           },
         }
       );
-
       setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
     } catch (err) {
