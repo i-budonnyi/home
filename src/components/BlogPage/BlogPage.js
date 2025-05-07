@@ -19,7 +19,6 @@ const API_PROBLEMS_URL = `${API_BASE}/problems`;
 const API_LIKE_URL = `${API_BASE}/likeRoutes`;
 const API_COMMENT_URL = `${API_BASE}/commentRoutes`;
 const API_SUBSCRIBE_URL = `${API_BASE}/subscriptionRoutes`;
-const API_USER_URL = `${API_BASE}/users/profile`;
 
 const BlogPage = () => {
   const [entries, setEntries] = useState([]);
