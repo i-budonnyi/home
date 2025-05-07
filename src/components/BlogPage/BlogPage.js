@@ -28,7 +28,6 @@ const BlogPage = () => {
   const [subscribedEntries, setSubscribedEntries] = useState({});
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
-  const [currentUserName, setCurrentUserName] = useState("Користувач");
   const [filteredType, setFilteredType] = useState("all");
 
   const getAuthToken = () => localStorage.getItem("token");
@@ -37,16 +36,11 @@ const BlogPage = () => {
     try {
       const token = getAuthToken();
       if (!token) return;
-      const response = await axios.get(API_USER_URL, {
+      await axios.get(API_USER_URL, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const { first_name, last_name, email } = response.data || {};
-      const rawName = `${first_name || ""} ${last_name || ""}`.trim();
-      const fullName = rawName || email || "Користувач";
-      setCurrentUserName(fullName);
     } catch (err) {
-      console.warn("⚠️ Неможливо отримати ім’я користувача:", err.message);
-      setCurrentUserName("Користувач");
+      console.warn("⚠️ Не вдалося підтягнути користувача:", err.message);
     }
   }, []);
 
@@ -92,19 +86,19 @@ const BlogPage = () => {
       const blogs = blogsRes.data?.blogs?.map((b) => ({
         ...b,
         entryType: "blog",
-        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author_email || "Невідомий",
+        authorname: getFormattedAuthor(b),
       })) || [];
 
       const ideas = blogsRes.data?.ideas?.map((i) => ({
         ...i,
         entryType: "idea",
-        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author_email || "Невідомий",
+        authorname: getFormattedAuthor(i),
       })) || [];
 
       const problems = problemsRes.data?.map((p) => ({
         ...p,
         entryType: "problem",
-        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author || "Невідомий",
+        authorname: getFormattedAuthor(p),
       })) || [];
 
       const allEntries = [...blogs, ...ideas, ...problems].sort(
@@ -122,6 +116,14 @@ const BlogPage = () => {
       setIsLoading(false);
     }
   }, [fetchLikes, fetchComments]);
+
+  const getFormattedAuthor = (data) => {
+    const rawName = `${data.author_first_name || ""} ${data.author_last_name || ""}`.trim();
+    if (rawName) return rawName + ".";
+    if (data.author_email) return data.author_email + ".";
+    if (data.author) return data.author + ".";
+    return "Невідомий.";
+  };
 
   const fetchSubscriptions = useCallback(async () => {
     try {
@@ -219,22 +221,17 @@ const BlogPage = () => {
         <Skeleton active />
       ) : (
         <>
-          <div style={{ marginBottom: "20px", textAlign: "center" }}>
-            <Title level={5}>
-              Фільтрувати за типом (користувач: {currentUserName}):
-            </Title>
-            <Space>
-              {["all", "blog", "idea", "problem"].map((type) => (
-                <Button
-                  key={type}
-                  type={filteredType === type ? "primary" : "default"}
-                  onClick={() => setFilteredType(type)}
-                >
-                  {type === "all" ? "Усі" : type.charAt(0).toUpperCase() + type.slice(1)}
-                </Button>
-              ))}
-            </Space>
-          </div>
+          <Space style={{ marginBottom: "20px", justifyContent: "center", display: "flex" }}>
+            {["all", "blog", "idea", "problem"].map((type) => (
+              <Button
+                key={type}
+                type={filteredType === type ? "primary" : "default"}
+                onClick={() => setFilteredType(type)}
+              >
+                {type === "all" ? "Усі" : type.charAt(0).toUpperCase() + type.slice(1)}
+              </Button>
+            ))}
+          </Space>
 
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
             {filteredEntries.map((entry) => (
@@ -273,8 +270,7 @@ const BlogPage = () => {
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {commentsData[entry.id]?.length ? (
                       commentsData[entry.id].map((comment) => {
-                        const rawName = `${comment.author_first_name || ""} ${comment.author_last_name || ""}`.trim();
-                        const name = rawName || comment.author_email || "Невідомий";
+                        const name = getFormattedAuthor(comment);
                         return (
                           <Card key={comment.id} size="small" style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}>
                             <div style={{ display: "flex", justifyContent: "space-between" }}>
