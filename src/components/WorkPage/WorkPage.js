@@ -10,7 +10,7 @@ import {
   Dropdown,
   Badge,
   List,
-  Button as AntButton
+  Button as AntButton,
 } from "antd";
 import {
   MessageOutlined,
@@ -21,7 +21,7 @@ import {
   PhoneOutlined,
   MailOutlined,
   UserOutlined,
-  BellOutlined
+  BellOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 
@@ -99,10 +99,12 @@ const WorkerPage = () => {
 
   const markAllAsRead = async () => {
     try {
-      const unread = notifications.filter(n => !n.is_read);
-      await Promise.all(unread.map(n =>
-        axios.patch(`https://backend-avtologistika.onrender.com/api/notifications/${n.id}/read`)
-      ));
+      const unread = notifications.filter((n) => !n.is_read);
+      await Promise.all(
+        unread.map((n) =>
+          axios.patch(`https://backend-avtologistika.onrender.com/api/notifications/${n.id}/read`)
+        )
+      );
       fetchNotifications();
     } catch (err) {
       console.error("❌ markAllAsRead:", err.message);
@@ -129,11 +131,7 @@ const WorkerPage = () => {
             { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
             { key: "/submit-problem", icon: <FileTextOutlined />, label: "Подати проблему" },
             { key: "/my-problems", icon: <ProjectOutlined />, label: "Мої проблеми" },
-            {
-              key: "/projects",
-              icon: <span><ProjectOutlined /> <span style={{ marginLeft: 4 }}>Мої подані ідеї</span> <span style={{ marginLeft: 4, fontSize: "14px" }}>🔔</span></span>,
-              label: ""
-            },
+            { key: "/projects", icon: <ProjectOutlined />, label: "Мої подані ідеї" },
             { key: "/subscriptions", icon: <StarOutlined />, label: "Підписка" },
           ]}
           style={styles.menu}
@@ -142,7 +140,7 @@ const WorkerPage = () => {
 
       <Layout style={{ marginLeft: 250 }}>
         <Content style={styles.content}>
-          <div style={{ position: "fixed", top: 20, right: 20, zIndex: 2000 }}>
+          <div style={styles.notificationIconWrapper}>
             <Dropdown
               trigger={["click"]}
               overlayStyle={{ width: 300 }}
@@ -152,7 +150,7 @@ const WorkerPage = () => {
                     dataSource={notifications}
                     loading={loadingNotifications}
                     locale={{ emptyText: "Немає сповіщень" }}
-                    renderItem={item => (
+                    renderItem={(item) => (
                       <List.Item style={{ opacity: item.is_read ? 0.6 : 1 }}>
                         <Text>{item.message}</Text>
                       </List.Item>
@@ -168,7 +166,7 @@ const WorkerPage = () => {
                 </div>
               )}
             >
-              <Badge count={notifications.filter(n => !n.is_read).length}>
+              <Badge count={notifications.filter((n) => !n.is_read).length}>
                 <BellOutlined style={{ fontSize: 24, color: "#1890ff", cursor: "pointer" }} />
               </Badge>
             </Dropdown>
@@ -250,6 +248,7 @@ const styles = {
     paddingRight: "50px",
     background: "#f4f6f9",
     minHeight: "100vh",
+    position: "relative",
   },
   card: {
     borderRadius: "16px",
@@ -262,6 +261,12 @@ const styles = {
   icon: {
     marginRight: "8px",
     color: "#1890ff",
+  },
+  notificationIconWrapper: {
+    position: "fixed",
+    bottom: 20,
+    right: 20,
+    zIndex: 2000,
   },
 };
 
