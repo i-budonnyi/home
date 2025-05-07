@@ -39,16 +39,17 @@ const LoginPage = () => {
       setUser(data.user);
 
       const redirects = {
-        user: "/workpage",
+        user: "/worker", // 🔁 user перенаправляється на worker
+        worker: "/worker",
         project_manager: "/pm-projects",
         ambassador: "/ambassadors",
         jury_secretary: "/jury-secretary",
         jury_member: "/jury",
-        worker: "/worker",
       };
 
       const role = data.user?.role;
-      navigate(role && redirects[role] ? redirects[role] : "/workpage");
+      const redirectPath = redirects[role] || "/worker"; // default fallback
+      navigate(redirectPath);
     } catch (err) {
       console.error("[LOGIN ERROR]:", err);
       setError(err.message || "Невідома помилка");
