@@ -32,27 +32,15 @@ const BlogPage = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  const fetchCurrentUser = useCallback(async () => {
-    try {
-      const token = getAuthToken();
-      if (!token) return;
-      await axios.get(API_USER_URL, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } catch (err) {
-      console.warn("⚠️ Не вдалося підтягнути користувача:", err.message);
-    }
-  }, []);
-
   const fetchLikes = useCallback(async (entry) => {
     try {
-      const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
-      setLikesData((prev) => ({
+      const res = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
+      setLikesData(prev => ({
         ...prev,
         [entry.id]: {
-          likesCount: response.data.likesCount || 0,
-          userLiked: response.data.likedBy?.some((u) => u.user_id === response.data.currentUserId),
-        },
+          likesCount: res.data.likesCount || 0,
+          userLiked: res.data.likedBy?.some(u => u.user_id === res.data.currentUserId),
+        }
       }));
     } catch (err) {
       console.error("❌ Лайки:", err.message);
@@ -62,12 +50,12 @@ const BlogPage = () => {
   const fetchComments = useCallback(async (entry) => {
     try {
       const token = getAuthToken();
-      const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setCommentsData((prev) => ({
+      setCommentsData(prev => ({
         ...prev,
-        [entry.id]: response.data.comments || [],
+        [entry.id]: res.data.comments || []
       }));
     } catch (err) {
       console.error("❌ Коментарі:", err.message);
@@ -80,25 +68,25 @@ const BlogPage = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
       const [blogsRes, problemsRes] = await Promise.all([
         axios.get(`${API_BLOG_URL}/entries`, { headers }),
-        axios.get(`${API_PROBLEMS_URL}`, { headers }),
+        axios.get(`${API_PROBLEMS_URL}`, { headers })
       ]);
 
       const blogs = blogsRes.data?.blogs?.map((b) => ({
         ...b,
         entryType: "blog",
-        authorname: getFormattedAuthor(b),
+        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author_email || "Невідомий"
       })) || [];
 
       const ideas = blogsRes.data?.ideas?.map((i) => ({
         ...i,
         entryType: "idea",
-        authorname: getFormattedAuthor(i),
+        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author_email || "Невідомий"
       })) || [];
 
       const problems = problemsRes.data?.map((p) => ({
         ...p,
         entryType: "problem",
-        authorname: getFormattedAuthor(p),
+        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author_email || "Невідомий"
       })) || [];
 
       const allEntries = [...blogs, ...ideas, ...problems].sort(
@@ -117,47 +105,38 @@ const BlogPage = () => {
     }
   }, [fetchLikes, fetchComments]);
 
-  const getFormattedAuthor = (data) => {
-    const rawName = `${data.author_first_name || ""} ${data.author_last_name || ""}`.trim();
-    if (rawName) return rawName + ".";
-    if (data.author_email) return data.author_email + ".";
-    if (data.author) return data.author + ".";
-    return "Невідомий.";
-  };
-
   const fetchSubscriptions = useCallback(async () => {
     try {
       const token = getAuthToken();
-      const response = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      const subscriptions = response.data.subscriptions.reduce((acc, sub) => {
+      const map = res.data.subscriptions.reduce((acc, sub) => {
         acc[sub.blog_id || sub.idea_id || sub.problem_id] = true;
         return acc;
       }, {});
-      setSubscribedEntries(subscriptions);
+      setSubscribedEntries(map);
     } catch (err) {
       console.error("❌ Підписки:", err.message);
     }
   }, []);
 
   useEffect(() => {
-    fetchCurrentUser();
     fetchAllEntries();
     fetchSubscriptions();
-  }, [fetchCurrentUser, fetchAllEntries, fetchSubscriptions]);
+  }, [fetchAllEntries, fetchSubscriptions]);
 
   const toggleLike = async (entry) => {
     try {
       const token = getAuthToken();
-      await axios.post(
-        `${API_LIKE_URL}/toggle-like`,
-        { entry_id: entry.id, entry_type: entry.entryType },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.post(`${API_LIKE_URL}/toggle-like`, {
+        entry_id: entry.id,
+        entry_type: entry.entryType
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       fetchLikes(entry);
     } catch (err) {
-      console.error("❌ Лайк:", err.message);
       message.error("Не вдалося змінити лайк.");
     }
   };
@@ -165,17 +144,18 @@ const BlogPage = () => {
   const handleSubscribe = async (entry) => {
     try {
       const token = getAuthToken();
-      const isSubscribed = subscribedEntries[entry.id];
-      const response = await axios({
-        method: isSubscribed ? "delete" : "post",
-        url: `${API_SUBSCRIBE_URL}/${isSubscribed ? "unsubscribe" : "subscribe"}`,
+      const isSub = subscribedEntries[entry.id];
+      const method = isSub ? "delete" : "post";
+      const url = `${API_SUBSCRIBE_URL}/${isSub ? "unsubscribe" : "subscribe"}`;
+      const res = await axios({
+        method,
+        url,
         data: { entry_id: entry.id, entry_type: entry.entryType },
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setSubscribedEntries((prev) => ({ ...prev, [entry.id]: !isSubscribed }));
-      message.success(response.data.message);
+      setSubscribedEntries(prev => ({ ...prev, [entry.id]: !isSub }));
+      message.success(res.data.message);
     } catch (err) {
-      console.error("❌ Підписка:", err.message);
       message.error("Не вдалося виконати операцію.");
     }
   };
@@ -189,15 +169,13 @@ const BlogPage = () => {
       await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
         entry_type: entry.entryType,
-        comment: comment,
+        comment
       }, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
+      setNewComment(prev => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
     } catch (err) {
-      console.error("❌ Коментар — помилка:", err.response?.data || err.message);
       message.error("Не вдалося додати коментар.");
     }
   };
@@ -213,30 +191,30 @@ const BlogPage = () => {
 
   const filteredEntries = filteredType === "all"
     ? entries
-    : entries.filter((e) => e.entryType === filteredType);
+    : entries.filter(e => e.entryType === filteredType);
 
   return (
     <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
-      {isLoading ? (
-        <Skeleton active />
-      ) : (
+      {isLoading ? <Skeleton active /> : (
         <>
-          <Space style={{ marginBottom: "20px", justifyContent: "center", display: "flex" }}>
-            {["all", "blog", "idea", "problem"].map((type) => (
-              <Button
-                key={type}
-                type={filteredType === type ? "primary" : "default"}
-                onClick={() => setFilteredType(type)}
-              >
-                {type === "all" ? "Усі" : type.charAt(0).toUpperCase() + type.slice(1)}
-              </Button>
-            ))}
-          </Space>
+          <div style={{ marginBottom: 20, textAlign: "center" }}>
+            <Space>
+              {["all", "blog", "idea", "problem"].map((type) => (
+                <Button
+                  key={type}
+                  type={filteredType === type ? "primary" : "default"}
+                  onClick={() => setFilteredType(type)}
+                >
+                  {type === "all" ? "Усі" : type.charAt(0).toUpperCase() + type.slice(1)}
+                </Button>
+              ))}
+            </Space>
+          </div>
 
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            {filteredEntries.map((entry) => (
+            {filteredEntries.map(entry => (
               <Card key={entry.id} hoverable style={{ borderRadius: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <Title level={4} style={{ margin: 0 }}>{entry.title}</Title>
                   <Button
                     type="primary"
@@ -270,15 +248,14 @@ const BlogPage = () => {
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {commentsData[entry.id]?.length ? (
                       commentsData[entry.id].map((comment) => {
-                        const name = getFormattedAuthor(comment);
+                        const fullName = `${comment.author_first_name || ""} ${comment.author_last_name || ""}`.trim();
+                        const displayName = fullName ? `${fullName}.` : (comment.author_email || "Невідомий.");
                         return (
                           <Card key={comment.id} size="small" style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}>
                             <div style={{ display: "flex", justifyContent: "space-between" }}>
-                              <Text strong>{name}</Text>
-                              <Text type="secondary" style={{ fontSize: "12px" }}>
-                                {!comment.createdAt || isNaN(Date.parse(comment.createdAt))
-                                  ? "Невідома дата"
-                                  : new Date(comment.createdAt).toLocaleString("uk-UA")}
+                              <Text strong>{displayName}</Text>
+                              <Text type="secondary" style={{ fontSize: 12 }}>
+                                {comment.createdAt ? new Date(comment.createdAt).toLocaleString("uk-UA") : "Невідома дата"}
                               </Text>
                             </div>
                             <Text>{comment.text}</Text>
@@ -297,7 +274,7 @@ const BlogPage = () => {
                       value={newComment[entry.id] || ""}
                       onChange={(e) => setNewComment({ ...newComment, [entry.id]: e.target.value })}
                       placeholder="Напишіть коментар..."
-                      style={{ marginTop: "8px", marginBottom: "8px" }}
+                      style={{ marginTop: 8, marginBottom: 8 }}
                     />
                     <Button
                       type="primary"
