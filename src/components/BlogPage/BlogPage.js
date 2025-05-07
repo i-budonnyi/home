@@ -33,7 +33,7 @@ const BlogPage = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUser = useCallback(async () => {
     try {
       const token = getAuthToken();
       if (!token) return;
@@ -46,7 +46,7 @@ const BlogPage = () => {
     } catch (err) {
       console.error("❌ Поточний користувач:", err.message);
     }
-  };
+  }, []);
 
   const fetchLikes = useCallback(async (entry) => {
     try {
@@ -141,7 +141,7 @@ const BlogPage = () => {
     fetchCurrentUser();
     fetchAllEntries();
     fetchSubscriptions();
-  }, [fetchAllEntries, fetchSubscriptions]);
+  }, [fetchCurrentUser, fetchAllEntries, fetchSubscriptions]);
 
   const toggleLike = async (entry) => {
     try {
@@ -220,7 +220,9 @@ const BlogPage = () => {
       ) : (
         <>
           <div style={{ marginBottom: "20px", textAlign: "center" }}>
-            <Title level={5}>Фільтрувати за типом:</Title>
+            <Title level={5}>
+              Фільтрувати за типом (користувач: {currentUserName}):
+            </Title>
             <Space>
               {["all", "blog", "idea", "problem"].map((type) => (
                 <Button
