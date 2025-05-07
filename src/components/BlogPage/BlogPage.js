@@ -41,10 +41,13 @@ const BlogPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const { first_name, last_name, email } = response.data || {};
-      const fullName = `${first_name || ""} ${last_name || ""}`.trim() || email || "Користувач";
+      const fullName = (first_name || last_name)
+        ? `${first_name || ""} ${last_name || ""}`.trim()
+        : email || "Користувач";
       setCurrentUserName(fullName);
     } catch (err) {
-      console.error("❌ Поточний користувач:", err.message);
+      console.warn("⚠️ Неможливо отримати ім’я користувача:", err.message);
+      setCurrentUserName("Користувач");
     }
   }, []);
 
@@ -270,19 +273,24 @@ const BlogPage = () => {
                   <Title level={5}>Коментарі:</Title>
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {commentsData[entry.id]?.length ? (
-                      commentsData[entry.id].map((comment) => (
-                        <Card key={comment.id} size="small" style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <Text strong>{`${comment.author_first_name || ""} ${comment.author_last_name || ""}`.trim() || "Невідомий"}</Text>
-                            <Text type="secondary" style={{ fontSize: "12px" }}>
-                              {!comment.createdAt || isNaN(Date.parse(comment.createdAt))
-                                ? "Невідома дата"
-                                : new Date(comment.createdAt).toLocaleString("uk-UA")}
-                            </Text>
-                          </div>
-                          <Text>{comment.text}</Text>
-                        </Card>
-                      ))
+                      commentsData[entry.id].map((comment) => {
+                        const name = (comment.author_first_name || comment.author_last_name)
+                          ? `${comment.author_first_name || ""} ${comment.author_last_name || ""}`.trim()
+                          : comment.author_email || "Невідомий";
+                        return (
+                          <Card key={comment.id} size="small" style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                              <Text strong>{name}</Text>
+                              <Text type="secondary" style={{ fontSize: "12px" }}>
+                                {!comment.createdAt || isNaN(Date.parse(comment.createdAt))
+                                  ? "Невідома дата"
+                                  : new Date(comment.createdAt).toLocaleString("uk-UA")}
+                              </Text>
+                            </div>
+                            <Text>{comment.text}</Text>
+                          </Card>
+                        );
+                      })
                     ) : (
                       <Text type="secondary">Коментарів ще немає.</Text>
                     )}
