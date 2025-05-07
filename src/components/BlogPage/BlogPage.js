@@ -196,7 +196,7 @@ const BlogPage = () => {
     <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
       <div style={{ marginBottom: "20px" }}>
         <Button type="default" href="/worker" style={{ backgroundColor: "#e6f7ff", borderColor: "#91d5ff" }}>
-          💡 Повернутись на Worker
+          💡 Повернутись на головну 
         </Button>
       </div>
 
