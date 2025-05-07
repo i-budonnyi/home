@@ -66,7 +66,7 @@ const BlogPage = () => {
   const fetchComments = useCallback(async (entry) => {
     try {
       const token = getAuthToken();
-      const response = await axios.get(`${API_COMMENT_URL}/entry/${entry.id}`, {
+      const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCommentsData((prev) => ({
@@ -182,13 +182,11 @@ const BlogPage = () => {
 
     try {
       const token = getAuthToken();
-      const payload = {
+      await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
         entry_type: entry.entryType,
         comment: comment,
-      };
-
-      await axios.post(`${API_COMMENT_URL}/add`, payload, {
+      }, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -275,9 +273,7 @@ const BlogPage = () => {
                       commentsData[entry.id].map((comment) => (
                         <Card key={comment.id} size="small" style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <Text strong>
-                              {`${comment.author_first_name || ""} ${comment.author_last_name || ""}`.trim() || comment.author_email || "Невідомий"}
-                            </Text>
+                            <Text strong>{`${comment.author_first_name || ""} ${comment.author_last_name || ""}`.trim() || "Невідомий"}</Text>
                             <Text type="secondary" style={{ fontSize: "12px" }}>
                               {!comment.createdAt || isNaN(Date.parse(comment.createdAt))
                                 ? "Невідома дата"
