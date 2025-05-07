@@ -7,6 +7,10 @@ import {
   Avatar,
   Typography,
   Space,
+  Dropdown,
+  Badge,
+  List,
+  Button as AntButton
 } from "antd";
 import {
   MessageOutlined,
@@ -17,7 +21,8 @@ import {
   PhoneOutlined,
   MailOutlined,
   UserOutlined,
-  } from "@ant-design/icons"; // Ant Design icon
+  BellOutlined
+} from "@ant-design/icons";
 import axios from "axios";
 
 const { Content, Sider } = Layout;
@@ -29,6 +34,8 @@ const WorkerPage = () => {
   const [userData, setUserData] = useState(null);
   const [isCheckingRole, setIsCheckingRole] = useState(true);
   const [error, setError] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -77,6 +84,35 @@ const WorkerPage = () => {
     }
   }, [isCheckingRole, error, userData?.role, navigate]);
 
+  const fetchNotifications = async () => {
+    if (!userData?.id) return;
+    try {
+      setLoadingNotifications(true);
+      const res = await axios.get(`https://backend-avtologistika.onrender.com/api/notifications/${userData.id}`);
+      setNotifications(res.data || []);
+    } catch (err) {
+      console.error("❌ Сповіщення:", err.message);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const unread = notifications.filter(n => !n.is_read);
+      await Promise.all(unread.map(n =>
+        axios.patch(`https://backend-avtologistika.onrender.com/api/notifications/${n.id}/read`)
+      ));
+      fetchNotifications();
+    } catch (err) {
+      console.error("❌ markAllAsRead:", err.message);
+    }
+  };
+
+  useEffect(() => {
+    if (userData?.id) fetchNotifications();
+  }, [userData]);
+
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <Sider width={250} style={styles.sider}>
@@ -106,6 +142,38 @@ const WorkerPage = () => {
 
       <Layout style={{ marginLeft: 250 }}>
         <Content style={styles.content}>
+          <div style={{ position: "fixed", top: 20, right: 20, zIndex: 2000 }}>
+            <Dropdown
+              trigger={["click"]}
+              overlayStyle={{ width: 300 }}
+              dropdownRender={() => (
+                <div style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 8, padding: 10 }}>
+                  <List
+                    dataSource={notifications}
+                    loading={loadingNotifications}
+                    locale={{ emptyText: "Немає сповіщень" }}
+                    renderItem={item => (
+                      <List.Item style={{ opacity: item.is_read ? 0.6 : 1 }}>
+                        <Text>{item.message}</Text>
+                      </List.Item>
+                    )}
+                  />
+                  {notifications.length > 0 && (
+                    <div style={{ marginTop: 10, textAlign: "center" }}>
+                      <AntButton type="link" onClick={markAllAsRead}>
+                        Позначити всі як прочитані
+                      </AntButton>
+                    </div>
+                  )}
+                </div>
+              )}
+            >
+              <Badge count={notifications.filter(n => !n.is_read).length}>
+                <BellOutlined style={{ fontSize: 24, color: "#1890ff", cursor: "pointer" }} />
+              </Badge>
+            </Dropdown>
+          </div>
+
           {isCheckingRole ? (
             <Title level={3}>⏳ Завантаження...</Title>
           ) : error ? (
