@@ -12,13 +12,13 @@ import {
   MessageOutlined,
   BulbOutlined,
   FileTextOutlined,
-  AppstoreOutlined,
   ProjectOutlined,
   StarOutlined,
   PhoneOutlined,
   MailOutlined,
   UserOutlined,
-} from "@ant-design/icons";
+  BellOutlined,
+} from "@ant-design/icons"; // Ant Design icon
 import axios from "axios";
 
 const { Content, Sider } = Layout;
@@ -93,10 +93,13 @@ const WorkerPage = () => {
             { key: "/blog", icon: <MessageOutlined />, label: "Блог" },
             { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
             { key: "/submit-problem", icon: <FileTextOutlined />, label: "Подати проблему" },
-            { key: "/my-ideas", icon: <AppstoreOutlined />, label: "Мої ідеї" },
             { key: "/my-problems", icon: <ProjectOutlined />, label: "Мої проблеми" },
+            {
+              key: "/projects",
+              icon: <span><ProjectOutlined /> <span style={{ marginLeft: 4 }}>Мої подані ідеї</span> <span style={{ marginLeft: 4, fontSize: "14px" }}>🔔</span></span>,
+              label: ""
+            },
             { key: "/subscriptions", icon: <StarOutlined />, label: "Підписка" },
-            { key: "/projects", icon: <ProjectOutlined />, label: "Мої подані ідеї" },
           ]}
           style={styles.menu}
         />
