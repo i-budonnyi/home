@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout,
@@ -84,7 +84,7 @@ const WorkerPage = () => {
     }
   }, [isCheckingRole, error, userData?.role, navigate]);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!userData?.id) return;
     try {
       setLoadingNotifications(true);
@@ -95,7 +95,7 @@ const WorkerPage = () => {
     } finally {
       setLoadingNotifications(false);
     }
-  };
+  }, [userData?.id]);
 
   const markAllAsRead = async () => {
     try {
@@ -113,7 +113,7 @@ const WorkerPage = () => {
 
   useEffect(() => {
     if (userData?.id) fetchNotifications();
-  }, [userData]);
+  }, [userData, fetchNotifications]);
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
