@@ -24,7 +24,6 @@ import axios from "axios";
 const { Content, Sider } = Layout;
 const { Title, Text } = Typography;
 
-// 🔥 Правильна адреса бекенду
 const API_BASE_URL = "https://backend-avtologistika.onrender.com/api/userRoutes";
 
 const WorkerPage = () => {
@@ -67,18 +66,17 @@ const WorkerPage = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (!isCheckingRole && userData?.role) {
+    if (!isCheckingRole && !error && userData?.role) {
       const redirects = {
         project_manager: "/pm-projects",
         ambassador: "/ambassadors",
         jury_secretary: "/jury-secretary",
         jury_member: "/jury",
       };
-      if (redirects[userData.role]) {
-        navigate(redirects[userData.role], { replace: true });
-      }
+      const targetPath = redirects[userData.role];
+      if (targetPath) navigate(targetPath, { replace: true });
     }
-  }, [isCheckingRole, userData?.role, navigate]);
+  }, [isCheckingRole, error, userData?.role, navigate]);
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
