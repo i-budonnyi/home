@@ -17,8 +17,7 @@ import {
   PhoneOutlined,
   MailOutlined,
   UserOutlined,
-  BellOutlined,
-} from "@ant-design/icons"; // Ant Design icon
+  } from "@ant-design/icons"; // Ant Design icon
 import axios from "axios";
 
 const { Content, Sider } = Layout;
