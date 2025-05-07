@@ -275,7 +275,9 @@ const BlogPage = () => {
                       commentsData[entry.id].map((comment) => (
                         <Card key={comment.id} size="small" style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}>
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <Text strong>{comment.authorName || "Невідомий"}</Text>
+                            <Text strong>
+                              {`${comment.author_first_name || ""} ${comment.author_last_name || ""}`.trim() || comment.author_email || "Невідомий"}
+                            </Text>
                             <Text type="secondary" style={{ fontSize: "12px" }}>
                               {!comment.createdAt || isNaN(Date.parse(comment.createdAt))
                                 ? "Невідома дата"
