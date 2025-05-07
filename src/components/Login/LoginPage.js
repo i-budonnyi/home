@@ -39,7 +39,7 @@ const LoginPage = () => {
       setUser(data.user);
 
       const redirects = {
-        user: "/workpage", // ✅ додано
+        user: "/workpage",
         project_manager: "/pm-projects",
         ambassador: "/ambassadors",
         jury_secretary: "/jury-secretary",
@@ -47,7 +47,8 @@ const LoginPage = () => {
         worker: "/worker",
       };
 
-      navigate(redirects[data.user.role] || "/");
+      const role = data.user?.role;
+      navigate(role && redirects[role] ? redirects[role] : "/workpage");
     } catch (err) {
       console.error("[LOGIN ERROR]:", err);
       setError(err.message || "Невідома помилка");
