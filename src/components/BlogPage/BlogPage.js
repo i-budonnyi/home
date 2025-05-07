@@ -41,9 +41,8 @@ const BlogPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const { first_name, last_name, email } = response.data || {};
-      const fullName = (first_name || last_name)
-        ? `${first_name || ""} ${last_name || ""}`.trim()
-        : email || "Користувач";
+      const rawName = `${first_name || ""} ${last_name || ""}`.trim();
+      const fullName = rawName || email || "Користувач";
       setCurrentUserName(fullName);
     } catch (err) {
       console.warn("⚠️ Неможливо отримати ім’я користувача:", err.message);
@@ -274,9 +273,8 @@ const BlogPage = () => {
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {commentsData[entry.id]?.length ? (
                       commentsData[entry.id].map((comment) => {
-                        const name = (comment.author_first_name || comment.author_last_name)
-                          ? `${comment.author_first_name || ""} ${comment.author_last_name || ""}`.trim()
-                          : comment.author_email || "Невідомий";
+                        const rawName = `${comment.author_first_name || ""} ${comment.author_last_name || ""}`.trim();
+                        const name = rawName || comment.author_email || "Невідомий";
                         return (
                           <Card key={comment.id} size="small" style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}>
                             <div style={{ display: "flex", justifyContent: "space-between" }}>
