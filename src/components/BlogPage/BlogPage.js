@@ -37,11 +37,9 @@ const BlogPage = () => {
     try {
       const token = getAuthToken();
       if (!token) return;
-
       const response = await axios.get(API_USER_URL, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const { first_name, last_name, email } = response.data || {};
       const fullName = `${first_name || ""} ${last_name || ""}`.trim() || email || "Користувач";
       setCurrentUserName(fullName);
@@ -68,7 +66,7 @@ const BlogPage = () => {
   const fetchComments = useCallback(async (entry) => {
     try {
       const token = getAuthToken();
-      const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
+      const response = await axios.get(`${API_COMMENT_URL}/entry/${entry.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCommentsData((prev) => ({
