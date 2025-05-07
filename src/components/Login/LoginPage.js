@@ -2,7 +2,6 @@ import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
 
-// ✅ Правильна адреса без /api/authRoutes, бо в бекенді маршрут /login
 const API_URL = "https://backend-avtologistika.onrender.com/login";
 
 const LoginPage = () => {
@@ -40,17 +39,15 @@ const LoginPage = () => {
       setUser(data.user);
 
       const redirects = {
+        user: "/workpage", // ✅ додано
         project_manager: "/pm-projects",
         ambassador: "/ambassadors",
         jury_secretary: "/jury-secretary",
         jury_member: "/jury",
+        worker: "/worker",
       };
 
-      if (data.user.role === "worker") {
-        navigate("/worker");
-      } else {
-        navigate(redirects[data.user.role] || "/");
-      }
+      navigate(redirects[data.user.role] || "/");
     } catch (err) {
       console.error("[LOGIN ERROR]:", err);
       setError(err.message || "Невідома помилка");
