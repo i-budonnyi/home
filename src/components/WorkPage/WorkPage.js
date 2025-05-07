@@ -28,7 +28,7 @@ import axios from "axios";
 const { Content, Sider } = Layout;
 const { Title, Text } = Typography;
 
-const API_BASE_URL = "https://backend-avtologistika.onrender.com/api/userRoutes";
+const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
 
 const WorkerPage = () => {
   const [userData, setUserData] = useState(null);
@@ -47,7 +47,7 @@ const WorkerPage = () => {
 
     const fetchUserProfile = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/profile`, {
+        const response = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -71,24 +71,11 @@ const WorkerPage = () => {
     fetchUserProfile();
   }, [navigate]);
 
-  useEffect(() => {
-    if (!isCheckingRole && !error && userData?.role) {
-      const redirects = {
-        project_manager: "/pm-projects",
-        ambassador: "/ambassadors",
-        jury_secretary: "/jury-secretary",
-        jury_member: "/jury",
-      };
-      const targetPath = redirects[userData.role];
-      if (targetPath) navigate(targetPath, { replace: true });
-    }
-  }, [isCheckingRole, error, userData?.role, navigate]);
-
   const fetchNotifications = useCallback(async () => {
     if (!userData?.id) return;
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`https://backend-avtologistika.onrender.com/api/notifications/${userData.id}`);
+      const res = await axios.get(`${API_BASE_URL}/notifications/${userData.id}`);
       setNotifications(res.data || []);
     } catch (err) {
       console.error("❌ Сповіщення:", err.message);
@@ -102,7 +89,7 @@ const WorkerPage = () => {
       const unread = notifications.filter((n) => !n.is_read);
       await Promise.all(
         unread.map((n) =>
-          axios.patch(`https://backend-avtologistika.onrender.com/api/notifications/${n.id}/read`)
+          axios.patch(`${API_BASE_URL}/notifications/${n.id}/read`)
         )
       );
       fetchNotifications();
@@ -114,6 +101,19 @@ const WorkerPage = () => {
   useEffect(() => {
     if (userData?.id) fetchNotifications();
   }, [userData, fetchNotifications]);
+
+  useEffect(() => {
+    if (!isCheckingRole && !error && userData?.role) {
+      const redirects = {
+        project_manager: "/pm-projects",
+        ambassador: "/ambassadors",
+        jury_secretary: "/jury-secretary",
+        jury_member: "/jury",
+      };
+      const targetPath = redirects[userData.role];
+      if (targetPath) navigate(targetPath, { replace: true });
+    }
+  }, [isCheckingRole, error, userData?.role, navigate]);
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
