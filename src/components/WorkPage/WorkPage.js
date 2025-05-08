@@ -11,6 +11,9 @@ import {
   Badge,
   List,
   Button as AntButton,
+  Input,
+  Form,
+  message
 } from "antd";
 import {
   MessageOutlined,
@@ -22,6 +25,8 @@ import {
   MailOutlined,
   UserOutlined,
   BellOutlined,
+  EditOutlined,
+  SaveOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 
@@ -36,6 +41,8 @@ const WorkerPage = () => {
   const [error, setError] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [form] = Form.useForm();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -60,6 +67,7 @@ const WorkerPage = () => {
           phone: response.data.phone || "",
           profilePicture: response.data.profile_picture || "",
           role: userRole,
+          editedOnce: response.data.edited_once || false
         });
       } catch (err) {
         setError(err.response?.data?.message || "Сталася помилка");
@@ -95,6 +103,22 @@ const WorkerPage = () => {
       fetchNotifications();
     } catch (err) {
       console.error("❌ markAllAsRead:", err.message);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields();
+      await axios.patch(`${API_BASE_URL}/userRoutes/${userData.id}`, {
+        email: values.email,
+        phone: values.phone,
+        edited_once: true,
+      });
+      setUserData({ ...userData, ...values, editedOnce: true });
+      setIsEditing(false);
+      message.success("Дані оновлено!");
+    } catch (err) {
+      message.error("Помилка при оновленні");
     }
   };
 
@@ -199,11 +223,23 @@ const WorkerPage = () => {
                 }
               />
               <Space direction="vertical" size="large" style={{ marginTop: "24px" }}>
-                {userData.phone && (
-                  <Text><PhoneOutlined style={styles.icon} /> {userData.phone}</Text>
-                )}
-                {userData.email && (
-                  <Text><MailOutlined style={styles.icon} /> {userData.email}</Text>
+                <Form form={form} initialValues={{ email: userData.email, phone: userData.phone }} layout="vertical">
+                  <Form.Item name="phone" label="Телефон">
+                    <Input disabled={!isEditing} prefix={<PhoneOutlined />} />
+                  </Form.Item>
+                  <Form.Item name="email" label="Email">
+                    <Input disabled={!isEditing} prefix={<MailOutlined />} />
+                  </Form.Item>
+                </Form>
+                {!userData.editedOnce && (
+                  <AntButton
+                    type="primary"
+                    icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
+                    onClick={isEditing ? handleSave : () => setIsEditing(true)}
+                    style={{ width: "100%" }}
+                  >
+                    {isEditing ? "Зберегти зміни" : "Редагувати дані"}
+                  </AntButton>
                 )}
               </Space>
             </Card>
