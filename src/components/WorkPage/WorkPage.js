@@ -12,7 +12,7 @@ import {
 import axios from "axios";
 
 const { Content, Sider } = Layout;
-const { Title, Text } = Typography;
+const { Title } = Typography; // ✅ Виправлено: Text видалено
 const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
 
 const WorkerPage = () => {
