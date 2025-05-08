@@ -2,18 +2,17 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout, Menu, Card, Avatar, Typography, List,
-  Button as AntButton, Input, Form, message, ConfigProvider, theme
+  Button, Input, Form, message, ConfigProvider, theme
 } from "antd";
 import {
-  MessageOutlined, BulbOutlined, FileTextOutlined,
-  ProjectOutlined, StarOutlined, PhoneOutlined,
-  MailOutlined, UserOutlined, EditOutlined,
-  SaveOutlined, BgColorsOutlined
+  MessageOutlined, BulbOutlined, FileTextOutlined, ProjectOutlined,
+  StarOutlined, PhoneOutlined, MailOutlined, UserOutlined,
+  EditOutlined, SaveOutlined, MoonOutlined, SunOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 
 const { Content, Sider } = Layout;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
 
 const WorkerPage = () => {
@@ -35,17 +34,13 @@ const WorkerPage = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
+    if (!token) return navigate("/login");
 
     const fetchUserProfile = async () => {
       try {
         const res = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         const user = res.data;
         setUserData({
           id: user.id,
@@ -83,11 +78,7 @@ const WorkerPage = () => {
   const markAllAsRead = async () => {
     try {
       const unread = notifications.filter(n => !n.is_read);
-      await Promise.all(
-        unread.map(n =>
-          axios.patch(`${API_BASE_URL}/notifications/${n.id}/read`)
-        )
-      );
+      await Promise.all(unread.map(n => axios.patch(`${API_BASE_URL}/notifications/${n.id}/read`)));
       fetchNotifications();
     } catch (err) {
       console.error("❌ markAllAsRead:", err.message);
@@ -113,8 +104,8 @@ const WorkerPage = () => {
         editedOnce: true,
       });
       setIsEditing(false);
-      message.success("Дані оновлено!");
-    } catch (err) {
+      message.success("Дані успішно оновлено!");
+    } catch {
       message.error("Помилка при оновленні");
     }
   };
@@ -128,13 +119,21 @@ const WorkerPage = () => {
   return (
     <ConfigProvider theme={{ algorithm: themeMode }}>
       <Layout style={{ minHeight: "100vh" }}>
-        <Sider width={250} style={styles.sider}>
+        <Sider width={250} style={styles.sider} theme={isDarkMode ? "dark" : "light"}>
           <div style={styles.logo}>
-            <Title level={4} style={styles.logoText}>Avtologistika</Title>
+            <Title level={4} style={{ ...styles.logoText, color: isDarkMode ? "#fff" : "#222" }}>
+              Avtologistika
+            </Title>
+            <Button
+              type="text"
+              icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+              onClick={toggleTheme}
+              style={{ fontSize: 18 }}
+            />
           </div>
           <Menu
-            theme={isDarkMode ? "dark" : "light"}
             mode="inline"
+            theme={isDarkMode ? "dark" : "light"}
             selectedKeys={[window.location.pathname]}
             onClick={({ key }) => navigate(key)}
             items={[
@@ -146,11 +145,6 @@ const WorkerPage = () => {
               { key: "/subscriptions", icon: <StarOutlined />, label: "Підписка" },
             ]}
           />
-          <div style={{ padding: "20px" }}>
-            <AntButton icon={<BgColorsOutlined />} onClick={toggleTheme} block>
-              {isDarkMode ? "Світла тема" : "Темна тема"}
-            </AntButton>
-          </div>
         </Sider>
 
         <Layout style={{ marginLeft: 250 }}>
@@ -169,7 +163,11 @@ const WorkerPage = () => {
                       icon={!userData.profilePicture && <UserOutlined />}
                     />
                   }
-                  title={<Title level={4}>{`${userData.firstName} ${userData.lastName}`}</Title>}
+                  title={
+                    <Title level={4}>
+                      {`${userData.firstName} ${userData.lastName}` || "Користувач"}
+                    </Title>
+                  }
                   description={`Роль: ${userData.role}`}
                 />
                 <Form
@@ -196,20 +194,21 @@ const WorkerPage = () => {
                     <Input disabled={!isEditing} prefix={<MailOutlined />} />
                   </Form.Item>
                 </Form>
-
                 {!userData.editedOnce && (
-                  <AntButton
+                  <Button
                     type="primary"
                     icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
                     onClick={isEditing ? handleSave : () => setIsEditing(true)}
                     style={{ width: "100%", marginTop: 16 }}
                   >
                     {isEditing ? "Зберегти зміни" : "Редагувати дані"}
-                  </AntButton>
+                  </Button>
                 )}
 
                 <div style={{ marginTop: 40 }}>
-                  <Title level={4}>Новини ({notifications.filter(n => !n.is_read).length})</Title>
+                  <Title level={4}>
+                    Новини ({notifications.filter(n => !n.is_read).length})
+                  </Title>
                   <List
                     bordered
                     loading={loadingNotifications}
@@ -223,7 +222,7 @@ const WorkerPage = () => {
                   />
                   {notifications.length > 0 && (
                     <div style={{ marginTop: 10 }}>
-                      <AntButton onClick={markAllAsRead}>Позначити всі як прочитані</AntButton>
+                      <Button onClick={markAllAsRead}>Позначити всі як прочитані</Button>
                     </div>
                   )}
                 </div>
@@ -239,24 +238,25 @@ const WorkerPage = () => {
 const styles = {
   sider: {
     position: "fixed",
+    height: "100vh",
+    left: 0,
     top: 0,
     bottom: 0,
-    left: 0,
-    height: "100vh",
-    zIndex: 1000,
     borderRight: "1px solid #001f3f",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
   },
   logo: {
-    height: 64,
+    padding: "16px",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
-    borderBottom: "1px solid #001f3f",
+    justifyContent: "space-between",
   },
   logoText: {
+    fontSize: 18,
+    fontWeight: 600,
     margin: 0,
-    fontSize: "18px",
-    fontWeight: "bold",
   },
   content: {
     padding: "30px 50px",
@@ -268,7 +268,6 @@ const styles = {
     maxWidth: "600px",
     width: "100%",
     margin: "0 auto",
-    background: "var(--card-bg)",
   },
 };
 
