@@ -7,8 +7,6 @@ import {
   Avatar,
   Typography,
   Space,
-  Dropdown,
-  Badge,
   List,
   Button as AntButton,
   Input,
@@ -24,7 +22,6 @@ import {
   PhoneOutlined,
   MailOutlined,
   UserOutlined,
-  BellOutlined,
   EditOutlined,
   SaveOutlined,
 } from "@ant-design/icons";
@@ -173,103 +170,91 @@ const WorkerPage = () => {
 
       <Layout style={{ marginLeft: 250 }}>
         <Content style={styles.content}>
-          <div style={styles.notificationIconWrapper}>
-            <Dropdown
-              trigger={["click"]}
-              overlayStyle={{ width: 300 }}
-              dropdownRender={() => (
-                <div style={{ background: "#fff", border: "1px solid #ddd", borderRadius: 8, padding: 10 }}>
-                  <List
-                    dataSource={notifications}
-                    loading={loadingNotifications}
-                    locale={{ emptyText: "Немає новин" }}
-                    renderItem={(item) => (
-                      <List.Item style={{ opacity: item.is_read ? 0.6 : 1 }}>
-                        <Text>{item.message}</Text>
-                      </List.Item>
-                    )}
-                  />
-                  {notifications.length > 0 && (
-                    <div style={{ marginTop: 10, textAlign: "center" }}>
-                      <AntButton type="link" onClick={markAllAsRead}>
-                        Позначити всі як прочитані
-                      </AntButton>
-                    </div>
-                  )}
-                </div>
-              )}
-            >
-              <Badge
-                count={notifications.filter((n) => !n.is_read).length}
-                title={`Непрочитані новини (${notifications.filter((n) => !n.is_read).length})`}
-              >
-                <BellOutlined style={{ fontSize: 24, color: "#1890ff", cursor: "pointer" }} />
-              </Badge>
-            </Dropdown>
-          </div>
-
           {isCheckingRole ? (
             <Title level={3}>⏳ Завантаження...</Title>
           ) : error ? (
             <Title level={3} type="danger">❌ {error}</Title>
           ) : (
-            <Card hoverable style={styles.card} bodyStyle={{ padding: "24px" }}>
-              <Card.Meta
-                avatar={
-                  <Avatar
-                    size={72}
-                    src={userData.profilePicture || null}
-                    icon={!userData.profilePicture && <UserOutlined />}
-                    style={{ backgroundColor: "#f0f0f0" }}
-                  />
-                }
-                title={
-                  <Title level={4} style={{ marginBottom: 0 }}>
-                    {`${userData.firstName} ${userData.lastName}`.trim() || "Користувач"}
-                  </Title>
-                }
-                description={
-                  <Text style={{ color: "#8c8c8c", fontSize: "16px" }}>
-                    Роль: {userData.role}
-                  </Text>
-                }
-              />
-              <Space direction="vertical" size="large" style={{ marginTop: "24px" }}>
-                <Form
-                  form={form}
-                  initialValues={{
-                    first_name: userData.firstName,
-                    last_name: userData.lastName,
-                    email: userData.email,
-                    phone: userData.phone,
-                  }}
-                  layout="vertical"
-                >
-                  <Form.Item name="first_name" label="Ім’я">
-                    <Input disabled={!isEditing} prefix={<UserOutlined />} />
-                  </Form.Item>
-                  <Form.Item name="last_name" label="Прізвище">
-                    <Input disabled={!isEditing} prefix={<UserOutlined />} />
-                  </Form.Item>
-                  <Form.Item name="phone" label="Телефон">
-                    <Input disabled={!isEditing} prefix={<PhoneOutlined />} />
-                  </Form.Item>
-                  <Form.Item name="email" label="Email">
-                    <Input disabled={!isEditing} prefix={<MailOutlined />} />
-                  </Form.Item>
-                </Form>
-                {!userData.editedOnce && (
-                  <AntButton
-                    type="primary"
-                    icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
-                    onClick={isEditing ? handleSave : () => setIsEditing(true)}
-                    style={{ width: "100%" }}
+            <>
+              <Card hoverable style={styles.card} bodyStyle={{ padding: "24px" }}>
+                <Card.Meta
+                  avatar={
+                    <Avatar
+                      size={72}
+                      src={userData.profilePicture || null}
+                      icon={!userData.profilePicture && <UserOutlined />}
+                      style={{ backgroundColor: "#f0f0f0" }}
+                    />
+                  }
+                  title={
+                    <Title level={4} style={{ marginBottom: 0 }}>
+                      {`${userData.firstName} ${userData.lastName}`.trim() || "Користувач"}
+                    </Title>
+                  }
+                  description={
+                    <Text style={{ color: "#8c8c8c", fontSize: "16px" }}>
+                      Роль: {userData.role}
+                    </Text>
+                  }
+                />
+                <Space direction="vertical" size="large" style={{ marginTop: "24px" }}>
+                  <Form
+                    form={form}
+                    initialValues={{
+                      first_name: userData.firstName,
+                      last_name: userData.lastName,
+                      email: userData.email,
+                      phone: userData.phone,
+                    }}
+                    layout="vertical"
                   >
-                    {isEditing ? "Зберегти зміни" : "Редагувати дані"}
-                  </AntButton>
-                )}
-              </Space>
-            </Card>
+                    <Form.Item name="first_name" label="Ім’я">
+                      <Input disabled={!isEditing} prefix={<UserOutlined />} />
+                    </Form.Item>
+                    <Form.Item name="last_name" label="Прізвище">
+                      <Input disabled={!isEditing} prefix={<UserOutlined />} />
+                    </Form.Item>
+                    <Form.Item name="phone" label="Телефон">
+                      <Input disabled={!isEditing} prefix={<PhoneOutlined />} />
+                    </Form.Item>
+                    <Form.Item name="email" label="Email">
+                      <Input disabled={!isEditing} prefix={<MailOutlined />} />
+                    </Form.Item>
+                  </Form>
+                  {!userData.editedOnce && (
+                    <AntButton
+                      type="primary"
+                      icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
+                      onClick={isEditing ? handleSave : () => setIsEditing(true)}
+                      style={{ width: "100%" }}
+                    >
+                      {isEditing ? "Зберегти зміни" : "Редагувати дані"}
+                    </AntButton>
+                  )}
+                </Space>
+              </Card>
+
+              {notifications.length > 0 && (
+                <div style={{ marginTop: 40 }}>
+                  <Title level={4}>
+                    Новини ({notifications.filter(n => !n.is_read).length})
+                  </Title>
+                  <List
+                    bordered
+                    loading={loadingNotifications}
+                    dataSource={notifications}
+                    renderItem={(item) => (
+                      <List.Item style={{ opacity: item.is_read ? 0.5 : 1 }}>
+                        {item.message}
+                      </List.Item>
+                    )}
+                  />
+                  <div style={{ marginTop: 10 }}>
+                    <AntButton onClick={markAllAsRead}>Позначити всі як прочитані</AntButton>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </Content>
       </Layout>
@@ -320,16 +305,6 @@ const styles = {
     maxWidth: "500px",
     width: "100%",
     margin: "0 auto",
-  },
-  icon: {
-    marginRight: "8px",
-    color: "#1890ff",
-  },
-  notificationIconWrapper: {
-    position: "fixed",
-    bottom: 20,
-    right: 20,
-    zIndex: 2000,
   },
 };
 
