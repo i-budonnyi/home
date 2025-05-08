@@ -109,11 +109,20 @@ const WorkerPage = () => {
   const themeMode = isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm;
 
   return (
-    <ConfigProvider theme={{ algorithm: themeMode }}>
+    <ConfigProvider theme={{
+      algorithm: themeMode,
+      token: {
+        colorText: isDarkMode ? "#fff" : "#000",
+        colorBgContainer: isDarkMode ? "#1f1f1f" : "#fff",
+        colorPrimary: "#1890ff"
+      }
+    }}>
       <Layout style={{ minHeight: "100vh" }}>
-        <Sider width={220} style={styles.sider} theme={isDarkMode ? "dark" : "light"}>
+        <Sider width={240} style={styles.sider} theme={isDarkMode ? "dark" : "light"}>
           <div style={styles.logo}>
-            <Title level={4} style={{ color: isDarkMode ? "#fff" : "#222", margin: 0 }}>Avtologistika</Title>
+            <Title level={4} style={{ color: isDarkMode ? "#fff" : "#222", margin: 0 }}>
+              Avtologistika
+            </Title>
             <Button
               type="text"
               icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
@@ -137,7 +146,7 @@ const WorkerPage = () => {
           />
         </Sider>
 
-        <Layout style={{ marginLeft: 220 }}>
+        <Layout style={{ marginLeft: 240 }}>
           <Header style={styles.header} />
           <Content style={styles.content}>
             {isCheckingRole ? (
@@ -145,8 +154,8 @@ const WorkerPage = () => {
             ) : error ? (
               <Title level={3} type="danger">❌ {error}</Title>
             ) : (
-              <Row justify="end">
-                <Col xs={24} sm={20} md={16} lg={12} xl={10}>
+              <Row justify="start">
+                <Col xs={24} sm={22} md={20} lg={16} xl={14}>
                   <Card style={styles.card} bordered={false}>
                     <Space direction="horizontal" align="center" style={{ marginBottom: 24 }}>
                       <Avatar size={64} icon={<UserOutlined />} src={userData.profilePicture} />
@@ -206,25 +215,19 @@ const WorkerPage = () => {
   );
 };
 
-const getLabel = (field) => {
-  const map = {
-    first_name: "Ім’я",
-    last_name: "Прізвище",
-    phone: "Телефон",
-    email: "Email",
-  };
-  return map[field];
-};
+const getLabel = (field) => ({
+  first_name: "Ім’я",
+  last_name: "Прізвище",
+  phone: "Телефон",
+  email: "Email"
+}[field]);
 
-const getIcon = (field) => {
-  const map = {
-    first_name: <UserOutlined />,
-    last_name: <UserOutlined />,
-    phone: <PhoneOutlined />,
-    email: <MailOutlined />,
-  };
-  return map[field];
-};
+const getIcon = (field) => ({
+  first_name: <UserOutlined />,
+  last_name: <UserOutlined />,
+  phone: <PhoneOutlined />,
+  email: <MailOutlined />
+}[field]);
 
 const styles = {
   sider: {
@@ -234,31 +237,30 @@ const styles = {
     top: 0,
     bottom: 0,
     borderRight: "1px solid #001f3f",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
     paddingTop: 20,
+    display: "flex",
+    flexDirection: "column"
   },
   logo: {
     padding: "0 16px 16px 16px",
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "space-between"
   },
   header: {
     background: "transparent",
-    height: 24,
+    height: 20
   },
   content: {
     padding: "40px 50px",
     background: "#f5f6fa",
-    minHeight: "100vh",
+    minHeight: "100vh"
   },
   card: {
     borderRadius: "16px",
     boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)",
-    background: "#fff",
-  },
+    background: "#fff"
+  }
 };
 
 export default WorkerPage;
