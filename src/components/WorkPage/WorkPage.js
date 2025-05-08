@@ -13,7 +13,7 @@ import {
   Button as AntButton,
   Input,
   Form,
-  message
+  message,
 } from "antd";
 import {
   MessageOutlined,
@@ -26,7 +26,7 @@ import {
   UserOutlined,
   BellOutlined,
   EditOutlined,
-  SaveOutlined
+  SaveOutlined,
 } from "@ant-design/icons";
 import axios from "axios";
 
@@ -67,7 +67,7 @@ const WorkerPage = () => {
           phone: response.data.phone || "",
           profilePicture: response.data.profile_picture || "",
           role: userRole,
-          editedOnce: response.data.edited_once || false
+          editedOnce: response.data.edited_once || false,
         });
       } catch (err) {
         setError(err.response?.data?.message || "Сталася помилка");
@@ -86,7 +86,7 @@ const WorkerPage = () => {
       const res = await axios.get(`${API_BASE_URL}/notifications/${userData.id}`);
       setNotifications(res.data || []);
     } catch (err) {
-      console.error("❌ Сповіщення:", err.message);
+      console.error("❌ Новини:", err.message);
     } finally {
       setLoadingNotifications(false);
     }
@@ -110,11 +110,20 @@ const WorkerPage = () => {
     try {
       const values = await form.validateFields();
       await axios.patch(`${API_BASE_URL}/userRoutes/${userData.id}`, {
+        first_name: values.first_name,
+        last_name: values.last_name,
         email: values.email,
         phone: values.phone,
         edited_once: true,
       });
-      setUserData({ ...userData, ...values, editedOnce: true });
+      setUserData({
+        ...userData,
+        firstName: values.first_name,
+        lastName: values.last_name,
+        email: values.email,
+        phone: values.phone,
+        editedOnce: true,
+      });
       setIsEditing(false);
       message.success("Дані оновлено!");
     } catch (err) {
@@ -173,7 +182,7 @@ const WorkerPage = () => {
                   <List
                     dataSource={notifications}
                     loading={loadingNotifications}
-                    locale={{ emptyText: "Немає сповіщень" }}
+                    locale={{ emptyText: "Немає новин" }}
                     renderItem={(item) => (
                       <List.Item style={{ opacity: item.is_read ? 0.6 : 1 }}>
                         <Text>{item.message}</Text>
@@ -190,7 +199,10 @@ const WorkerPage = () => {
                 </div>
               )}
             >
-              <Badge count={notifications.filter((n) => !n.is_read).length}>
+              <Badge
+                count={notifications.filter((n) => !n.is_read).length}
+                title={`Непрочитані новини (${notifications.filter((n) => !n.is_read).length})`}
+              >
                 <BellOutlined style={{ fontSize: 24, color: "#1890ff", cursor: "pointer" }} />
               </Badge>
             </Dropdown>
@@ -223,7 +235,22 @@ const WorkerPage = () => {
                 }
               />
               <Space direction="vertical" size="large" style={{ marginTop: "24px" }}>
-                <Form form={form} initialValues={{ email: userData.email, phone: userData.phone }} layout="vertical">
+                <Form
+                  form={form}
+                  initialValues={{
+                    first_name: userData.firstName,
+                    last_name: userData.lastName,
+                    email: userData.email,
+                    phone: userData.phone,
+                  }}
+                  layout="vertical"
+                >
+                  <Form.Item name="first_name" label="Ім’я">
+                    <Input disabled={!isEditing} prefix={<UserOutlined />} />
+                  </Form.Item>
+                  <Form.Item name="last_name" label="Прізвище">
+                    <Input disabled={!isEditing} prefix={<UserOutlined />} />
+                  </Form.Item>
                   <Form.Item name="phone" label="Телефон">
                     <Input disabled={!isEditing} prefix={<PhoneOutlined />} />
                   </Form.Item>
