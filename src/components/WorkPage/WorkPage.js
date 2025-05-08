@@ -7,8 +7,6 @@ import {
   Avatar,
   Typography,
   Space,
-  Dropdown,
-  Badge,
   List,
   Button as AntButton,
   Input,
@@ -24,7 +22,6 @@ import {
   PhoneOutlined,
   MailOutlined,
   UserOutlined,
-  BellOutlined,
   EditOutlined,
   SaveOutlined,
 } from "@ant-design/icons";
@@ -309,12 +306,6 @@ const styles = {
     maxWidth: "600px",
     width: "100%",
     margin: "0 auto",
-  },
-  notificationIconWrapper: {
-    position: "fixed",
-    bottom: 20,
-    right: 20,
-    zIndex: 2000,
   },
 };
 
