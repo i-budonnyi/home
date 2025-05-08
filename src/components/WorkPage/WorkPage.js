@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Layout, Menu, Card, Avatar, Typography, Space, List,
-  Button as AntButton, Input, Form, message, Switch, ConfigProvider, theme
+  Layout, Menu, Card, Avatar, Typography, List,
+  Button as AntButton, Input, Form, message, ConfigProvider, theme
 } from "antd";
 import {
   MessageOutlined, BulbOutlined, FileTextOutlined,
@@ -13,7 +13,7 @@ import {
 import axios from "axios";
 
 const { Content, Sider } = Layout;
-const { Title, Text } = Typography;
+const { Title } = Typography;
 const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
 
 const WorkerPage = () => {
