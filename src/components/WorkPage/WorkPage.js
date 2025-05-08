@@ -1,18 +1,18 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Layout, Menu, Card, Avatar, Typography, List,
-  Button, Input, Form, message, ConfigProvider, theme
+  Layout, Menu, Avatar, Typography, Button, Input, Form, message,
+  ConfigProvider, theme, Row, Col, List, Card, Space
 } from "antd";
 import {
   MessageOutlined, BulbOutlined, FileTextOutlined, ProjectOutlined,
   StarOutlined, PhoneOutlined, MailOutlined, UserOutlined,
-  EditOutlined, SaveOutlined, MoonOutlined, SunOutlined
+  EditOutlined, SaveOutlined, SunOutlined, MoonOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 
-const { Content, Sider } = Layout;
-const { Title } = Typography; // ✅ Виправлено: Text видалено
+const { Content, Sider, Header } = Layout;
+const { Title } = Typography;
 const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
 
 const WorkerPage = () => {
@@ -21,7 +21,7 @@ const WorkerPage = () => {
   const [error, setError] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [editField, setEditField] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
   const [form] = Form.useForm();
   const navigate = useNavigate();
@@ -52,6 +52,12 @@ const WorkerPage = () => {
           role: user.role?.toLowerCase() || "worker",
           editedOnce: user.edited_once || false,
         });
+        form.setFieldsValue({
+          first_name: user.first_name,
+          last_name: user.last_name,
+          email: user.email,
+          phone: user.phone,
+        });
       } catch (err) {
         setError(err.response?.data?.message || "Сталася помилка");
       } finally {
@@ -60,7 +66,7 @@ const WorkerPage = () => {
     };
 
     fetchUserProfile();
-  }, [navigate]);
+  }, [navigate, form]);
 
   const fetchNotifications = useCallback(async () => {
     if (!userData?.id) return;
@@ -85,45 +91,29 @@ const WorkerPage = () => {
     }
   };
 
-  const handleSave = async () => {
+  const saveField = async (field) => {
     try {
-      const values = await form.validateFields();
+      const values = await form.validateFields([field]);
       await axios.patch(`${API_BASE_URL}/userRoutes/${userData.id}`, {
-        first_name: values.first_name,
-        last_name: values.last_name,
-        email: values.email,
-        phone: values.phone,
+        [field === "first_name" ? "first_name" : field]: values[field],
         edited_once: true,
       });
-      setUserData({
-        ...userData,
-        firstName: values.first_name,
-        lastName: values.last_name,
-        email: values.email,
-        phone: values.phone,
-        editedOnce: true,
-      });
-      setIsEditing(false);
-      message.success("Дані успішно оновлено!");
+      setUserData(prev => ({ ...prev, [field]: values[field] }));
+      setEditField(null);
+      message.success("Збережено");
     } catch {
-      message.error("Помилка при оновленні");
+      message.error("Помилка при збереженні");
     }
   };
-
-  useEffect(() => {
-    if (userData?.id) fetchNotifications();
-  }, [userData, fetchNotifications]);
 
   const themeMode = isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm;
 
   return (
     <ConfigProvider theme={{ algorithm: themeMode }}>
       <Layout style={{ minHeight: "100vh" }}>
-        <Sider width={250} style={styles.sider} theme={isDarkMode ? "dark" : "light"}>
+        <Sider width={220} style={styles.sider} theme={isDarkMode ? "dark" : "light"}>
           <div style={styles.logo}>
-            <Title level={4} style={{ ...styles.logoText, color: isDarkMode ? "#fff" : "#222" }}>
-              Avtologistika
-            </Title>
+            <Title level={4} style={{ color: isDarkMode ? "#fff" : "#222", margin: 0 }}>Avtologistika</Title>
             <Button
               type="text"
               icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
@@ -147,86 +137,67 @@ const WorkerPage = () => {
           />
         </Sider>
 
-        <Layout style={{ marginLeft: 250 }}>
+        <Layout style={{ marginLeft: 220 }}>
+          <Header style={styles.header} />
           <Content style={styles.content}>
             {isCheckingRole ? (
               <Title level={3}>⏳ Завантаження...</Title>
             ) : error ? (
               <Title level={3} type="danger">❌ {error}</Title>
             ) : (
-              <Card hoverable style={styles.card}>
-                <Card.Meta
-                  avatar={
-                    <Avatar
-                      size={72}
-                      src={userData.profilePicture || null}
-                      icon={!userData.profilePicture && <UserOutlined />}
-                    />
-                  }
-                  title={
-                    <Title level={4}>
-                      {`${userData.firstName} ${userData.lastName}` || "Користувач"}
-                    </Title>
-                  }
-                  description={`Роль: ${userData.role}`}
-                />
-                <Form
-                  form={form}
-                  initialValues={{
-                    first_name: userData.firstName,
-                    last_name: userData.lastName,
-                    email: userData.email,
-                    phone: userData.phone,
-                  }}
-                  layout="vertical"
-                  style={{ marginTop: 24 }}
-                >
-                  <Form.Item name="first_name" label="Ім’я">
-                    <Input disabled={!isEditing} prefix={<UserOutlined />} />
-                  </Form.Item>
-                  <Form.Item name="last_name" label="Прізвище">
-                    <Input disabled={!isEditing} prefix={<UserOutlined />} />
-                  </Form.Item>
-                  <Form.Item name="phone" label="Телефон">
-                    <Input disabled={!isEditing} prefix={<PhoneOutlined />} />
-                  </Form.Item>
-                  <Form.Item name="email" label="Email">
-                    <Input disabled={!isEditing} prefix={<MailOutlined />} />
-                  </Form.Item>
-                </Form>
-                {!userData.editedOnce && (
-                  <Button
-                    type="primary"
-                    icon={isEditing ? <SaveOutlined /> : <EditOutlined />}
-                    onClick={isEditing ? handleSave : () => setIsEditing(true)}
-                    style={{ width: "100%", marginTop: 16 }}
-                  >
-                    {isEditing ? "Зберегти зміни" : "Редагувати дані"}
-                  </Button>
-                )}
+              <Row justify="end">
+                <Col xs={24} sm={20} md={16} lg={12} xl={10}>
+                  <Card style={styles.card} bordered={false}>
+                    <Space direction="horizontal" align="center" style={{ marginBottom: 24 }}>
+                      <Avatar size={64} icon={<UserOutlined />} src={userData.profilePicture} />
+                      <div>
+                        <Title level={4} style={{ margin: 0 }}>
+                          {userData.firstName} {userData.lastName}
+                        </Title>
+                        <div style={{ color: "#888" }}>Роль: {userData.role}</div>
+                      </div>
+                    </Space>
 
-                <div style={{ marginTop: 40 }}>
-                  <Title level={4}>
-                    Новини ({notifications.filter(n => !n.is_read).length})
-                  </Title>
-                  <List
-                    bordered
-                    loading={loadingNotifications}
-                    locale={{ emptyText: "Наразі немає новин" }}
-                    dataSource={notifications}
-                    renderItem={(item) => (
-                      <List.Item style={{ opacity: item.is_read ? 0.5 : 1 }}>
-                        {item.message}
-                      </List.Item>
-                    )}
-                  />
-                  {notifications.length > 0 && (
-                    <div style={{ marginTop: 10 }}>
-                      <Button onClick={markAllAsRead}>Позначити всі як прочитані</Button>
+                    <Form form={form} layout="vertical">
+                      {["first_name", "last_name", "phone", "email"].map((field) => (
+                        <Form.Item key={field} label={getLabel(field)} name={field}>
+                          <Input
+                            disabled={editField !== field}
+                            prefix={getIcon(field)}
+                            addonAfter={
+                              editField === field ? (
+                                <SaveOutlined onClick={() => saveField(field)} style={{ cursor: "pointer" }} />
+                              ) : (
+                                <EditOutlined onClick={() => setEditField(field)} style={{ cursor: "pointer" }} />
+                              )
+                            }
+                          />
+                        </Form.Item>
+                      ))}
+                    </Form>
+
+                    <div style={{ marginTop: 40 }}>
+                      <Title level={4}>Новини ({notifications.filter(n => !n.is_read).length})</Title>
+                      <List
+                        bordered
+                        loading={loadingNotifications}
+                        locale={{ emptyText: "Наразі немає новин" }}
+                        dataSource={notifications}
+                        renderItem={(item) => (
+                          <List.Item style={{ opacity: item.is_read ? 0.5 : 1 }}>
+                            {item.message}
+                          </List.Item>
+                        )}
+                      />
+                      {notifications.length > 0 && (
+                        <div style={{ marginTop: 10 }}>
+                          <Button onClick={markAllAsRead}>Позначити всі як прочитані</Button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </Card>
+                  </Card>
+                </Col>
+              </Row>
             )}
           </Content>
         </Layout>
@@ -235,10 +206,30 @@ const WorkerPage = () => {
   );
 };
 
+const getLabel = (field) => {
+  const map = {
+    first_name: "Ім’я",
+    last_name: "Прізвище",
+    phone: "Телефон",
+    email: "Email",
+  };
+  return map[field];
+};
+
+const getIcon = (field) => {
+  const map = {
+    first_name: <UserOutlined />,
+    last_name: <UserOutlined />,
+    phone: <PhoneOutlined />,
+    email: <MailOutlined />,
+  };
+  return map[field];
+};
+
 const styles = {
   sider: {
-    position: "fixed",
     height: "100vh",
+    position: "fixed",
     left: 0,
     top: 0,
     bottom: 0,
@@ -246,28 +237,27 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
+    paddingTop: 20,
   },
   logo: {
-    padding: "16px",
+    padding: "0 16px 16px 16px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  logoText: {
-    fontSize: 18,
-    fontWeight: 600,
-    margin: 0,
+  header: {
+    background: "transparent",
+    height: 24,
   },
   content: {
-    padding: "30px 50px",
+    padding: "40px 50px",
+    background: "#f5f6fa",
     minHeight: "100vh",
-    background: "var(--background-color)",
   },
   card: {
     borderRadius: "16px",
-    maxWidth: "600px",
-    width: "100%",
-    margin: "0 auto",
+    boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)",
+    background: "#fff",
   },
 };
 
