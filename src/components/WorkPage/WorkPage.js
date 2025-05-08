@@ -109,25 +109,16 @@ const WorkerPage = () => {
   const themeMode = isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm;
 
   return (
-    <ConfigProvider theme={{
-      algorithm: themeMode,
-      token: {
-        colorText: isDarkMode ? "#fff" : "#000",
-        colorBgContainer: isDarkMode ? "#1f1f1f" : "#fff",
-        colorPrimary: "#1890ff"
-      }
-    }}>
+    <ConfigProvider theme={{ algorithm: themeMode }}>
       <Layout style={{ minHeight: "100vh" }}>
-        <Sider width={240} style={styles.sider} theme={isDarkMode ? "dark" : "light"}>
+        <Sider width={220} style={styles.sider} theme={isDarkMode ? "dark" : "light"}>
           <div style={styles.logo}>
-            <Title level={4} style={{ color: isDarkMode ? "#fff" : "#222", margin: 0 }}>
-              Avtologistika
-            </Title>
+            <Title level={4} style={{ color: "#fff", margin: 0 }}>Avtologistika</Title>
             <Button
               type="text"
               icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
               onClick={toggleTheme}
-              style={{ fontSize: 18 }}
+              style={{ fontSize: 18, color: "#fff" }}
             />
           </div>
           <Menu
@@ -146,7 +137,7 @@ const WorkerPage = () => {
           />
         </Sider>
 
-        <Layout style={{ marginLeft: 240 }}>
+        <Layout style={{ marginLeft: 220 }}>
           <Header style={styles.header} />
           <Content style={styles.content}>
             {isCheckingRole ? (
@@ -155,15 +146,15 @@ const WorkerPage = () => {
               <Title level={3} type="danger">❌ {error}</Title>
             ) : (
               <Row justify="start">
-                <Col xs={24} sm={22} md={20} lg={16} xl={14}>
+                <Col xs={24} sm={22} md={18} lg={14} xl={12}>
                   <Card style={styles.card} bordered={false}>
                     <Space direction="horizontal" align="center" style={{ marginBottom: 24 }}>
                       <Avatar size={64} icon={<UserOutlined />} src={userData.profilePicture} />
                       <div>
-                        <Title level={4} style={{ margin: 0 }}>
+                        <Title level={4} style={{ margin: 0, color: isDarkMode ? "#fff" : "#000" }}>
                           {userData.firstName} {userData.lastName}
                         </Title>
-                        <div style={{ color: "#888" }}>Роль: {userData.role}</div>
+                        <div style={{ color: isDarkMode ? "#aaa" : "#888" }}>Роль: {userData.role}</div>
                       </div>
                     </Space>
 
@@ -186,7 +177,9 @@ const WorkerPage = () => {
                     </Form>
 
                     <div style={{ marginTop: 40 }}>
-                      <Title level={4}>Новини ({notifications.filter(n => !n.is_read).length})</Title>
+                      <Title level={4} style={{ color: isDarkMode ? "#fff" : "#000" }}>
+                        Новини ({notifications.filter(n => !n.is_read).length})
+                      </Title>
                       <List
                         bordered
                         loading={loadingNotifications}
@@ -215,19 +208,25 @@ const WorkerPage = () => {
   );
 };
 
-const getLabel = (field) => ({
-  first_name: "Ім’я",
-  last_name: "Прізвище",
-  phone: "Телефон",
-  email: "Email"
-}[field]);
+const getLabel = (field) => {
+  const map = {
+    first_name: "Ім’я",
+    last_name: "Прізвище",
+    phone: "Телефон",
+    email: "Email",
+  };
+  return map[field];
+};
 
-const getIcon = (field) => ({
-  first_name: <UserOutlined />,
-  last_name: <UserOutlined />,
-  phone: <PhoneOutlined />,
-  email: <MailOutlined />
-}[field]);
+const getIcon = (field) => {
+  const map = {
+    first_name: <UserOutlined />,
+    last_name: <UserOutlined />,
+    phone: <PhoneOutlined />,
+    email: <MailOutlined />,
+  };
+  return map[field];
+};
 
 const styles = {
   sider: {
@@ -236,31 +235,33 @@ const styles = {
     left: 0,
     top: 0,
     bottom: 0,
+    backgroundColor: "#001529",
     borderRight: "1px solid #001f3f",
-    paddingTop: 20,
     display: "flex",
-    flexDirection: "column"
+    flexDirection: "column",
+    justifyContent: "space-between",
+    paddingTop: 20,
   },
   logo: {
     padding: "0 16px 16px 16px",
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-between"
+    justifyContent: "space-between",
   },
   header: {
     background: "transparent",
-    height: 20
+    height: 48,
   },
   content: {
-    padding: "40px 50px",
+    padding: "30px 50px 50px",
     background: "#f5f6fa",
-    minHeight: "100vh"
+    minHeight: "100vh",
   },
   card: {
     borderRadius: "16px",
     boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)",
-    background: "#fff"
-  }
+    background: "#fff",
+  },
 };
 
 export default WorkerPage;
