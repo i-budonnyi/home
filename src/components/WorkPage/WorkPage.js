@@ -78,12 +78,12 @@ const WorkerPage = () => {
     }
     try {
       setLoadingNotifications(true);
-      console.log("📡 [GET] /notifications/" + userData.id);
+      console.log(`📡 Запит сповіщень: GET /notifications/${userData.id}`);
       const res = await axios.get(`${API_BASE_URL}/notifications/${userData.id}`);
-      console.log("📬 Відповідь з бекенду:", res);
+      console.log("📬 Відповідь з бекенду:", res.data);
       setNotifications(res.data || []);
     } catch (err) {
-      console.error("❌ Помилка запиту сповіщень:", err);
+      console.error("❌ Помилка запиту сповіщень:", err.message);
     } finally {
       setLoadingNotifications(false);
     }
@@ -96,8 +96,10 @@ const WorkerPage = () => {
   const markAllAsRead = async () => {
     try {
       const unread = notifications.filter(n => !n.is_read);
-      console.log("🔄 Позначення прочитаними сповіщень:", unread);
-      await Promise.all(unread.map(n => axios.patch(`${API_BASE_URL}/notifications/${n.id}/read`)));
+      console.log("🔄 Позначення як прочитані:", unread.map(n => n.id));
+      await Promise.all(unread.map(n =>
+        axios.patch(`${API_BASE_URL}/notifications/${n.id}/read`)
+      ));
       fetchNotifications();
     } catch (err) {
       console.error("❌ markAllAsRead:", err.message);
@@ -116,7 +118,7 @@ const WorkerPage = () => {
       setEditField(null);
       message.success("Збережено");
     } catch (err) {
-      console.error("❌ Помилка збереження поля:", field, err);
+      console.error("❌ Помилка збереження:", field, err);
       message.error("Помилка при збереженні");
     }
   };
@@ -137,17 +139,8 @@ const WorkerPage = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh" }}>
-        <Sider
-          width={340}
-          style={{
-            background: "transparent",
-            padding: "32px 24px 24px 24px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-start",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+        <Sider width={340} style={{ background: "transparent", padding: "32px 24px 24px 24px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 32 }}>
             <Button
               type="text"
               icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
@@ -160,14 +153,7 @@ const WorkerPage = () => {
             theme={isDarkMode ? "dark" : "light"}
             selectedKeys={[window.location.pathname]}
             onClick={({ key }) => navigate(key)}
-            style={{
-              background: "transparent",
-              border: "none",
-              fontSize: 16,
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-            }}
+            style={{ background: "transparent", fontSize: 16, display: "flex", flexDirection: "column", gap: 16 }}
             items={[
               { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
               { key: "/submit-problem", icon: <FileTextOutlined />, label: "Подати проблему" },
@@ -217,7 +203,9 @@ const WorkerPage = () => {
                   ))}
                 </Form>
                 <Divider />
-                <Title level={5} style={{ marginTop: 24 }}>Новини ({notifications.filter(n => !n.is_read).length})</Title>
+                <Title level={5} style={{ marginTop: 24 }}>
+                  Новини ({notifications.filter(n => !n.is_read).length})
+                </Title>
                 <List
                   bordered={false}
                   loading={loadingNotifications}
