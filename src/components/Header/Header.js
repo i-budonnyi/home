@@ -53,19 +53,18 @@ const Header = () => {
     }
   }, [fetchUserProfile]);
 
-  if (!isLoaded) {
-    return null;
-  }
+  if (!isLoaded) return null;
 
   return (
     <header
       style={{
-        padding: '15px 20px',
+        padding: '6px 20px',
         backgroundColor: '#003366',
         color: 'white',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
+        height: '48px',
       }}
     >
       <h1
@@ -73,24 +72,27 @@ const Header = () => {
         style={{
           cursor: 'pointer',
           margin: 0,
-          fontSize: '24px',
+          fontSize: '18px',
         }}
       >
         Avtologistika
       </h1>
+
       <nav>
         {userName ? (
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <span
               onClick={() => navigate('/worker')}
               style={{
-                marginRight: '15px',
+                marginRight: '12px',
                 cursor: 'pointer',
+                fontWeight: '500',
+                fontSize: '14px',
                 textDecoration: 'underline',
-                fontWeight: 'bold',
               }}
+              title="Перейти до профілю"
             >
-              Привіт, {userName}!
+              {userName}
             </span>
             <button
               onClick={handleLogout}
@@ -98,12 +100,13 @@ const Header = () => {
                 color: 'white',
                 backgroundColor: '#dc3545',
                 border: 'none',
-                borderRadius: '5px',
-                padding: '8px 12px',
+                borderRadius: '4px',
+                padding: '6px 10px',
                 cursor: 'pointer',
+                fontSize: '13px',
               }}
             >
-              Вихід
+              Вийти
             </button>
           </div>
         ) : (
@@ -114,10 +117,11 @@ const Header = () => {
                 color: 'white',
                 backgroundColor: '#28a745',
                 border: 'none',
-                borderRadius: '5px',
-                padding: '8px 12px',
+                borderRadius: '4px',
+                padding: '6px 10px',
                 cursor: 'pointer',
-                marginRight: '10px',
+                marginRight: '8px',
+                fontSize: '13px',
               }}
             >
               Вхід
@@ -128,9 +132,10 @@ const Header = () => {
                 color: 'white',
                 backgroundColor: '#17a2b8',
                 border: 'none',
-                borderRadius: '5px',
-                padding: '8px 12px',
+                borderRadius: '4px',
+                padding: '6px 10px',
                 cursor: 'pointer',
+                fontSize: '13px',
               }}
             >
               Реєстрація
