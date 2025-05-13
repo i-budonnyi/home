@@ -1,4 +1,4 @@
-// WorkerPage — меню без білого фону, без дублювання, виправлений синтаксис
+// WorkerPage — вирівняна картка, стабільне завантаження сповіщень
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -69,17 +69,24 @@ const WorkerPage = () => {
   }, [navigate, form]);
 
   const fetchNotifications = useCallback(async () => {
-    if (!userData?.id) return;
+    if (!userData?.id) {
+      console.warn("🔸 userId відсутній");
+      return;
+    }
     try {
       setLoadingNotifications(true);
       const res = await axios.get(`${API_BASE_URL}/notifications/${userData.id}`);
       setNotifications(res.data || []);
     } catch (err) {
-      console.error("❌ Новини:", err.message);
+      console.error("❌ Помилка завантаження сповіщень:", err.message);
     } finally {
       setLoadingNotifications(false);
     }
   }, [userData?.id]);
+
+  useEffect(() => {
+    if (userData?.id) fetchNotifications();
+  }, [userData?.id, fetchNotifications]);
 
   const markAllAsRead = async () => {
     try {
@@ -166,65 +173,60 @@ const WorkerPage = () => {
 
         <Layout style={{ marginLeft: 340 }}>
           <Header style={{ background: "transparent", height: 0, padding: 0 }} />
-          <Content style={{ padding: "40px 0px 40px 0px", background: themeMode.token.colorBgLayout }}>
+          <Content style={{ padding: "40px 0 40px 24px", background: themeMode.token.colorBgLayout }}>
             {isCheckingRole ? (
               <Title level={3}>⏳ Завантаження...</Title>
             ) : error ? (
               <Title level={3} type="danger">❌ {error}</Title>
             ) : (
-              <Row justify="start">
-                <Col>
-                  <Card style={{
-                    width: 880,
-                    marginLeft: 0,
-                    borderRadius: 20,
-                    padding: 28,
-                    background: themeMode.token.colorBgContainer,
-                    boxShadow: isDarkMode ? "0 8px 24px rgba(0,0,0,0.5)" : "0 6px 18px rgba(0,0,0,0.1)"
-                  }} bordered={false}>
-                    <Title level={4} style={{ marginBottom: 4 }}>{userData.firstName} {userData.lastName}</Title>
-                    <Text type="secondary">
-                      Роль: <Badge count={userData.role} style={{ backgroundColor: "#08966E" }} />
-                    </Text>
-                    <Divider />
-                    <Form form={form} layout="vertical">
-                      {["first_name", "last_name", "phone", "email"].map((field) => (
-                        <Form.Item key={field} label={getLabel(field)} name={field}>
-                          <Input
-                            disabled={editField !== field}
-                            prefix={getIcon(field)}
-                            addonAfter={
-                              editField === field ? (
-                                <SaveOutlined onClick={() => saveField(field)} style={{ cursor: "pointer" }} />
-                              ) : (
-                                <EditOutlined onClick={() => setEditField(field)} style={{ cursor: "pointer" }} />
-                              )
-                            }
-                          />
-                        </Form.Item>
-                      ))}
-                    </Form>
-                    <Divider />
-                    <Title level={5} style={{ marginTop: 24 }}>Новини ({notifications.filter(n => !n.is_read).length})</Title>
-                    <List
-                      bordered={false}
-                      loading={loadingNotifications}
-                      locale={{ emptyText: "Наразі немає новин" }}
-                      dataSource={notifications}
-                      renderItem={(item) => (
-                        <List.Item style={{ opacity: item.is_read ? 0.5 : 1, padding: 12 }}>
-                          {item.message}
-                        </List.Item>
-                      )}
-                    />
-                    {notifications.length > 0 && (
-                      <div style={{ marginTop: 16 }}>
-                        <Button onClick={markAllAsRead} type="primary">Позначити всі як прочитані</Button>
-                      </div>
-                    )}
-                  </Card>
-                </Col>
-              </Row>
+              <Card style={{
+                width: 880,
+                borderRadius: 20,
+                padding: 28,
+                background: themeMode.token.colorBgContainer,
+                boxShadow: isDarkMode ? "0 8px 24px rgba(0,0,0,0.5)" : "0 6px 18px rgba(0,0,0,0.1)"
+              }} bordered={false}>
+                <Title level={4} style={{ marginBottom: 4 }}>{userData.firstName} {userData.lastName}</Title>
+                <Text type="secondary">
+                  Роль: <Badge count={userData.role} style={{ backgroundColor: "#08966E" }} />
+                </Text>
+                <Divider />
+                <Form form={form} layout="vertical">
+                  {["first_name", "last_name", "phone", "email"].map((field) => (
+                    <Form.Item key={field} label={getLabel(field)} name={field}>
+                      <Input
+                        disabled={editField !== field}
+                        prefix={getIcon(field)}
+                        addonAfter={
+                          editField === field ? (
+                            <SaveOutlined onClick={() => saveField(field)} style={{ cursor: "pointer" }} />
+                          ) : (
+                            <EditOutlined onClick={() => setEditField(field)} style={{ cursor: "pointer" }} />
+                          )
+                        }
+                      />
+                    </Form.Item>
+                  ))}
+                </Form>
+                <Divider />
+                <Title level={5} style={{ marginTop: 24 }}>Новини ({notifications.filter(n => !n.is_read).length})</Title>
+                <List
+                  bordered={false}
+                  loading={loadingNotifications}
+                  locale={{ emptyText: "Наразі немає новин" }}
+                  dataSource={notifications}
+                  renderItem={(item) => (
+                    <List.Item style={{ opacity: item.is_read ? 0.5 : 1, padding: 12 }}>
+                      {item.message}
+                    </List.Item>
+                  )}
+                />
+                {notifications.length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <Button onClick={markAllAsRead} type="primary">Позначити всі як прочитані</Button>
+                  </div>
+                )}
+              </Card>
             )}
           </Content>
         </Layout>
