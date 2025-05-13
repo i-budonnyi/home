@@ -70,24 +70,24 @@ const WorkerPage = () => {
   }, [navigate, form]);
 
   const fetchNotifications = useCallback(async (userId) => {
-  if (!userId) return;
+    if (!userId) return;
 
-  try {
-    setLoadingNotifications(true);
-    const res = await axios.get(`${API_BASE_URL}/notifications/${userId}`);
-    setNotifications(res.data || []);
-  } catch (err) {
-    console.error("❌ Сповіщення не отримано:", err.response?.data || err.message);
-  } finally {
-    setLoadingNotifications(false);
-  }
-}, []);
+    try {
+      setLoadingNotifications(true);
+      const res = await axios.get(`${API_BASE_URL}/notifications/${userId}`);
+      setNotifications(res.data || []);
+    } catch (err) {
+      console.error("❌ Сповіщення не отримано:", err.response?.data || err.message);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  }, []);
 
-useEffect(() => {
-  if (userData?.id) {
-    fetchNotifications(userData.id);
-  }
-}, [userData?.id, fetchNotifications]);
+  useEffect(() => {
+    if (userData?.id) {
+      fetchNotifications(userData.id);
+    }
+  }, [userData?.id, fetchNotifications]);
 
   const markAllAsRead = async () => {
     try {
@@ -95,7 +95,7 @@ useEffect(() => {
       await Promise.all(unread.map(n =>
         axios.patch(`${API_BASE_URL}/notifications/${n.id}/read`)
       ));
-      fetchNotifications();
+      fetchNotifications(userData.id); // 🔧 Єдина правка тут
     } catch (err) {
       console.error("❌ Не вдалося позначити як прочитані:", err.message);
     }
