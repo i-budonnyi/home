@@ -74,7 +74,7 @@ const WorkerPage = () => {
 
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE_URL}/notifications/${userId}`);
+      const res = await axios.get(`${API_BASE_URL}/notifications/user/${userId}`); // ✅ Виправлено тут
       setNotifications(res.data || []);
     } catch (err) {
       console.error("❌ Сповіщення не отримано:", err.response?.data || err.message);
@@ -95,7 +95,7 @@ const WorkerPage = () => {
       await Promise.all(unread.map(n =>
         axios.patch(`${API_BASE_URL}/notifications/${n.id}/read`)
       ));
-      fetchNotifications(userData.id); // 🔧 Єдина правка тут
+      fetchNotifications(userData.id);
     } catch (err) {
       console.error("❌ Не вдалося позначити як прочитані:", err.message);
     }
