@@ -1,8 +1,9 @@
+// Повністю оновлений WorkerPage у стилі Material Design 3
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout, Menu, Avatar, Typography, Button, Input, Form, message,
-  ConfigProvider, theme, Row, Col, List, Card, Space
+  ConfigProvider, theme, Row, Col, List, Card, Space, Divider
 } from "antd";
 import {
   MessageOutlined, BulbOutlined, FileTextOutlined, ProjectOutlined,
@@ -12,7 +13,7 @@ import {
 import axios from "axios";
 
 const { Content, Sider, Header } = Layout;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
 
 const WorkerPage = () => {
@@ -110,10 +111,11 @@ const WorkerPage = () => {
     algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
     token: {
       colorPrimary: "#1E63F2",
-      fontFamily: "Segoe UI, sans-serif",
+      fontFamily: "Roboto, sans-serif",
+      borderRadius: 12,
       colorTextBase: isDarkMode ? "#E1E6EB" : "#1C1C1C",
       colorBgContainer: isDarkMode ? "#1C1F26" : "#FFFFFF",
-      colorBgLayout: isDarkMode ? "#14171D" : "#F4F6F9",
+      colorBgLayout: isDarkMode ? "#121212" : "#F9FAFB",
       colorBorder: isDarkMode ? "#2C313A" : "#DDE1E6",
     },
   };
@@ -121,9 +123,9 @@ const WorkerPage = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh" }}>
-        <Sider width={240} style={{ backgroundColor: isDarkMode ? "#0D1B2A" : "#E6F0FF", paddingTop: 16 }}>
+        <Sider width={240} style={{ backgroundColor: isDarkMode ? "#1A1A1A" : "#F1F5F9", paddingTop: 16 }}>
           <div style={{ padding: "0 16px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Title level={4} style={{ color: isDarkMode ? "#fff" : "#1C1C1C", fontWeight: 600 }}>Avtologistika</Title>
+            <Title level={4} style={{ color: isDarkMode ? "#fff" : "#1E63F2", fontWeight: 700 }}>Avtologistika</Title>
             <Button
               type="text"
               icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
@@ -149,34 +151,33 @@ const WorkerPage = () => {
         </Sider>
 
         <Layout style={{ marginLeft: 240 }}>
-          <Header style={{ background: isDarkMode ? "#0D1B2A" : "#FFFFFF", height: 56 }} />
-          <Content style={{ padding: "30px 50px 50px", background: themeMode.token.colorBgLayout }}>
+          <Header style={{ background: isDarkMode ? "#1A1A1A" : "#FFFFFF", height: 56 }} />
+          <Content style={{ padding: "40px 60px", background: themeMode.token.colorBgLayout }}>
             {isCheckingRole ? (
               <Title level={3}>⏳ Завантаження...</Title>
             ) : error ? (
               <Title level={3} type="danger">❌ {error}</Title>
             ) : (
               <Row justify="center">
-                <Col xs={24} sm={22} md={18} lg={14} xl={12}>
+                <Col xs={24} sm={22} md={16} lg={12} xl={10}>
                   <Card style={{
-                    borderRadius: 20,
-                    padding: 24,
+                    borderRadius: 16,
+                    padding: 28,
                     background: themeMode.token.colorBgContainer,
                     boxShadow: isDarkMode
-                      ? "0 4px 20px rgba(0, 0, 0, 0.4)"
-                      : "0 4px 12px rgba(0, 0, 0, 0.08)",
+                      ? "0 8px 24px rgba(0, 0, 0, 0.4)"
+                      : "0 6px 18px rgba(0, 0, 0, 0.1)",
                     transition: "all 0.3s ease-in-out",
                   }} bordered={false}>
-                    <Space direction="horizontal" align="center" style={{ marginBottom: 24 }}>
+                    <Space align="center" style={{ marginBottom: 32 }}>
                       <Avatar size={64} icon={<UserOutlined />} src={userData.profilePicture} />
                       <div>
-                        <Title level={4} style={{ margin: 0 }}>
-                          {userData.firstName} {userData.lastName}
-                        </Title>
-                        <div style={{ color: "#888" }}>Роль: {userData.role}</div>
+                        <Title level={4} style={{ margin: 0 }}>{userData.firstName} {userData.lastName}</Title>
+                        <Text type="secondary">Роль: {userData.role}</Text>
                       </div>
                     </Space>
 
+                    <Divider />
                     <Form form={form} layout="vertical">
                       {["first_name", "last_name", "phone", "email"].map((field) => (
                         <Form.Item key={field} label={getLabel(field)} name={field}>
@@ -195,25 +196,24 @@ const WorkerPage = () => {
                       ))}
                     </Form>
 
-                    <div style={{ marginTop: 40 }}>
-                      <Title level={4}>Новини ({notifications.filter(n => !n.is_read).length})</Title>
-                      <List
-                        bordered
-                        loading={loadingNotifications}
-                        locale={{ emptyText: "Наразі немає новин" }}
-                        dataSource={notifications}
-                        renderItem={(item) => (
-                          <List.Item style={{ opacity: item.is_read ? 0.5 : 1 }}>
-                            {item.message}
-                          </List.Item>
-                        )}
-                      />
-                      {notifications.length > 0 && (
-                        <div style={{ marginTop: 10 }}>
-                          <Button onClick={markAllAsRead}>Позначити всі як прочитані</Button>
-                        </div>
+                    <Divider />
+                    <Title level={5} style={{ marginTop: 24 }}>Новини ({notifications.filter(n => !n.is_read).length})</Title>
+                    <List
+                      bordered={false}
+                      loading={loadingNotifications}
+                      locale={{ emptyText: "Наразі немає новин" }}
+                      dataSource={notifications}
+                      renderItem={(item) => (
+                        <List.Item style={{ opacity: item.is_read ? 0.5 : 1, padding: 12 }}>
+                          {item.message}
+                        </List.Item>
                       )}
-                    </div>
+                    />
+                    {notifications.length > 0 && (
+                      <div style={{ marginTop: 16 }}>
+                        <Button onClick={markAllAsRead} type="primary">Позначити всі як прочитані</Button>
+                      </div>
+                    )}
                   </Card>
                 </Col>
               </Row>
