@@ -1,4 +1,4 @@
-// WorkerPage — фінальний, сучасний, вирівняний інтерфейс
+// WorkerPage — відповідно до малюнка: карта вирівняна, меню без білого фону, перемикач зверху
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -123,21 +123,30 @@ const WorkerPage = () => {
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh" }}>
         <Sider
-          width={360}
+          width={340}
           style={{
-            backgroundColor: isDarkMode ? "#1F1F1F" : "#E7EAEE",
-            padding: "32px 20px",
+            background: "transparent",
+            padding: "32px 24px 24px 24px",
             display: "flex",
             flexDirection: "column",
-            gap: 32,
+            justifyContent: "flex-start",
           }}
         >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+            <Title level={4} style={{ color: isDarkMode ? "#fff" : "#1E63F2", fontWeight: 700, fontSize: 20 }}>Avtologistika</Title>
+            <Button
+              type="text"
+              icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+              onClick={toggleTheme}
+              style={{ fontSize: 20, color: isDarkMode ? "#fff" : "#1E63F2" }}
+            />
+          </div>
           <Menu
             mode="inline"
             theme={isDarkMode ? "dark" : "light"}
             selectedKeys={[window.location.pathname]}
             onClick={({ key }) => navigate(key)}
-            style={{ border: "none", fontSize: 16, display: "flex", flexDirection: "column", gap: 20 }}
+            style={{ border: "none", fontSize: 16, display: "flex", flexDirection: "column", gap: 16 }}
             items={[
               { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
               { key: "/submit-problem", icon: <FileTextOutlined />, label: "Подати проблему" },
@@ -147,27 +156,21 @@ const WorkerPage = () => {
               { key: "/subscriptions", icon: <StarOutlined />, label: "Мої підписки" },
             ]}
           />
-          <Button
-            type="text"
-            icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
-            onClick={toggleTheme}
-            style={{ fontSize: 20, color: isDarkMode ? "#fff" : "#1E63F2" }}
-          />
         </Sider>
 
-        <Layout style={{ marginLeft: 360 }}>
-          <Header style={{ background: themeMode.token.colorBgLayout, height: 56 }} />
+        <Layout style={{ marginLeft: 340 }}>
+          <Header style={{ background: "transparent", height: 0, padding: 0 }} />
 
-          <Content style={{ padding: "40px 60px", background: themeMode.token.colorBgLayout }}>
+          <Content style={{ padding: "40px 0px 40px 0px", background: themeMode.token.colorBgLayout }}>
             {isCheckingRole ? (
               <Title level={3}>⏳ Завантаження...</Title>
             ) : error ? (
               <Title level={3} type="danger">❌ {error}</Title>
             ) : (
               <Row justify="start">
-                <Col span={24}>
+                <Col>
                   <Card style={{
-                    maxWidth: 880,
+                    width: 880,
                     marginLeft: 0,
                     borderRadius: 20,
                     padding: 28,
