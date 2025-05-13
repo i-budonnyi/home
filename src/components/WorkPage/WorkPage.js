@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout, Menu, Typography, Button, Input, Form, message,
-  ConfigProvider, theme, Row, Col, List, Card, Space, Divider, Badge
+  ConfigProvider, theme, Row, Col, List, Card, Divider, Badge
 } from "antd";
 import {
   MessageOutlined, BulbOutlined, FileTextOutlined, ProjectOutlined,
@@ -169,13 +169,12 @@ const WorkerPage = () => {
                     borderRadius: 20,
                     padding: 28,
                     background: themeMode.token.colorBgContainer,
-                    boxShadow: isDarkMode ? "0 8px 24px rgba(0,0,0,0.5)" : "0 6px 18px rgba(0,0,0,0.1)",
+                    boxShadow: isDarkMode ? "0 8px 24px rgba(0,0,0,0.5)" : "0 6px 18px rgba(0,0,0,0.1)"
                   }} bordered={false}>
                     <Title level={4} style={{ marginBottom: 4 }}>{userData.firstName} {userData.lastName}</Title>
                     <Text type="secondary">
                       Роль: <Badge count={userData.role} style={{ backgroundColor: "#08966E" }} />
                     </Text>
-
                     <Divider />
                     <Form form={form} layout="vertical">
                       {["first_name", "last_name", "phone", "email"].map((field) => (
@@ -194,7 +193,6 @@ const WorkerPage = () => {
                         </Form.Item>
                       ))}
                     </Form>
-
                     <Divider />
                     <Title level={5} style={{ marginTop: 24 }}>Новини ({notifications.filter(n => !n.is_read).length})</Title>
                     <List
