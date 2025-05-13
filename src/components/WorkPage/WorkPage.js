@@ -1,9 +1,9 @@
-// Повністю оновлений WorkerPage у стилі Material Design 3
+// WorkerPage у стилі Material Design 3 — без аватара, з об'єднаною елегантною карткою
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Layout, Menu, Avatar, Typography, Button, Input, Form, message,
-  ConfigProvider, theme, Row, Col, List, Card, Space, Divider
+  Layout, Menu, Typography, Button, Input, Form, message,
+  ConfigProvider, theme, Row, Col, List, Card, Space, Divider, Badge
 } from "antd";
 import {
   MessageOutlined, BulbOutlined, FileTextOutlined, ProjectOutlined,
@@ -49,7 +49,6 @@ const WorkerPage = () => {
           lastName: user.last_name || "",
           email: user.email || "",
           phone: user.phone || "",
-          profilePicture: user.profile_picture || "",
           role: user.role?.toLowerCase() || "worker",
           editedOnce: user.edited_once || false,
         });
@@ -112,10 +111,10 @@ const WorkerPage = () => {
     token: {
       colorPrimary: "#1E63F2",
       fontFamily: "Roboto, sans-serif",
-      borderRadius: 12,
+      borderRadius: 20,
       colorTextBase: isDarkMode ? "#E1E6EB" : "#1C1C1C",
-      colorBgContainer: isDarkMode ? "#1C1F26" : "#FFFFFF",
-      colorBgLayout: isDarkMode ? "#121212" : "#F9FAFB",
+      colorBgContainer: isDarkMode ? "#1E1E1E" : "#FFFFFF",
+      colorBgLayout: isDarkMode ? "#121212" : "#F8F9FA",
       colorBorder: isDarkMode ? "#2C313A" : "#DDE1E6",
     },
   };
@@ -151,7 +150,13 @@ const WorkerPage = () => {
         </Sider>
 
         <Layout style={{ marginLeft: 240 }}>
-          <Header style={{ background: isDarkMode ? "#1A1A1A" : "#FFFFFF", height: 56 }} />
+          <Header style={{ background: isDarkMode ? "#1A1A1A" : "#FFFFFF", height: 56, padding: "0 24px", display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+            <Text style={{ marginRight: 16, color: isDarkMode ? "#fff" : "#1E63F2" }}>
+              Привіт, <strong>{userData?.firstName} {userData?.lastName}</strong>
+            </Text>
+            <Button danger onClick={() => navigate("/login")}>Вийти</Button>
+          </Header>
+
           <Content style={{ padding: "40px 60px", background: themeMode.token.colorBgLayout }}>
             {isCheckingRole ? (
               <Title level={3}>⏳ Завантаження...</Title>
@@ -161,21 +166,15 @@ const WorkerPage = () => {
               <Row justify="center">
                 <Col xs={24} sm={22} md={16} lg={12} xl={10}>
                   <Card style={{
-                    borderRadius: 16,
+                    borderRadius: 20,
                     padding: 28,
                     background: themeMode.token.colorBgContainer,
-                    boxShadow: isDarkMode
-                      ? "0 8px 24px rgba(0, 0, 0, 0.4)"
-                      : "0 6px 18px rgba(0, 0, 0, 0.1)",
-                    transition: "all 0.3s ease-in-out",
+                    boxShadow: isDarkMode ? "0 8px 24px rgba(0,0,0,0.5)" : "0 6px 18px rgba(0,0,0,0.1)",
                   }} bordered={false}>
-                    <Space align="center" style={{ marginBottom: 32 }}>
-                      <Avatar size={64} icon={<UserOutlined />} src={userData.profilePicture} />
-                      <div>
-                        <Title level={4} style={{ margin: 0 }}>{userData.firstName} {userData.lastName}</Title>
-                        <Text type="secondary">Роль: {userData.role}</Text>
-                      </div>
-                    </Space>
+                    <Title level={4} style={{ marginBottom: 4 }}>{userData.firstName} {userData.lastName}</Title>
+                    <Text type="secondary">
+                      Роль: <Badge count={userData.role} style={{ backgroundColor: "#08966E" }} />
+                    </Text>
 
                     <Divider />
                     <Form form={form} layout="vertical">
