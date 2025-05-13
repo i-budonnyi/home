@@ -1,4 +1,4 @@
-// WorkerPage з правильним боковим меню, без дублів, з вирівняною карткою
+// WorkerPage — фінальний, сучасний, вирівняний інтерфейс
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -123,22 +123,21 @@ const WorkerPage = () => {
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh" }}>
         <Sider
-          width={300}
+          width={360}
           style={{
-            backgroundColor: isDarkMode ? "#1F1F1F" : "#F4F6F9",
-            padding: "32px 24px",
+            backgroundColor: isDarkMode ? "#1F1F1F" : "#E7EAEE",
+            padding: "32px 20px",
             display: "flex",
             flexDirection: "column",
             gap: 32,
           }}
         >
-          <Title level={4} style={{ color: isDarkMode ? "#fff" : "#1E63F2", fontWeight: 700, fontSize: 20 }}>Avtologistika</Title>
           <Menu
             mode="inline"
             theme={isDarkMode ? "dark" : "light"}
             selectedKeys={[window.location.pathname]}
             onClick={({ key }) => navigate(key)}
-            style={{ border: "none", fontSize: 16, display: "flex", flexDirection: "column", gap: 16 }}
+            style={{ border: "none", fontSize: 16, display: "flex", flexDirection: "column", gap: 20 }}
             items={[
               { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
               { key: "/submit-problem", icon: <FileTextOutlined />, label: "Подати проблему" },
@@ -156,7 +155,7 @@ const WorkerPage = () => {
           />
         </Sider>
 
-        <Layout style={{ marginLeft: 300 }}>
+        <Layout style={{ marginLeft: 360 }}>
           <Header style={{ background: themeMode.token.colorBgLayout, height: 56 }} />
 
           <Content style={{ padding: "40px 60px", background: themeMode.token.colorBgLayout }}>
@@ -166,8 +165,10 @@ const WorkerPage = () => {
               <Title level={3} type="danger">❌ {error}</Title>
             ) : (
               <Row justify="start">
-                <Col xs={24} sm={22} md={20} lg={18} xl={14} style={{ marginLeft: 0 }}>
+                <Col span={24}>
                   <Card style={{
+                    maxWidth: 880,
+                    marginLeft: 0,
                     borderRadius: 20,
                     padding: 28,
                     background: themeMode.token.colorBgContainer,
