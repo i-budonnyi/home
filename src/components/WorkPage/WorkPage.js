@@ -69,23 +69,25 @@ const WorkerPage = () => {
     fetchUserProfile();
   }, [navigate, form]);
 
-  const fetchNotifications = useCallback(async () => {
-    if (!userData?.id) return;
+  const fetchNotifications = useCallback(async (userId) => {
+  if (!userId) return;
 
-    try {
-      setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE_URL}/notifications/${userData.id}`);
-      setNotifications(res.data || []);
-    } catch (err) {
-      console.error("❌ Сповіщення не отримано:", err.message);
-    } finally {
-      setLoadingNotifications(false);
-    }
-  }, [userData?.id]);
+  try {
+    setLoadingNotifications(true);
+    const res = await axios.get(`${API_BASE_URL}/notifications/${userId}`);
+    setNotifications(res.data || []);
+  } catch (err) {
+    console.error("❌ Сповіщення не отримано:", err.response?.data || err.message);
+  } finally {
+    setLoadingNotifications(false);
+  }
+}, []);
 
-  useEffect(() => {
-    if (userData?.id) fetchNotifications();
-  }, [userData?.id, fetchNotifications]);
+useEffect(() => {
+  if (userData?.id) {
+    fetchNotifications(userData.id);
+  }
+}, [userData?.id, fetchNotifications]);
 
   const markAllAsRead = async () => {
     try {
