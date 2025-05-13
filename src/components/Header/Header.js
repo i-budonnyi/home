@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const API_BASE_URL = 'https://backend-avtologistika.onrender.com/api/userRoutes';
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -53,30 +55,36 @@ const Header = () => {
     }
   }, [fetchUserProfile]);
 
+  useEffect(() => {
+    const currentTheme = localStorage.getItem('theme');
+    setIsDarkMode(currentTheme === 'dark');
+  }, [location.pathname]); // 🔁 перевірка теми при зміні маршруту
+
   if (!isLoaded) return null;
 
   return (
     <header
       style={{
-        padding: '6px 20px',
-        backgroundColor: '#003366',
+        height: '36px',
+        backgroundColor: isDarkMode ? '#1A1A1A' : '#003366',
         color: 'white',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        height: '48px',
+        padding: '0 16px',
+        fontSize: '13px',
       }}
     >
-      <h1
+      <div
         onClick={() => navigate('/')}
         style={{
           cursor: 'pointer',
-          margin: 0,
-          fontSize: '18px',
+          fontWeight: 600,
+          fontSize: '14px',
         }}
       >
         Avtologistika
-      </h1>
+      </div>
 
       <nav>
         {userName ? (
@@ -84,13 +92,12 @@ const Header = () => {
             <span
               onClick={() => navigate('/worker')}
               style={{
-                marginRight: '12px',
+                marginRight: '10px',
                 cursor: 'pointer',
-                fontWeight: '500',
-                fontSize: '14px',
                 textDecoration: 'underline',
+                fontSize: '13px',
+                fontWeight: 500,
               }}
-              title="Перейти до профілю"
             >
               {userName}
             </span>
@@ -100,10 +107,11 @@ const Header = () => {
                 color: 'white',
                 backgroundColor: '#dc3545',
                 border: 'none',
-                borderRadius: '4px',
-                padding: '6px 10px',
+                borderRadius: '3px',
+                padding: '4px 8px',
                 cursor: 'pointer',
-                fontSize: '13px',
+                fontSize: '12px',
+                lineHeight: '1',
               }}
             >
               Вийти
@@ -117,11 +125,12 @@ const Header = () => {
                 color: 'white',
                 backgroundColor: '#28a745',
                 border: 'none',
-                borderRadius: '4px',
-                padding: '6px 10px',
+                borderRadius: '3px',
+                padding: '4px 8px',
                 cursor: 'pointer',
-                marginRight: '8px',
-                fontSize: '13px',
+                marginRight: '6px',
+                fontSize: '12px',
+                lineHeight: '1',
               }}
             >
               Вхід
@@ -132,10 +141,11 @@ const Header = () => {
                 color: 'white',
                 backgroundColor: '#17a2b8',
                 border: 'none',
-                borderRadius: '4px',
-                padding: '6px 10px',
+                borderRadius: '3px',
+                padding: '4px 8px',
                 cursor: 'pointer',
-                fontSize: '13px',
+                fontSize: '12px',
+                lineHeight: '1',
               }}
             >
               Реєстрація
