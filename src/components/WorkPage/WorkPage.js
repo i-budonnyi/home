@@ -95,7 +95,7 @@ const WorkerPage = () => {
     try {
       const values = await form.validateFields([field]);
       await axios.patch(`${API_BASE_URL}/userRoutes/${userData.id}`, {
-        [field === "first_name" ? "first_name" : field]: values[field],
+        [field]: values[field],
         edited_once: true,
       });
       setUserData(prev => ({ ...prev, [field]: values[field] }));
@@ -106,19 +106,29 @@ const WorkerPage = () => {
     }
   };
 
-  const themeMode = isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm;
+  const themeMode = {
+    algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+    token: {
+      colorPrimary: "#1E63F2",
+      fontFamily: "Segoe UI, sans-serif",
+      colorTextBase: isDarkMode ? "#E1E6EB" : "#1C1C1C",
+      colorBgContainer: isDarkMode ? "#1C1F26" : "#FFFFFF",
+      colorBgLayout: isDarkMode ? "#14171D" : "#F4F6F9",
+      colorBorder: isDarkMode ? "#2C313A" : "#DDE1E6",
+    },
+  };
 
   return (
-    <ConfigProvider theme={{ algorithm: themeMode }}>
+    <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh" }}>
-        <Sider width={220} style={styles.sider} theme={isDarkMode ? "dark" : "light"}>
-          <div style={styles.logo}>
-            <Title level={4} style={{ color: "#fff", margin: 0 }}>Avtologistika</Title>
+        <Sider width={240} style={{ backgroundColor: isDarkMode ? "#0D1B2A" : "#E6F0FF", paddingTop: 16 }}>
+          <div style={{ padding: "0 16px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Title level={4} style={{ color: isDarkMode ? "#fff" : "#1C1C1C", fontWeight: 600 }}>Avtologistika</Title>
             <Button
               type="text"
               icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
               onClick={toggleTheme}
-              style={{ fontSize: 18, color: "#fff" }}
+              style={{ fontSize: 18, color: isDarkMode ? "#fff" : "#1E63F2" }}
             />
           </div>
           <Menu
@@ -126,6 +136,7 @@ const WorkerPage = () => {
             theme={isDarkMode ? "dark" : "light"}
             selectedKeys={[window.location.pathname]}
             onClick={({ key }) => navigate(key)}
+            style={{ border: "none" }}
             items={[
               { key: "/blog", icon: <MessageOutlined />, label: "Блог" },
               { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
@@ -137,24 +148,32 @@ const WorkerPage = () => {
           />
         </Sider>
 
-        <Layout style={{ marginLeft: 220 }}>
-          <Header style={styles.header} />
-          <Content style={styles.content}>
+        <Layout style={{ marginLeft: 240 }}>
+          <Header style={{ background: isDarkMode ? "#0D1B2A" : "#FFFFFF", height: 56 }} />
+          <Content style={{ padding: "30px 50px 50px", background: themeMode.token.colorBgLayout }}>
             {isCheckingRole ? (
               <Title level={3}>⏳ Завантаження...</Title>
             ) : error ? (
               <Title level={3} type="danger">❌ {error}</Title>
             ) : (
-              <Row justify="start">
+              <Row justify="center">
                 <Col xs={24} sm={22} md={18} lg={14} xl={12}>
-                  <Card style={styles.card} bordered={false}>
+                  <Card style={{
+                    borderRadius: 20,
+                    padding: 24,
+                    background: themeMode.token.colorBgContainer,
+                    boxShadow: isDarkMode
+                      ? "0 4px 20px rgba(0, 0, 0, 0.4)"
+                      : "0 4px 12px rgba(0, 0, 0, 0.08)",
+                    transition: "all 0.3s ease-in-out",
+                  }} bordered={false}>
                     <Space direction="horizontal" align="center" style={{ marginBottom: 24 }}>
                       <Avatar size={64} icon={<UserOutlined />} src={userData.profilePicture} />
                       <div>
-                        <Title level={4} style={{ margin: 0, color: isDarkMode ? "#fff" : "#000" }}>
+                        <Title level={4} style={{ margin: 0 }}>
                           {userData.firstName} {userData.lastName}
                         </Title>
-                        <div style={{ color: isDarkMode ? "#aaa" : "#888" }}>Роль: {userData.role}</div>
+                        <div style={{ color: "#888" }}>Роль: {userData.role}</div>
                       </div>
                     </Space>
 
@@ -177,9 +196,7 @@ const WorkerPage = () => {
                     </Form>
 
                     <div style={{ marginTop: 40 }}>
-                      <Title level={4} style={{ color: isDarkMode ? "#fff" : "#000" }}>
-                        Новини ({notifications.filter(n => !n.is_read).length})
-                      </Title>
+                      <Title level={4}>Новини ({notifications.filter(n => !n.is_read).length})</Title>
                       <List
                         bordered
                         loading={loadingNotifications}
@@ -208,60 +225,18 @@ const WorkerPage = () => {
   );
 };
 
-const getLabel = (field) => {
-  const map = {
-    first_name: "Ім’я",
-    last_name: "Прізвище",
-    phone: "Телефон",
-    email: "Email",
-  };
-  return map[field];
-};
+const getLabel = (field) => ({
+  first_name: "Ім’я",
+  last_name: "Прізвище",
+  phone: "Телефон",
+  email: "Email",
+}[field]);
 
-const getIcon = (field) => {
-  const map = {
-    first_name: <UserOutlined />,
-    last_name: <UserOutlined />,
-    phone: <PhoneOutlined />,
-    email: <MailOutlined />,
-  };
-  return map[field];
-};
-
-const styles = {
-  sider: {
-    height: "100vh",
-    position: "fixed",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: "#001529",
-    borderRight: "1px solid #001f3f",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    paddingTop: 20,
-  },
-  logo: {
-    padding: "0 16px 16px 16px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  header: {
-    background: "transparent",
-    height: 48,
-  },
-  content: {
-    padding: "30px 50px 50px",
-    background: "#f5f6fa",
-    minHeight: "100vh",
-  },
-  card: {
-    borderRadius: "16px",
-    boxShadow: "0 8px 20px rgba(0, 0, 0, 0.05)",
-    background: "#fff",
-  },
-};
+const getIcon = (field) => ({
+  first_name: <UserOutlined />,
+  last_name: <UserOutlined />,
+  phone: <PhoneOutlined />,
+  email: <MailOutlined />,
+}[field]);
 
 export default WorkerPage;
