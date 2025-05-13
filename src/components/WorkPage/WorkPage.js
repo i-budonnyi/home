@@ -131,33 +131,49 @@ const WorkerPage = () => {
             flexDirection: "column",
             justifyContent: "flex-start",
           }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
-            <Title level={4} style={{ color: isDarkMode ? "#fff" : "#1E63F2", fontWeight: 700, fontSize: 20 }}>Avtologistika</Title>
-            <Button
-              type="text"
-              icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
-              onClick={toggleTheme}
-              style={{ fontSize: 20, color: isDarkMode ? "#fff" : "#1E63F2" }}
-            />
-          </div>
-          <Menu
-            mode="inline"
-            theme={isDarkMode ? "dark" : "light"}
-            selectedKeys={[window.location.pathname]}
-            onClick={({ key }) => navigate(key)}
-            style={{ border: "none", fontSize: 16, display: "flex", flexDirection: "column", gap: 16 }}
-            items={[
-              { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
-              { key: "/submit-problem", icon: <FileTextOutlined />, label: "Подати проблему" },
-              { key: "/blog", icon: <MessageOutlined />, label: "Блог" },
-              { key: "/my-problems", icon: <ProjectOutlined />, label: "Мої проблеми" },
-              { key: "/projects", icon: <ProjectOutlined />, label: "Мої подані ідеї" },
-              { key: "/subscriptions", icon: <StarOutlined />, label: "Мої підписки" },
-            ]}
-          />
-        </Sider>
+        <Sider
+  width={340}
+  style={{
+    background: "transparent", // ❗️забирає фон самого контейнера
+    padding: "32px 24px 24px 24px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "flex-start",
+  }}
+>
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+    <Title level={4} style={{ color: isDarkMode ? "#fff" : "#1E63F2", fontWeight: 700, fontSize: 20 }}>Avtologistika</Title>
+    <Button
+      type="text"
+      icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+      onClick={toggleTheme}
+      style={{ fontSize: 20, color: isDarkMode ? "#fff" : "#1E63F2" }}
+    />
+  </div>
 
+  <Menu
+    mode="inline"
+    theme={isDarkMode ? "dark" : "light"}
+    selectedKeys={[window.location.pathname]}
+    onClick={({ key }) => navigate(key)}
+    style={{
+      background: "transparent", // 🟢 ключовий рядок — прибирає білий фон
+      border: "none",
+      fontSize: 16,
+      display: "flex",
+      flexDirection: "column",
+      gap: 16,
+    }}
+    items={[
+      { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
+      { key: "/submit-problem", icon: <FileTextOutlined />, label: "Подати проблему" },
+      { key: "/blog", icon: <MessageOutlined />, label: "Блог" },
+      { key: "/my-problems", icon: <ProjectOutlined />, label: "Мої проблеми" },
+      { key: "/projects", icon: <ProjectOutlined />, label: "Мої подані ідеї" },
+      { key: "/subscriptions", icon: <StarOutlined />, label: "Мої підписки" },
+    ]}
+  />
+</Sider>
         <Layout style={{ marginLeft: 340 }}>
           <Header style={{ background: "transparent", height: 0, padding: 0 }} />
 
