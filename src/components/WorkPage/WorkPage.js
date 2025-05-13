@@ -1,4 +1,4 @@
-// WorkerPage у стилі Material Design 3 — без аватара, з об'єднаною елегантною карткою
+// WorkerPage з оновленим боковим меню та вирівняною карткою
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -114,7 +114,7 @@ const WorkerPage = () => {
       borderRadius: 20,
       colorTextBase: isDarkMode ? "#E1E6EB" : "#1C1C1C",
       colorBgContainer: isDarkMode ? "#1E1E1E" : "#FFFFFF",
-      colorBgLayout: isDarkMode ? "#121212" : "#F8F9FA",
+      colorBgLayout: isDarkMode ? "#121212" : "#F0F2F5",
       colorBorder: isDarkMode ? "#2C313A" : "#DDE1E6",
     },
   };
@@ -122,22 +122,32 @@ const WorkerPage = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh" }}>
-        <Sider width={240} style={{ backgroundColor: isDarkMode ? "#1A1A1A" : "#F1F5F9", paddingTop: 16 }}>
-          <div style={{ padding: "0 16px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <Title level={4} style={{ color: isDarkMode ? "#fff" : "#1E63F2", fontWeight: 700 }}>Avtologistika</Title>
+        <Sider
+          width={260}
+          style={{
+            backgroundColor: isDarkMode ? "#1F1F1F" : "#E3EAF0",
+            padding: "24px 16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 24,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <Title level={4} style={{ color: isDarkMode ? "#fff" : "#1E63F2", fontWeight: 700, fontSize: 20 }}>Avtologistika</Title>
             <Button
               type="text"
               icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
               onClick={toggleTheme}
-              style={{ fontSize: 18, color: isDarkMode ? "#fff" : "#1E63F2" }}
+              style={{ fontSize: 20, color: isDarkMode ? "#fff" : "#1E63F2" }}
             />
           </div>
+
           <Menu
             mode="inline"
             theme={isDarkMode ? "dark" : "light"}
             selectedKeys={[window.location.pathname]}
             onClick={({ key }) => navigate(key)}
-            style={{ border: "none" }}
+            style={{ border: "none", fontSize: 16 }}
             items={[
               { key: "/blog", icon: <MessageOutlined />, label: "Блог" },
               { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
@@ -149,9 +159,9 @@ const WorkerPage = () => {
           />
         </Sider>
 
-        <Layout style={{ marginLeft: 240 }}>
+        <Layout style={{ marginLeft: 260 }}>
           <Header style={{ background: isDarkMode ? "#1A1A1A" : "#FFFFFF", height: 56, padding: "0 24px", display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
-            <Text style={{ marginRight: 16, color: isDarkMode ? "#fff" : "#1E63F2" }}>
+            <Text style={{ marginRight: 16, color: isDarkMode ? "#fff" : "#1E63F2", fontSize: 16 }}>
               Привіт, <strong>{userData?.firstName} {userData?.lastName}</strong>
             </Text>
             <Button danger onClick={() => navigate("/login")}>Вийти</Button>
@@ -163,8 +173,8 @@ const WorkerPage = () => {
             ) : error ? (
               <Title level={3} type="danger">❌ {error}</Title>
             ) : (
-              <Row justify="center">
-                <Col xs={24} sm={22} md={16} lg={12} xl={10}>
+              <Row justify="start">
+                <Col xs={24} sm={22} md={16} lg={12} xl={10} style={{ marginLeft: 20 }}>
                   <Card style={{
                     borderRadius: 20,
                     padding: 28,
