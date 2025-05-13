@@ -74,9 +74,7 @@ const WorkerPage = () => {
 
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE_URL}/notifications`, {
-        params: { userId: userData.id },
-      });
+      const res = await axios.get(`${API_BASE_URL}/notifications/${userData.id}`);
       setNotifications(res.data || []);
     } catch (err) {
       console.error("❌ Сповіщення не отримано:", err.message);
