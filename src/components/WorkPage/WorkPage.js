@@ -1,4 +1,4 @@
-// WorkerPage з оновленим боковим меню та вирівняною карткою
+// WorkerPage з правильним боковим меню, без дублів, з вирівняною карткою
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -123,49 +123,41 @@ const WorkerPage = () => {
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh" }}>
         <Sider
-          width={260}
+          width={300}
           style={{
-            backgroundColor: isDarkMode ? "#1F1F1F" : "#E3EAF0",
-            padding: "24px 16px",
+            backgroundColor: isDarkMode ? "#1F1F1F" : "#F4F6F9",
+            padding: "32px 24px",
             display: "flex",
             flexDirection: "column",
-            gap: 24,
+            gap: 32,
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Title level={4} style={{ color: isDarkMode ? "#fff" : "#1E63F2", fontWeight: 700, fontSize: 20 }}>Avtologistika</Title>
-            <Button
-              type="text"
-              icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
-              onClick={toggleTheme}
-              style={{ fontSize: 20, color: isDarkMode ? "#fff" : "#1E63F2" }}
-            />
-          </div>
-
+          <Title level={4} style={{ color: isDarkMode ? "#fff" : "#1E63F2", fontWeight: 700, fontSize: 20 }}>Avtologistika</Title>
           <Menu
             mode="inline"
             theme={isDarkMode ? "dark" : "light"}
             selectedKeys={[window.location.pathname]}
             onClick={({ key }) => navigate(key)}
-            style={{ border: "none", fontSize: 16 }}
+            style={{ border: "none", fontSize: 16, display: "flex", flexDirection: "column", gap: 16 }}
             items={[
-              { key: "/blog", icon: <MessageOutlined />, label: "Блог" },
               { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
               { key: "/submit-problem", icon: <FileTextOutlined />, label: "Подати проблему" },
+              { key: "/blog", icon: <MessageOutlined />, label: "Блог" },
               { key: "/my-problems", icon: <ProjectOutlined />, label: "Мої проблеми" },
               { key: "/projects", icon: <ProjectOutlined />, label: "Мої подані ідеї" },
-              { key: "/subscriptions", icon: <StarOutlined />, label: "Підписка" },
+              { key: "/subscriptions", icon: <StarOutlined />, label: "Мої підписки" },
             ]}
+          />
+          <Button
+            type="text"
+            icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+            onClick={toggleTheme}
+            style={{ fontSize: 20, color: isDarkMode ? "#fff" : "#1E63F2" }}
           />
         </Sider>
 
-        <Layout style={{ marginLeft: 260 }}>
-          <Header style={{ background: isDarkMode ? "#1A1A1A" : "#FFFFFF", height: 56, padding: "0 24px", display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
-            <Text style={{ marginRight: 16, color: isDarkMode ? "#fff" : "#1E63F2", fontSize: 16 }}>
-              Привіт, <strong>{userData?.firstName} {userData?.lastName}</strong>
-            </Text>
-            <Button danger onClick={() => navigate("/login")}>Вийти</Button>
-          </Header>
+        <Layout style={{ marginLeft: 300 }}>
+          <Header style={{ background: themeMode.token.colorBgLayout, height: 56 }} />
 
           <Content style={{ padding: "40px 60px", background: themeMode.token.colorBgLayout }}>
             {isCheckingRole ? (
@@ -174,7 +166,7 @@ const WorkerPage = () => {
               <Title level={3} type="danger">❌ {error}</Title>
             ) : (
               <Row justify="start">
-                <Col xs={24} sm={22} md={16} lg={12} xl={10} style={{ marginLeft: 20 }}>
+                <Col xs={24} sm={22} md={20} lg={18} xl={14} style={{ marginLeft: 0 }}>
                   <Card style={{
                     borderRadius: 20,
                     padding: 28,
