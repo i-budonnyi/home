@@ -71,40 +71,26 @@ const WorkerPage = () => {
     fetchUserProfile();
   }, [navigate, form]);
 
-  const fetchNotifications = useCallback(async () => {
-    if (!userData?.id) {
-      console.warn("🔸 userId відсутній, сповіщення не будуть завантажені.");
-      return;
-    }
-    try {
-      setLoadingNotifications(true);
-      console.log(`📡 Запит сповіщень: GET /notifications/${userData.id}`);
-      const res = await axios.get(`${API_BASE_URL}/notifications/${userData.id}`);
-      console.log("📬 Відповідь з бекенду:", res.data);
-      setNotifications(res.data || []);
-    } catch (err) {
-      console.error("❌ Помилка запиту сповіщень:", err.message);
-    } finally {
-      setLoadingNotifications(false);
-    }
-  }, [userData?.id]);
+ const fetchNotifications = useCallback(async () => {
+  if (!userData?.id) {
+    console.warn("🔸 userId відсутній, сповіщення не будуть завантажені.");
+    return;
+  }
+  try {
+    setLoadingNotifications(true);
+    console.log(`📡 GET /notifications?userId=${userData.id}`);
+    const res = await axios.get(`${API_BASE_URL}/notifications`, {
+      params: { userId: userData.id },
+    });
+    console.log("📬 Сповіщення отримані:", res.data);
+    setNotifications(res.data || []);
+  } catch (err) {
+    console.error("❌ Помилка при отриманні сповіщень:", err.message);
+  } finally {
+    setLoadingNotifications(false);
+  }
+}, [userData?.id]);
 
-  useEffect(() => {
-    if (userData?.id) fetchNotifications();
-  }, [userData?.id, fetchNotifications]);
-
-  const markAllAsRead = async () => {
-    try {
-      const unread = notifications.filter(n => !n.is_read);
-      console.log("🔄 Позначення як прочитані:", unread.map(n => n.id));
-      await Promise.all(unread.map(n =>
-        axios.patch(`${API_BASE_URL}/notifications/${n.id}/read`)
-      ));
-      fetchNotifications();
-    } catch (err) {
-      console.error("❌ markAllAsRead:", err.message);
-    }
-  };
 
   const saveField = async (field) => {
     try {
