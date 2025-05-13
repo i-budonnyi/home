@@ -1,9 +1,8 @@
-// WorkerPage — вирівняна картка, стабільне завантаження сповіщень
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout, Menu, Typography, Button, Input, Form, message,
-  ConfigProvider, theme, Row, Col, List, Card, Divider, Badge
+  ConfigProvider, theme, List, Card, Divider, Badge
 } from "antd";
 import {
   MessageOutlined, BulbOutlined, FileTextOutlined, ProjectOutlined,
@@ -75,10 +74,12 @@ const WorkerPage = () => {
     }
     try {
       setLoadingNotifications(true);
+      console.log("📡 Отримання сповіщень для ID:", userData.id);
       const res = await axios.get(`${API_BASE_URL}/notifications/${userData.id}`);
+      console.log("✅ Сповіщення отримано:", res.data);
       setNotifications(res.data || []);
     } catch (err) {
-      console.error("❌ Помилка завантаження сповіщень:", err.message);
+      console.error("❌ Помилка завантаження сповіщень:", err);
     } finally {
       setLoadingNotifications(false);
     }
