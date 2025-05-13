@@ -38,10 +38,13 @@ const WorkerPage = () => {
 
     const fetchUserProfile = async () => {
       try {
+        console.log("👤 Отримання профілю користувача...");
         const res = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const user = res.data;
+        console.log("✅ Профіль отримано:", user);
+
         setUserData({
           id: user.id,
           firstName: user.first_name || "",
@@ -58,6 +61,7 @@ const WorkerPage = () => {
           phone: user.phone,
         });
       } catch (err) {
+        console.error("❌ Помилка отримання профілю:", err);
         setError(err.response?.data?.message || "Сталася помилка");
       } finally {
         setIsCheckingRole(false);
@@ -69,17 +73,17 @@ const WorkerPage = () => {
 
   const fetchNotifications = useCallback(async () => {
     if (!userData?.id) {
-      console.warn("🔸 userId відсутній");
+      console.warn("🔸 userId відсутній, сповіщення не будуть завантажені.");
       return;
     }
     try {
       setLoadingNotifications(true);
-      console.log("📡 Отримання сповіщень для ID:", userData.id);
+      console.log("📡 [GET] /notifications/" + userData.id);
       const res = await axios.get(`${API_BASE_URL}/notifications/${userData.id}`);
-      console.log("✅ Сповіщення отримано:", res.data);
+      console.log("📬 Відповідь з бекенду:", res);
       setNotifications(res.data || []);
     } catch (err) {
-      console.error("❌ Помилка завантаження сповіщень:", err);
+      console.error("❌ Помилка запиту сповіщень:", err);
     } finally {
       setLoadingNotifications(false);
     }
@@ -92,6 +96,7 @@ const WorkerPage = () => {
   const markAllAsRead = async () => {
     try {
       const unread = notifications.filter(n => !n.is_read);
+      console.log("🔄 Позначення прочитаними сповіщень:", unread);
       await Promise.all(unread.map(n => axios.patch(`${API_BASE_URL}/notifications/${n.id}/read`)));
       fetchNotifications();
     } catch (err) {
@@ -102,6 +107,7 @@ const WorkerPage = () => {
   const saveField = async (field) => {
     try {
       const values = await form.validateFields([field]);
+      console.log("💾 Збереження поля:", field, values);
       await axios.patch(`${API_BASE_URL}/userRoutes/${userData.id}`, {
         [field]: values[field],
         edited_once: true,
@@ -109,7 +115,8 @@ const WorkerPage = () => {
       setUserData(prev => ({ ...prev, [field]: values[field] }));
       setEditField(null);
       message.success("Збережено");
-    } catch {
+    } catch (err) {
+      console.error("❌ Помилка збереження поля:", field, err);
       message.error("Помилка при збереженні");
     }
   };
