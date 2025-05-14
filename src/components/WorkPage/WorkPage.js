@@ -71,25 +71,6 @@ const WorkerPage = () => {
     fetchUserProfile();
   }, [navigate, form, token]);
 
-  useEffect(() => {
-    const sendNotification = async () => {
-      try {
-        await axios.post(`${API_BASE_URL}/notification`, {
-          message: "Користувач увійшов у WorkerPage"
-        }, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-      } catch (err) {
-        console.error("[NOTIFICATION] ❌ Помилка:", err.response?.data || err.message);
-        message.error("❌ Помилка при створенні сповіщення");
-      }
-    };
-
-    if (userData) sendNotification();
-  }, [userData, token]);
-
   const fetchNotifications = useCallback(async () => {
     try {
       setLoadingNotifications(true);
