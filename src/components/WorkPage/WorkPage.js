@@ -26,6 +26,8 @@ const WorkerPage = () => {
   const [form] = Form.useForm();
   const navigate = useNavigate();
 
+  const token = localStorage.getItem("token");
+
   const toggleTheme = () => {
     const newTheme = isDarkMode ? "light" : "dark";
     setIsDarkMode(!isDarkMode);
@@ -33,17 +35,14 @@ const WorkerPage = () => {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     if (!token) return navigate("/login");
 
     const fetchUserProfile = async () => {
       try {
-        console.log("[FETCH_PROFILE] Відправка запиту...");
         const res = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const user = res.data;
-        console.log("[FETCH_PROFILE] Отримано дані:", user);
 
         setUserData({
           id: user.id,
@@ -70,19 +69,20 @@ const WorkerPage = () => {
     };
 
     fetchUserProfile();
-  }, [navigate, form]);
+  }, [navigate, form, token]);
 
   useEffect(() => {
     if (!userData?.id) return;
 
     const sendNotification = async () => {
       try {
-        console.log("[NOTIFICATION] Надсилання сповіщення:", userData.id);
         await axios.post(`${API_BASE_URL}/notification`, {
-          user_id: userData.id,
-          message: "Користувач увійшов у WorkerPage",
+          message: "Користувач увійшов у WorkerPage"
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         });
-        console.log("[NOTIFICATION] Успішно відправлено.");
       } catch (err) {
         const errorText = err.response?.data?.message || err.message || "Невідома помилка";
         console.error("[NOTIFICATION] ❌ Помилка:", err.response?.data || err.message);
@@ -91,23 +91,25 @@ const WorkerPage = () => {
     };
 
     sendNotification();
-  }, [userData?.id]);
+  }, [userData?.id, token]);
 
   const fetchNotifications = useCallback(async (userId) => {
     if (!userId) return;
 
     try {
       setLoadingNotifications(true);
-      console.log("[FETCH_NOTIFICATIONS] Запит для userId:", userId);
-      const res = await axios.get(`${API_BASE_URL}/notification/user/${userId}`);
-      console.log("[FETCH_NOTIFICATIONS] Відповідь:", res.data);
+      const res = await axios.get(`${API_BASE_URL}/notification/user/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       setNotifications(res.data || []);
     } catch (err) {
       console.error("[FETCH_NOTIFICATIONS] ❌ Помилка:", err.response?.data || err.message);
     } finally {
       setLoadingNotifications(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     if (userData?.id) {
@@ -118,9 +120,12 @@ const WorkerPage = () => {
   const markAllAsRead = async () => {
     try {
       const unread = notifications.filter(n => !n.is_read);
-      console.log("[MARK_ALL_AS_READ] Непрочитані:", unread);
       await Promise.all(unread.map(n =>
-        axios.patch(`${API_BASE_URL}/notification/${n.id}/read`)
+        axios.patch(`${API_BASE_URL}/notification/${n.id}/read`, {}, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
       ));
       fetchNotifications(userData.id);
     } catch (err) {
@@ -131,10 +136,13 @@ const WorkerPage = () => {
   const saveField = async (field) => {
     try {
       const values = await form.validateFields([field]);
-      console.log("[SAVE_FIELD] Збереження поля:", field, values);
       await axios.patch(`${API_BASE_URL}/userRoutes/${userData.id}`, {
         [field]: values[field],
         edited_once: true,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       setUserData(prev => ({ ...prev, [field]: values[field] }));
       setEditField(null);
