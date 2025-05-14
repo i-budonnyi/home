@@ -1,3 +1,4 @@
+// Залишається без змін:
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -74,7 +75,7 @@ const WorkerPage = () => {
 
     const sendNotification = async () => {
       try {
-        await axios.post(`${API_BASE_URL}/notifications`, {
+        await axios.post(`${API_BASE_URL}/notification`, {
           user_id: userData.id,
           message: "Користувач увійшов у WorkerPage",
         });
@@ -93,7 +94,7 @@ const WorkerPage = () => {
 
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE_URL}/notifications/user/${userId}`);
+      const res = await axios.get(`${API_BASE_URL}/notification/user/${userId}`);
       setNotifications(res.data || []);
     } catch (err) {
       console.error("❌ Сповіщення не отримано:", err.response?.data || err.message);
@@ -112,7 +113,7 @@ const WorkerPage = () => {
     try {
       const unread = notifications.filter(n => !n.is_read);
       await Promise.all(unread.map(n =>
-        axios.patch(`${API_BASE_URL}/notifications/${n.id}/read`)
+        axios.patch(`${API_BASE_URL}/notification/${n.id}/read`)
       ));
       fetchNotifications(userData.id);
     } catch (err) {
