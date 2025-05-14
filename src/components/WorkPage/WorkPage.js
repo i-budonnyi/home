@@ -77,6 +77,7 @@ const WorkerPage = () => {
     const sendNotification = async () => {
       try {
         await axios.post(`${API_BASE_URL}/notification`, {
+          user_id: userData.id,
           message: "Користувач увійшов у WorkerPage"
         }, {
           headers: {
@@ -84,9 +85,8 @@ const WorkerPage = () => {
           }
         });
       } catch (err) {
-        const errorText = err.response?.data?.message || err.message || "Невідома помилка";
         console.error("[NOTIFICATION] ❌ Помилка:", err.response?.data || err.message);
-        message.error(`❌ ${errorText}`);
+        message.error("❌ Помилка при створенні сповіщення");
       }
     };
 
