@@ -72,12 +72,9 @@ const WorkerPage = () => {
   }, [navigate, form, token]);
 
   useEffect(() => {
-    if (!userData?.id) return;
-
     const sendNotification = async () => {
       try {
         await axios.post(`${API_BASE_URL}/notification`, {
-          user_id: userData.id,
           message: "Користувач увійшов у WorkerPage"
         }, {
           headers: {
@@ -90,15 +87,13 @@ const WorkerPage = () => {
       }
     };
 
-    sendNotification();
-  }, [userData?.id, token]);
+    if (userData) sendNotification();
+  }, [userData, token]);
 
-  const fetchNotifications = useCallback(async (userId) => {
-    if (!userId) return;
-
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE_URL}/notification/user/${userId}`, {
+      const res = await axios.get(`${API_BASE_URL}/notification`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -112,10 +107,8 @@ const WorkerPage = () => {
   }, [token]);
 
   useEffect(() => {
-    if (userData?.id) {
-      fetchNotifications(userData.id);
-    }
-  }, [userData?.id, fetchNotifications]);
+    if (userData) fetchNotifications();
+  }, [userData, fetchNotifications]);
 
   const markAllAsRead = async () => {
     try {
@@ -127,7 +120,7 @@ const WorkerPage = () => {
           }
         })
       ));
-      fetchNotifications(userData.id);
+      fetchNotifications();
     } catch (err) {
       console.error("[MARK_ALL_AS_READ] ❌ Помилка:", err.message);
     }
