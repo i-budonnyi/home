@@ -38,10 +38,12 @@ const WorkerPage = () => {
 
     const fetchUserProfile = async () => {
       try {
+        console.log("[FETCH_PROFILE] Відправка запиту...");
         const res = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const user = res.data;
+        console.log("[FETCH_PROFILE] Отримано дані:", user);
 
         setUserData({
           id: user.id,
@@ -60,6 +62,7 @@ const WorkerPage = () => {
           phone: user.phone,
         });
       } catch (err) {
+        console.error("[FETCH_PROFILE] Помилка:", err);
         setError(err.response?.data?.message || "Сталася помилка");
       } finally {
         setIsCheckingRole(false);
@@ -74,13 +77,15 @@ const WorkerPage = () => {
 
     const sendNotification = async () => {
       try {
+        console.log("[NOTIFICATION] Надсилання сповіщення:", userData.id);
         await axios.post(`${API_BASE_URL}/notification`, {
           user_id: userData.id,
           message: "Користувач увійшов у WorkerPage",
         });
+        console.log("[NOTIFICATION] Успішно відправлено.");
       } catch (err) {
         const errorText = err.response?.data?.message || err.message || "Невідома помилка";
-        console.error("❌ Помилка при створенні сповіщення:", err.response?.data || err.message);
+        console.error("[NOTIFICATION] ❌ Помилка:", err.response?.data || err.message);
         message.error(`❌ ${errorText}`);
       }
     };
@@ -93,10 +98,12 @@ const WorkerPage = () => {
 
     try {
       setLoadingNotifications(true);
+      console.log("[FETCH_NOTIFICATIONS] Запит для userId:", userId);
       const res = await axios.get(`${API_BASE_URL}/notification/user/${userId}`);
+      console.log("[FETCH_NOTIFICATIONS] Відповідь:", res.data);
       setNotifications(res.data || []);
     } catch (err) {
-      console.error("❌ Сповіщення не отримано:", err.response?.data || err.message);
+      console.error("[FETCH_NOTIFICATIONS] ❌ Помилка:", err.response?.data || err.message);
     } finally {
       setLoadingNotifications(false);
     }
@@ -111,18 +118,20 @@ const WorkerPage = () => {
   const markAllAsRead = async () => {
     try {
       const unread = notifications.filter(n => !n.is_read);
+      console.log("[MARK_ALL_AS_READ] Непрочитані:", unread);
       await Promise.all(unread.map(n =>
         axios.patch(`${API_BASE_URL}/notification/${n.id}/read`)
       ));
       fetchNotifications(userData.id);
     } catch (err) {
-      console.error("❌ Не вдалося позначити як прочитані:", err.message);
+      console.error("[MARK_ALL_AS_READ] ❌ Помилка:", err.message);
     }
   };
 
   const saveField = async (field) => {
     try {
       const values = await form.validateFields([field]);
+      console.log("[SAVE_FIELD] Збереження поля:", field, values);
       await axios.patch(`${API_BASE_URL}/userRoutes/${userData.id}`, {
         [field]: values[field],
         edited_once: true,
@@ -131,6 +140,7 @@ const WorkerPage = () => {
       setEditField(null);
       message.success("Збережено");
     } catch (err) {
+      console.error("[SAVE_FIELD] ❌ Помилка:", err);
       message.error("Помилка при збереженні");
     }
   };
