@@ -59,6 +59,12 @@ const WorkerPage = () => {
           email: user.email,
           phone: user.phone,
         });
+
+        // Створити сповіщення після завантаження профілю
+        await axios.post(`${API_BASE_URL}/notifications`, {
+          user_id: user.id,
+          message: "Користувач увійшов у WorkerPage",
+        });
       } catch (err) {
         setError(err.response?.data?.message || "Сталася помилка");
       } finally {
