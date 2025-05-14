@@ -69,7 +69,6 @@ const WorkerPage = () => {
     fetchUserProfile();
   }, [navigate, form]);
 
-  // 🟢 Окремо створити сповіщення, коли userData вже завантажено
   useEffect(() => {
     if (!userData?.id) return;
 
@@ -80,8 +79,9 @@ const WorkerPage = () => {
           message: "Користувач увійшов у WorkerPage",
         });
       } catch (err) {
+        const errorText = err.response?.data?.message || err.message || "Невідома помилка";
         console.error("❌ Помилка при створенні сповіщення:", err.response?.data || err.message);
-        message.error("❌ Помилка при створенні сповіщення.");
+        message.error(`❌ ${errorText}`);
       }
     };
 
@@ -93,7 +93,7 @@ const WorkerPage = () => {
 
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE_URL}/notifications/${userId}`);
+      const res = await axios.get(`${API_BASE_URL}/notifications/user/${userId}`);
       setNotifications(res.data || []);
     } catch (err) {
       console.error("❌ Сповіщення не отримано:", err.response?.data || err.message);
