@@ -15,7 +15,6 @@ const { Header, Content } = Layout;
 const { Title } = Typography;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
-const USER_API_URL = `${API_BASE}/userRoutes`;
 const PROBLEM_API_URL = `${API_BASE}/problems`;
 const AMBASSADOR_API_URL = `${API_BASE}/ambassadorRoutes`;
 
