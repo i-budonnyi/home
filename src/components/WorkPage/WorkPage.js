@@ -101,7 +101,9 @@ const WorkerPage = () => {
           headers: { Authorization: `Bearer ${token}` }
         })
       ));
-      fetchNotifications();
+      setNotifications(prev =>
+        prev.map(n => ({ ...n, is_read: true }))
+      );
       antdMessage.success("✅ Всі повідомлення позначено як прочитані.");
     } catch (err) {
       console.error("[MARK_ALL_AS_READ] ❌", err.message);
