@@ -25,6 +25,7 @@ const WorkerPage = () => {
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
   const [form] = Form.useForm();
   const navigate = useNavigate();
+
   const token = localStorage.getItem("token");
 
   const toggleTheme = () => {
@@ -74,13 +75,11 @@ const WorkerPage = () => {
     try {
       setLoadingNotifications(true);
       const res = await axios.get(`${API_BASE_URL}/notification`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(res.data || []);
     } catch (err) {
-      console.error("[FETCH_NOTIFICATIONS] ❌ Помилка:", err.response?.data || err.message);
+      console.error("[FETCH_NOTIFICATIONS] ❌", err.response?.data || err.message);
     } finally {
       setLoadingNotifications(false);
     }
@@ -100,8 +99,8 @@ const WorkerPage = () => {
       ));
       fetchNotifications();
     } catch (err) {
-      console.error("[MARK_ALL_AS_READ] ❌ Помилка:", err.message);
-      message.error("Не вдалося позначити сповіщення як прочитані.");
+      console.error("[MARK_ALL_AS_READ] ❌", err.message);
+      message.error("Не вдалося оновити статус прочитаності.");
     }
   };
 
@@ -118,14 +117,21 @@ const WorkerPage = () => {
       setEditField(null);
       message.success("Збережено");
     } catch (err) {
-      console.error("[SAVE_FIELD] ❌ Помилка:", err);
+      console.error("[SAVE_FIELD] ❌", err);
       message.error("Помилка при збереженні");
     }
   };
 
+  // 🧼 Фільтрація повідомлень — повністю прибирає emoji/крокозябри
   const sanitizeMessage = (text) => {
     if (!text) return "";
-    return text.replace(/[^\wа-яА-ЯіїєІЇЄ.,!?'"():\s-]/g, "").trim();
+    return text
+      .normalize("NFKD")
+      .replace(/[\u{1F600}-\u{1F64F}]/gu, "")
+      .replace(/[\u{1F300}-\u{1F5FF}]/gu, "")
+      .replace(/[\u{1F680}-\u{1F6FF}]/gu, "")
+      .replace(/[^\p{L}\p{N}\s.,!?'"():-]/gu, "")
+      .trim();
   };
 
   const themeMode = {
