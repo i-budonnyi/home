@@ -25,7 +25,6 @@ const WorkerPage = () => {
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
   const [form] = Form.useForm();
   const navigate = useNavigate();
-
   const token = localStorage.getItem("token");
 
   const toggleTheme = () => {
@@ -61,7 +60,7 @@ const WorkerPage = () => {
           phone: user.phone,
         });
       } catch (err) {
-        console.error("[FETCH_PROFILE] Помилка:", err);
+        console.error("[FETCH_PROFILE] ❌", err);
         setError(err.response?.data?.message || "Сталася помилка");
       } finally {
         setIsCheckingRole(false);
@@ -79,7 +78,7 @@ const WorkerPage = () => {
       });
       setNotifications(res.data || []);
     } catch (err) {
-      console.error("[FETCH_NOTIFICATIONS] ❌", err.response?.data || err.message);
+      console.error("[FETCH_NOTIFICATIONS] ❌", err?.response?.data || err.message);
     } finally {
       setLoadingNotifications(false);
     }
@@ -101,13 +100,11 @@ const WorkerPage = () => {
           headers: { Authorization: `Bearer ${token}` }
         })
       ));
-      setNotifications(prev =>
-        prev.map(n => ({ ...n, is_read: true }))
-      );
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       antdMessage.success("✅ Всі повідомлення позначено як прочитані.");
     } catch (err) {
-      console.error("[MARK_ALL_AS_READ] ❌", err.message);
-      antdMessage.error("❌ Не вдалося оновити статус прочитаності.");
+      console.error("[MARK_ALL_AS_READ] ❌", err?.message || err);
+      antdMessage.error("❌ Не вдалося оновити статус прочитаності. Можливі CORS-проблеми.");
     }
   };
 
@@ -238,11 +235,11 @@ const WorkerPage = () => {
 };
 
 const sanitizeText = (text) => {
-  if (!text) return "";
+  if (!text || typeof text !== "string") return "";
   return text
     .normalize("NFKC")
-    .replace(/[^ -~Ѐ-ӿԀ-ԯⷠ-ⷿꙀ-ꚟ\s.,!?"'()\-:]/gu, "")
-    .replace(/\s+/g, " ")
+    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F6FF}]/gu, "") // emoji
+    .replace(/[^\p{L}\p{N}\s.,!?"'():-]/gu, "") // тільки літери, цифри, розділові
     .trim();
 };
 
