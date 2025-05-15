@@ -86,7 +86,11 @@ const WorkerPage = () => {
   }, [token]);
 
   useEffect(() => {
-    if (userData) fetchNotifications();
+    if (userData) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 5000);
+      return () => clearInterval(interval);
+    }
   }, [userData, fetchNotifications]);
 
   const markAllAsRead = async () => {
@@ -127,10 +131,10 @@ const WorkerPage = () => {
     if (!text) return "";
     return text
       .normalize("NFKD")
-      .replace(/[😀-🙏]/gu, "")
-      .replace(/[🌀-🗿]/gu, "")
-      .replace(/[🚀-🛿]/gu, "")
-      .replace(/[^\p{L}\p{N}\s.,!?'"():-]/gu, "")
+      .replace(/[\u{1F600}-\u{1F64F}]/gu, "")
+      .replace(/[\u{1F300}-\u{1F5FF}]/gu, "")
+      .replace(/[\u{1F680}-\u{1F6FF}]/gu, "")
+      .replace(/[^\p{L}\p{N}\s.,!?"'():-]/gu, "")
       .trim();
   };
 
