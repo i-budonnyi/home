@@ -43,6 +43,7 @@ const SubmitProblemPage = () => {
           name: `${amb.first_name} ${amb.last_name}`,
         }))
       );
+      console.log("✅ Амбасадори завантажені:", data);
     } catch (err) {
       console.error("❌ Амбасадори не завантажені:", err);
     }
@@ -58,6 +59,8 @@ const SubmitProblemPage = () => {
         ambassador_id: values.ambassadorId || null,
       };
 
+      console.log("📤 Надсилаємо payload:", payload);
+
       const response = await fetch(PROBLEM_API_URL, {
         method: "POST",
         headers: {
@@ -67,12 +70,18 @@ const SubmitProblemPage = () => {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error(`Помилка подання: ${response.status}`);
+      const result = await response.json();
+      console.log("📥 Відповідь сервера:", result);
+
+      if (!response.ok) {
+        throw new Error(result.message || `Помилка подання: ${response.status}`);
+      }
+
       setMessage("✅ Проблему успішно подано!");
       form.resetFields();
     } catch (err) {
       console.error("❌ Помилка подання проблеми:", err);
-      setMessage("❌ Не вдалося подати проблему.");
+      setMessage(err.message || "❌ Не вдалося подати проблему.");
     } finally {
       setIsSubmitting(false);
     }
