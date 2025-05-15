@@ -76,6 +76,7 @@ const WorkerPage = () => {
       const res = await axios.get(`${API_BASE_URL}/notification`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log("[FETCH_NOTIFICATIONS_RAW] 🟡", res.data);
       setNotifications(res.data || []);
     } catch (err) {
       console.error("[FETCH_NOTIFICATIONS] ❌", err?.response?.data || err.message);
@@ -214,11 +215,14 @@ const WorkerPage = () => {
                   loading={loadingNotifications}
                   locale={{ emptyText: "Наразі немає новин" }}
                   dataSource={notifications}
-                  renderItem={(item) => (
-                    <List.Item style={{ opacity: item.is_read ? 0.5 : 1, padding: 12 }}>
-                      {sanitizeText(item.message)}
-                    </List.Item>
-                  )}
+                  renderItem={(item) => {
+                    const sanitized = sanitizeText(item.message);
+                    return (
+                      <List.Item style={{ opacity: item.is_read ? 0.5 : 1, padding: 12 }}>
+                        {sanitized}
+                      </List.Item>
+                    );
+                  }}
                 />
                 {notifications.length > 0 && (
                   <div style={{ marginTop: 16 }}>
@@ -236,11 +240,14 @@ const WorkerPage = () => {
 
 const sanitizeText = (text) => {
   if (!text || typeof text !== "string") return "";
-  return text
+  console.log("[SANITIZE_TEXT] 🟠 input:", text);
+  const result = text
     .normalize("NFKC")
     .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F6FF}]/gu, "") // emoji
     .replace(/[^\p{L}\p{N}\s.,!?"'():-]/gu, "") // тільки літери, цифри, розділові
     .trim();
+  console.log("[SANITIZE_TEXT] 🔵 output:", result);
+  return result;
 };
 
 const getLabel = (field) => ({
