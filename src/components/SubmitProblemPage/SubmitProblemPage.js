@@ -21,7 +21,6 @@ const AMBASSADOR_API_URL = `${API_BASE}/ambassadorRoutes`;
 
 const SubmitProblemPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);
-  const [userId, setUserId] = useState(null);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [form] = Form.useForm();
@@ -31,19 +30,6 @@ const SubmitProblemPage = () => {
     const token = localStorage.getItem("token");
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
-
-  const fetchUserId = useCallback(async () => {
-    try {
-      const response = await fetch(`${USER_API_URL}/profile`, {
-        headers: getAuthHeaders(),
-      });
-      if (!response.ok) throw new Error("Помилка отримання профілю.");
-      const data = await response.json();
-      setUserId(data?.id || data?.user_id);
-    } catch (err) {
-      console.error("❌ Не вдалося отримати user_id:", err);
-    }
-  }, []);
 
   const fetchAmbassadors = useCallback(async () => {
     try {
@@ -66,13 +52,11 @@ const SubmitProblemPage = () => {
   const handleSubmit = async (values) => {
     try {
       setIsSubmitting(true);
-      if (!userId) throw new Error("⛔ Ви не авторизовані.");
 
       const payload = {
         title: values.title,
         description: values.description,
         ambassador_id: values.ambassadorId || null,
-        user_id: userId,
       };
 
       const response = await fetch(PROBLEM_API_URL, {
@@ -96,9 +80,8 @@ const SubmitProblemPage = () => {
   };
 
   useEffect(() => {
-    fetchUserId();
     fetchAmbassadors();
-  }, [fetchUserId, fetchAmbassadors]);
+  }, [fetchAmbassadors]);
 
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f9" }}>
