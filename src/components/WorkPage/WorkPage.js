@@ -98,9 +98,10 @@ const WorkerPage = () => {
         })
       ));
       fetchNotifications();
+      message.success("✅ Всі повідомлення позначено як прочитані.");
     } catch (err) {
       console.error("[MARK_ALL_AS_READ] ❌", err.message);
-      message.error("Не вдалося оновити статус прочитаності.");
+      message.error("❌ Не вдалося оновити статус прочитаності.");
     }
   };
 
@@ -122,14 +123,13 @@ const WorkerPage = () => {
     }
   };
 
-  // 🧼 Фільтрація повідомлень — повністю прибирає emoji/крокозябри
   const sanitizeMessage = (text) => {
     if (!text) return "";
     return text
       .normalize("NFKD")
-      .replace(/[\u{1F600}-\u{1F64F}]/gu, "")
-      .replace(/[\u{1F300}-\u{1F5FF}]/gu, "")
-      .replace(/[\u{1F680}-\u{1F6FF}]/gu, "")
+      .replace(/[😀-🙏]/gu, "")
+      .replace(/[🌀-🗿]/gu, "")
+      .replace(/[🚀-🛿]/gu, "")
       .replace(/[^\p{L}\p{N}\s.,!?'"():-]/gu, "")
       .trim();
   };
