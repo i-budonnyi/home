@@ -25,7 +25,6 @@ const WorkerPage = () => {
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
   const [form] = Form.useForm();
   const navigate = useNavigate();
-
   const token = localStorage.getItem("token");
 
   const toggleTheme = () => {
@@ -96,14 +95,13 @@ const WorkerPage = () => {
       const unread = notifications.filter(n => !n.is_read);
       await Promise.all(unread.map(n =>
         axios.patch(`${API_BASE_URL}/notification/${n.id}/read`, {}, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers: { Authorization: `Bearer ${token}` }
         })
       ));
       fetchNotifications();
     } catch (err) {
       console.error("[MARK_ALL_AS_READ] ❌ Помилка:", err.message);
+      message.error("Не вдалося позначити сповіщення як прочитані.");
     }
   };
 
@@ -114,9 +112,7 @@ const WorkerPage = () => {
         [field]: values[field],
         edited_once: true,
       }, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
       setUserData(prev => ({ ...prev, [field]: values[field] }));
       setEditField(null);
@@ -125,6 +121,11 @@ const WorkerPage = () => {
       console.error("[SAVE_FIELD] ❌ Помилка:", err);
       message.error("Помилка при збереженні");
     }
+  };
+
+  const sanitizeMessage = (text) => {
+    if (!text) return "";
+    return text.replace(/[^\wа-яА-ЯіїєІЇЄ.,!?'"():\s-]/g, "").trim();
   };
 
   const themeMode = {
@@ -217,7 +218,7 @@ const WorkerPage = () => {
                   dataSource={notifications}
                   renderItem={(item) => (
                     <List.Item style={{ opacity: item.is_read ? 0.5 : 1, padding: 12 }}>
-                      {item.message}
+                      {sanitizeMessage(item.message)}
                     </List.Item>
                   )}
                 />
