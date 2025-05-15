@@ -217,7 +217,7 @@ const WorkerPage = () => {
                   dataSource={notifications}
                   renderItem={(item) => (
                     <List.Item style={{ opacity: item.is_read ? 0.5 : 1, padding: 12 }}>
-                      {item.message}
+                      {sanitizeText(item.message)}
                     </List.Item>
                   )}
                 />
@@ -233,6 +233,15 @@ const WorkerPage = () => {
       </Layout>
     </ConfigProvider>
   );
+};
+
+const sanitizeText = (text) => {
+  if (!text) return "";
+  return text
+    .normalize("NFKC")
+    .replace(/[^ -~Ѐ-ӿԀ-ԯⷠ-ⷿꙀ-ꚟ\s.,!?"'()\-:]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
 };
 
 const getLabel = (field) => ({
