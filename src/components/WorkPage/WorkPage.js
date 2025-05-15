@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Layout, Menu, Typography, Button, Input, Form, message,
+  Layout, Menu, Typography, Button, Input, Form, message as antdMessage,
   ConfigProvider, theme, List, Card, Divider, Badge
 } from "antd";
 import {
@@ -102,10 +102,10 @@ const WorkerPage = () => {
         })
       ));
       fetchNotifications();
-      message.success("✅ Всі повідомлення позначено як прочитані.");
+      antdMessage.success("✅ Всі повідомлення позначено як прочитані.");
     } catch (err) {
       console.error("[MARK_ALL_AS_READ] ❌", err.message);
-      message.error("❌ Не вдалося оновити статус прочитаності.");
+      antdMessage.error("❌ Не вдалося оновити статус прочитаності.");
     }
   };
 
@@ -120,22 +120,11 @@ const WorkerPage = () => {
       });
       setUserData(prev => ({ ...prev, [field]: values[field] }));
       setEditField(null);
-      message.success("Збережено");
+      antdMessage.success("Збережено");
     } catch (err) {
       console.error("[SAVE_FIELD] ❌", err);
-      message.error("Помилка при збереженні");
+      antdMessage.error("Помилка при збереженні");
     }
-  };
-
-  const sanitizeMessage = (text) => {
-    if (!text) return "";
-    return text
-      .normalize("NFKD")
-      .replace(/[\u{1F600}-\u{1F64F}]/gu, "")
-      .replace(/[\u{1F300}-\u{1F5FF}]/gu, "")
-      .replace(/[\u{1F680}-\u{1F6FF}]/gu, "")
-      .replace(/[^\p{L}\p{N}\s.,!?"'():-]/gu, "")
-      .trim();
   };
 
   const themeMode = {
@@ -228,7 +217,7 @@ const WorkerPage = () => {
                   dataSource={notifications}
                   renderItem={(item) => (
                     <List.Item style={{ opacity: item.is_read ? 0.5 : 1, padding: 12 }}>
-                      {sanitizeMessage(item.message)}
+                      {item.message}
                     </List.Item>
                   )}
                 />
