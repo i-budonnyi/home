@@ -16,7 +16,7 @@ const { Title } = Typography;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const PROBLEM_API_URL = `${API_BASE}/problems`;
-const AMBASSADOR_API_URL = `${API_BASE}/ambassadorRoutes`;
+const AMBASSADORS_API_URL = `${PROBLEM_API_URL}/ambassadors`;
 
 const SubmitProblemPage = () => {
   const [ambassadors, setAmbassadors] = useState([]);
@@ -32,7 +32,7 @@ const SubmitProblemPage = () => {
 
   const fetchAmbassadors = useCallback(async () => {
     try {
-      const response = await fetch(AMBASSADOR_API_URL, {
+      const response = await fetch(AMBASSADORS_API_URL, {
         headers: getAuthHeaders(),
       });
       if (!response.ok) throw new Error("Помилка отримання амбасадорів.");
@@ -59,7 +59,7 @@ const SubmitProblemPage = () => {
         ambassador_id: values.ambassadorId || null,
       };
 
-      console.log("📤 Надсилаємо payload:", payload);
+      console.log("📤 Відправляємо запит:", payload);
 
       const response = await fetch(PROBLEM_API_URL, {
         method: "POST",
@@ -71,10 +71,10 @@ const SubmitProblemPage = () => {
       });
 
       const result = await response.json();
-      console.log("📥 Відповідь сервера:", result);
+      console.log("📥 Відповідь від сервера:", result);
 
       if (!response.ok) {
-        throw new Error(result.message || `Помилка подання: ${response.status}`);
+        throw new Error(result.message || "Помилка створення проблеми");
       }
 
       setMessage("✅ Проблему успішно подано!");
