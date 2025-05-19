@@ -9,10 +9,9 @@ import axios from "axios";
 
 const { Content } = Layout;
 const { Title } = Typography;
-const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
+const API_BASE_URL = "https://backend-avtologistika.onrender.com/api/self";
 
 const EditProfilePage = () => {
-  const [userData, setUserData] = useState(null);
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -23,10 +22,9 @@ const EditProfilePage = () => {
 
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
+        const res = await axios.get(`${API_BASE_URL}/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUserData(res.data);
         form.setFieldsValue({
           first_name: res.data.first_name,
           last_name: res.data.last_name,
@@ -34,7 +32,8 @@ const EditProfilePage = () => {
           phone: res.data.phone,
         });
       } catch (err) {
-        antdMessage.error("Не вдалося завантажити профіль.");
+        console.error("[FETCH_PROFILE_ERROR]", err);
+        antdMessage.error("❌ Не вдалося завантажити профіль.");
       }
     };
 
@@ -43,17 +42,17 @@ const EditProfilePage = () => {
 
   const handleSave = async (values) => {
     try {
-      await axios.patch(`${API_BASE_URL}/userRoutes/${userData.id}`, {
+      await axios.patch(`${API_BASE_URL}/profile`, {
         ...values,
         edited_once: true,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      antdMessage.success("Профіль оновлено.");
+      antdMessage.success("✅ Профіль успішно оновлено.");
       navigate("/worker");
     } catch (err) {
       console.error("[UPDATE_ERROR]", err);
-      antdMessage.error("Помилка збереження профілю.");
+      antdMessage.error("❌ Помилка під час збереження профілю.");
     }
   };
 
