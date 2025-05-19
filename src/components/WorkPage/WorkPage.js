@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Layout, Menu, Typography, Button, ConfigProvider, theme,
-  List, Card, Divider, Badge
+  Layout, Menu, Typography, Button, ConfigProvider, theme, List, Card, Divider, Badge
 } from "antd";
 import {
   MessageOutlined, BulbOutlined, FileTextOutlined, ProjectOutlined,
-  StarOutlined, SunOutlined, MoonOutlined
+  StarOutlined, SunOutlined, MoonOutlined, PhoneOutlined, MailOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 
@@ -21,7 +20,6 @@ const WorkerPage = () => {
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
-
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
@@ -45,6 +43,8 @@ const WorkerPage = () => {
           id: user.id,
           firstName: user.first_name || "",
           lastName: user.last_name || "",
+          email: user.email || "",
+          phone: user.phone || "",
           role: user.role?.toLowerCase() || "worker",
         });
       } catch (err) {
@@ -136,51 +136,51 @@ const WorkerPage = () => {
           />
         </Sider>
 
-        <Layout style={{ marginLeft: 340 }}>
+        <Layout>
           <Header style={{ background: "transparent", height: 0, padding: 0 }} />
-          <Content style={{ padding: "0", background: themeMode.token.colorBgLayout }}>
-            <div style={{ display: "flex", justifyContent: "flex-start", padding: 40 }}>
-              {isCheckingRole ? (
-                <Title level={3}>⏳ Завантаження...</Title>
-              ) : error ? (
-                <Title level={3} type="danger">❌ {error}</Title>
-              ) : (
-                <Card style={{
-                  width: 880,
-                  borderRadius: 20,
-                  padding: 28,
-                  background: themeMode.token.colorBgContainer,
-                  boxShadow: isDarkMode ? "0 8px 24px rgba(0,0,0,0.5)" : "0 6px 18px rgba(0,0,0,0.1)"
-                }} bordered={false}>
-                  <Title level={4}>{userData.firstName} {userData.lastName}</Title>
-                  <Text type="secondary">
-                    Роль: <Badge count={userData.role} style={{ backgroundColor: "#08966E" }} />
-                  </Text>
-                  <Divider />
-                  <Button type="primary" onClick={() => navigate("/edit-profile")}>
-                    ✏️ Редагувати профіль
-                  </Button>
-                  <Divider />
-                  <Title level={5}>Новини ({notifications.filter(n => !n.is_read).length})</Title>
-                  <List
-                    bordered={false}
-                    loading={loadingNotifications}
-                    locale={{ emptyText: "Наразі немає новин" }}
-                    dataSource={notifications}
-                    renderItem={(item) => (
-                      <List.Item style={{ opacity: item.is_read ? 0.5 : 1, padding: 12 }}>
-                        {sanitizeText(item.message)}
-                      </List.Item>
-                    )}
-                  />
-                  {notifications.length > 0 && (
-                    <div style={{ marginTop: 16 }}>
-                      <Button onClick={markAllAsRead} type="primary">Позначити всі як прочитані</Button>
-                    </div>
+          <Content style={{ padding: "40px 40px 40px 0", background: themeMode.token.colorBgLayout }}>
+            {isCheckingRole ? (
+              <Title level={3}>⏳ Завантаження...</Title>
+            ) : error ? (
+              <Title level={3} type="danger">❌ {error}</Title>
+            ) : (
+              <Card style={{
+                width: 880,
+                borderRadius: 20,
+                padding: 28,
+                background: themeMode.token.colorBgContainer,
+                boxShadow: isDarkMode ? "0 8px 24px rgba(0,0,0,0.5)" : "0 6px 18px rgba(0,0,0,0.1)"
+              }} bordered={false}>
+                <Title level={4}>{userData.firstName} {userData.lastName}</Title>
+                <Text type="secondary">Роль: <Badge count={userData.role} style={{ backgroundColor: "#08966E" }} /></Text>
+                <Divider />
+                <Text><MailOutlined /> {userData.email}</Text><br />
+                <Text><PhoneOutlined /> {userData.phone}</Text><br />
+                <Button type="primary" style={{ marginTop: 16 }} onClick={() => navigate("/edit-profile")}>
+                  Редагувати профіль
+                </Button>
+                <Divider />
+                <Title level={5} style={{ marginTop: 24 }}>
+                  Новини ({notifications.filter(n => !n.is_read).length})
+                </Title>
+                <List
+                  bordered={false}
+                  loading={loadingNotifications}
+                  locale={{ emptyText: "Наразі немає новин" }}
+                  dataSource={notifications}
+                  renderItem={(item) => (
+                    <List.Item style={{ opacity: item.is_read ? 0.5 : 1, padding: 12 }}>
+                      {sanitizeText(item.message)}
+                    </List.Item>
                   )}
-                </Card>
-              )}
-            </div>
+                />
+                {notifications.length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <Button onClick={markAllAsRead} type="primary">Позначити всі як прочитані</Button>
+                  </div>
+                )}
+              </Card>
+            )}
           </Content>
         </Layout>
       </Layout>
