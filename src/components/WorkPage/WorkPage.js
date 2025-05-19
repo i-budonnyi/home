@@ -1,13 +1,12 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Layout, Menu, Typography, Button, Input, Form, message as antdMessage,
-  ConfigProvider, theme, List, Card, Divider, Badge
+  Layout, Menu, Typography, Button, ConfigProvider, theme,
+  List, Card, Divider, Badge
 } from "antd";
 import {
   MessageOutlined, BulbOutlined, FileTextOutlined, ProjectOutlined,
-  StarOutlined, PhoneOutlined, MailOutlined, UserOutlined,
-  EditOutlined, SaveOutlined, SunOutlined, MoonOutlined
+  StarOutlined, SunOutlined, MoonOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 
@@ -21,9 +20,8 @@ const WorkerPage = () => {
   const [error, setError] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
-  const [editField, setEditField] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
-  const [form] = Form.useForm();
+
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
@@ -47,17 +45,7 @@ const WorkerPage = () => {
           id: user.id,
           firstName: user.first_name || "",
           lastName: user.last_name || "",
-          email: user.email || "",
-          phone: user.phone || "",
           role: user.role?.toLowerCase() || "worker",
-          editedOnce: user.edited_once || false,
-        });
-
-        form.setFieldsValue({
-          first_name: user.first_name,
-          last_name: user.last_name,
-          email: user.email,
-          phone: user.phone,
         });
       } catch (err) {
         console.error("[FETCH_PROFILE] ❌", err);
@@ -68,7 +56,7 @@ const WorkerPage = () => {
     };
 
     fetchUserProfile();
-  }, [navigate, form, token]);
+  }, [navigate, token]);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -76,7 +64,6 @@ const WorkerPage = () => {
       const res = await axios.get(`${API_BASE_URL}/notification`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log("[FETCH_NOTIFICATIONS_RAW] 🟡", res.data);
       setNotifications(res.data || []);
     } catch (err) {
       console.error("[FETCH_NOTIFICATIONS] ❌", err?.response?.data || err.message);
@@ -102,28 +89,8 @@ const WorkerPage = () => {
         })
       ));
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      antdMessage.success("✅ Всі повідомлення позначено як прочитані.");
     } catch (err) {
       console.error("[MARK_ALL_AS_READ] ❌", err?.message || err);
-      antdMessage.error("❌ Не вдалося оновити статус прочитаності. Можливі CORS-проблеми.");
-    }
-  };
-
-  const saveField = async (field) => {
-    try {
-      const values = await form.validateFields([field]);
-      await axios.patch(`${API_BASE_URL}/userRoutes/${userData.id}`, {
-        [field]: values[field],
-        edited_once: true,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUserData(prev => ({ ...prev, [field]: values[field] }));
-      setEditField(null);
-      antdMessage.success("Збережено");
-    } catch (err) {
-      console.error("[SAVE_FIELD] ❌", err);
-      antdMessage.error("Помилка при збереженні");
     }
   };
 
@@ -185,45 +152,26 @@ const WorkerPage = () => {
                   background: themeMode.token.colorBgContainer,
                   boxShadow: isDarkMode ? "0 8px 24px rgba(0,0,0,0.5)" : "0 6px 18px rgba(0,0,0,0.1)"
                 }} bordered={false}>
-                  <Title level={4} style={{ marginBottom: 4 }}>{userData.firstName} {userData.lastName}</Title>
+                  <Title level={4}>{userData.firstName} {userData.lastName}</Title>
                   <Text type="secondary">
                     Роль: <Badge count={userData.role} style={{ backgroundColor: "#08966E" }} />
                   </Text>
                   <Divider />
-                  <Form form={form} layout="vertical">
-                    {["first_name", "last_name", "phone", "email"].map((field) => (
-                      <Form.Item key={field} label={getLabel(field)} name={field}>
-                        <Input
-                          disabled={editField !== field}
-                          prefix={getIcon(field)}
-                          addonAfter={
-                            editField === field ? (
-                              <SaveOutlined onClick={() => saveField(field)} style={{ cursor: "pointer" }} />
-                            ) : (
-                              <EditOutlined onClick={() => setEditField(field)} style={{ cursor: "pointer" }} />
-                            )
-                          }
-                        />
-                      </Form.Item>
-                    ))}
-                  </Form>
+                  <Button type="primary" onClick={() => navigate("/edit-profile")}>
+                    ✏️ Редагувати профіль
+                  </Button>
                   <Divider />
-                  <Title level={5} style={{ marginTop: 24 }}>
-                    Новини ({notifications.filter(n => !n.is_read).length})
-                  </Title>
+                  <Title level={5}>Новини ({notifications.filter(n => !n.is_read).length})</Title>
                   <List
                     bordered={false}
                     loading={loadingNotifications}
                     locale={{ emptyText: "Наразі немає новин" }}
                     dataSource={notifications}
-                    renderItem={(item) => {
-                      const sanitized = sanitizeText(item.message);
-                      return (
-                        <List.Item style={{ opacity: item.is_read ? 0.5 : 1, padding: 12 }}>
-                          {sanitized}
-                        </List.Item>
-                      );
-                    }}
+                    renderItem={(item) => (
+                      <List.Item style={{ opacity: item.is_read ? 0.5 : 1, padding: 12 }}>
+                        {sanitizeText(item.message)}
+                      </List.Item>
+                    )}
                   />
                   {notifications.length > 0 && (
                     <div style={{ marginTop: 16 }}>
@@ -242,26 +190,11 @@ const WorkerPage = () => {
 
 const sanitizeText = (text) => {
   if (!text || typeof text !== "string") return "";
-  const result = text
+  return text
     .normalize("NFKC")
     .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F6FF}]/gu, "")
     .replace(/[^\p{L}\p{N}\s.,!?"'():-]/gu, "")
     .trim();
-  return result;
 };
-
-const getLabel = (field) => ({
-  first_name: "Ім’я",
-  last_name: "Прізвище",
-  phone: "Телефон",
-  email: "Email",
-}[field]);
-
-const getIcon = (field) => ({
-  first_name: <UserOutlined />,
-  last_name: <UserOutlined />,
-  phone: <PhoneOutlined />,
-  email: <MailOutlined />,
-}[field]);
 
 export default WorkerPage;

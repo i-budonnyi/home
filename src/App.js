@@ -12,6 +12,7 @@ import SubmitIdeaPage from './components/SubmitIdeaPage';
 import Subscriptions from './components/Subscriptions';
 import IdeasPlatform from './components/IdeasPlatform';
 import UpdateProfilePage from './components/UpdateProfilePage';
+import EditProfilePage from './components/EditProfilePage/EditProfilePage'; // ✅ додано
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Logout from './components/Logout';
@@ -25,8 +26,8 @@ import PMProjectsPage from './components/PMProjectsPage/PMProjectsPage';
 import { UserProvider } from './components/context/UserContext';
 
 const App = () => (
-  <BrowserRouter> {/* 🔥 ПРАВИЛЬНО: BrowserRouter зверху */}
-    <UserProvider> {/* 🔥 Потім вже обгортаємо контекстом */}
+  <BrowserRouter>
+    <UserProvider>
       <Header />
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -35,6 +36,7 @@ const App = () => (
         <Route path="/worker" element={<WorkPage />} />
         <Route path="/profile-settings" element={<ProfileSettingsPage />} />
         <Route path="/update-profile" element={<UpdateProfilePage />} />
+        <Route path="/edit-profile" element={<EditProfilePage />} /> {/* ✅ новий маршрут */}
         <Route path="/projects" element={<MyProjectsPage />} />
         <Route path="/submit-problem" element={<SubmitProblemPage />} />
         <Route path="/submit-idea" element={<SubmitIdeaPage />} />
