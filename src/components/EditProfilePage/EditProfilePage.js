@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout, Typography, Button, Input, Form, message as antdMessage,
@@ -92,7 +92,7 @@ const EditProfilePage = () => {
                 <Input placeholder="Ваше прізвище" />
               </Form.Item>
               <Form.Item name="email" label="Email">
-                <Input placeholder="Email" type="email" />
+                <Input placeholder="Email" type="email" disabled />
               </Form.Item>
               <Form.Item name="phone" label="Телефон">
                 <Input placeholder="Номер телефону" />
