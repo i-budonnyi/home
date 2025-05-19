@@ -12,7 +12,6 @@ const { Title } = Typography;
 const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
 
 const EditProfilePage = () => {
-  const [userData, setUserData] = useState(null);
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -26,7 +25,6 @@ const EditProfilePage = () => {
         const res = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUserData(res.data);
         form.setFieldsValue({
           first_name: res.data.first_name,
           last_name: res.data.last_name,
@@ -44,7 +42,7 @@ const EditProfilePage = () => {
 
   const handleSave = async (values) => {
     try {
-      await axios.patch(`${API_BASE_URL}/userRoutes/${userData.id}`, {
+      await axios.patch(`${API_BASE_URL}/self/profile`, {
         ...values,
         edited_once: true,
       }, {
@@ -100,7 +98,9 @@ const EditProfilePage = () => {
                 <Input placeholder="Номер телефону" />
               </Form.Item>
               <Form.Item>
-                <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>Зберегти</Button>
+                <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                  Зберегти
+                </Button>
               </Form.Item>
             </Form>
           </Card>
