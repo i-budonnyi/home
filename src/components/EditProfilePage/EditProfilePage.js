@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout, Typography, Button, Input, Form, message as antdMessage,
@@ -9,7 +9,7 @@ import axios from "axios";
 
 const { Content } = Layout;
 const { Title } = Typography;
-const API_BASE_URL = "https://backend-avtologistika.onrender.com/api/self";
+const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
 
 const EditProfilePage = () => {
   const [form] = Form.useForm();
@@ -22,7 +22,7 @@ const EditProfilePage = () => {
 
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/profile`, {
+        const res = await axios.get(`${API_BASE_URL}/self/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         form.setFieldsValue({
@@ -32,8 +32,7 @@ const EditProfilePage = () => {
           phone: res.data.phone,
         });
       } catch (err) {
-        console.error("[FETCH_PROFILE_ERROR]", err);
-        antdMessage.error("❌ Не вдалося завантажити профіль.");
+        antdMessage.error("Не вдалося завантажити профіль.");
       }
     };
 
@@ -42,17 +41,17 @@ const EditProfilePage = () => {
 
   const handleSave = async (values) => {
     try {
-      await axios.patch(`${API_BASE_URL}/profile`, {
+      await axios.patch(`${API_BASE_URL}/self/profile`, {
         ...values,
         edited_once: true,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      antdMessage.success("✅ Профіль успішно оновлено.");
+      antdMessage.success("Профіль оновлено.");
       navigate("/worker");
     } catch (err) {
       console.error("[UPDATE_ERROR]", err);
-      antdMessage.error("❌ Помилка під час збереження профілю.");
+      antdMessage.error("Помилка збереження профілю.");
     }
   };
 
