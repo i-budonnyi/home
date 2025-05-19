@@ -1,15 +1,8 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Layout,
-  Typography,
-  Button,
-  Input,
-  Form,
-  message as antdMessage,
-  ConfigProvider,
-  theme,
-  Card,
+  Layout, Typography, Button, Input, Form, message as antdMessage,
+  ConfigProvider, theme, Card
 } from "antd";
 import { SaveOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import axios from "axios";
@@ -20,6 +13,7 @@ const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
 
 const EditProfilePage = () => {
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const isDarkMode = localStorage.getItem("theme") === "dark";
@@ -29,7 +23,7 @@ const EditProfilePage = () => {
 
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/self/profile`, {
+        const res = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         form.setFieldsValue({
@@ -49,21 +43,20 @@ const EditProfilePage = () => {
 
   const handleSave = async (values) => {
     try {
-      await axios.patch(
-        `${API_BASE_URL}/self/profile`,
-        {
-          ...values,
-          edited_once: true,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      setLoading(true);
+      await axios.patch(`${API_BASE_URL}/self/profile`, {
+        ...values,
+        edited_once: true,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       antdMessage.success("Профіль оновлено.");
       navigate("/worker");
     } catch (err) {
       console.error("[UPDATE_PROFILE_ERROR]", err);
       antdMessage.error("Помилка збереження профілю.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -109,7 +102,12 @@ const EditProfilePage = () => {
                 <Input placeholder="Номер телефону" />
               </Form.Item>
               <Form.Item>
-                <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  icon={<SaveOutlined />}
+                  loading={loading}
+                >
                   Зберегти
                 </Button>
               </Form.Item>
