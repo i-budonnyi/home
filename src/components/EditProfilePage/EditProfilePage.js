@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout, Typography, Button, Input, Form, message as antdMessage,
@@ -12,7 +12,6 @@ const { Title } = Typography;
 const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
 
 const EditProfilePage = () => {
-  const [userData, setUserData] = useState(null);
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -23,10 +22,9 @@ const EditProfilePage = () => {
 
     const fetchProfile = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
+        const res = await axios.get(`${API_BASE_URL}/self/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUserData(res.data);
         form.setFieldsValue({
           first_name: res.data.first_name,
           last_name: res.data.last_name,
@@ -44,7 +42,7 @@ const EditProfilePage = () => {
 
   const handleSave = async (values) => {
     try {
-      await axios.patch(`${API_BASE_URL}/userRoutes/${userData.id}`, {
+      await axios.patch(`${API_BASE_URL}/self/profile`, {
         ...values,
         edited_once: true,
       }, {
