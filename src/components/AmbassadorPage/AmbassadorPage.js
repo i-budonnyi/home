@@ -31,9 +31,11 @@ const AmbassadorProfile = () => {
       setError(null);
       const token = getAuthToken();
       if (!token) throw new Error("❌ Необхідно авторизуватися.");
+      console.log("[FRONT] 🔐 Запит профілю амбасадора...");
       const response = await axios.get(API_PROFILE, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      console.log("[FRONT] ✅ Отримано профіль:", response.data);
       if (response.status === 200 && response.data?.id) {
         setAmbassador(response.data);
       } else {
@@ -52,7 +54,9 @@ const AmbassadorProfile = () => {
     if (!ambassador?.id) return;
     try {
       setLoadingSelectedIdeas(true);
+      console.log(`[FRONT] 📡 Отримуємо ідеї для амбасадора ID=${ambassador.id}`);
       const response = await axios.get(`${AMBASSADOR_API}/${ambassador.id}/ideas`);
+      console.log("[FRONT] ✅ Отримано ідеї:", response.data);
       if (response.status === 200 && Array.isArray(response.data)) {
         setSelectedIdeas(response.data);
       } else {
@@ -70,10 +74,12 @@ const AmbassadorProfile = () => {
   const fetchComments = async (ideaId) => {
     try {
       const token = getAuthToken();
+      console.log("[FRONT] 💬 Отримуємо коментарі для ідеї:", ideaId);
       const response = await axios.get(`${API_FEEDBACK}/list`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { idea_id: ideaId },
       });
+      console.log("[FRONT] ✅ Коментарі:", response.data);
       if (response.status === 200) {
         setComments((prev) => ({ ...prev, [ideaId]: response.data }));
       } else {
@@ -92,6 +98,7 @@ const AmbassadorProfile = () => {
     }
     try {
       const token = getAuthToken();
+      console.log("[FRONT] ✏️ Додаємо коментар до ідеї ID:", ideaId);
       await axios.post(
         `${API_FEEDBACK}/add`,
         { idea_id: ideaId, text: newComment },
