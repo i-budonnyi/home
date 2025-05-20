@@ -7,7 +7,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark');
+  const [isDarkMode, setIsDarkMode] = useState(document.documentElement.getAttribute('data-theme') === 'dark');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -45,10 +45,11 @@ const Header = () => {
     else setIsLoaded(true);
   }, [fetchUserProfile]);
 
+  // 🔄 React to theme change without reloading
   useEffect(() => {
     const observer = new MutationObserver(() => {
-      const currentTheme = localStorage.getItem('theme');
-      setIsDarkMode(currentTheme === 'dark');
+      const current = document.documentElement.getAttribute('data-theme');
+      setIsDarkMode(current === 'dark');
     });
     observer.observe(document.documentElement, { attributes: true });
     return () => observer.disconnect();
@@ -71,9 +72,13 @@ const Header = () => {
       backgroundColor: 'transparent',
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
-      color: isDarkMode ? '#fff' : '#1C1C1C',
+      color: isDarkMode ? '#fff' : '#1a1a1a',
+      fontWeight: 400
     }}>
-      <div style={{ fontSize: '16px', fontWeight: 500, cursor: 'pointer' }} onClick={() => navigate('/')}>
+      <div
+        style={{ fontSize: '16px', fontWeight: 500, cursor: 'pointer' }}
+        onClick={() => navigate('/')}
+      >
         Avtologistika
       </div>
 
@@ -81,13 +86,13 @@ const Header = () => {
         {userName ? (
           <>
             <span
+              onClick={() => navigate('/worker')}
               style={{
                 cursor: 'pointer',
                 textDecoration: 'underline',
                 fontSize: '14px',
-                color: isDarkMode ? '#fff' : '#1C1C1C'
+                color: isDarkMode ? '#fff' : '#1a1a1a',
               }}
-              onClick={() => navigate('/worker')}
             >
               {userName}
             </span>
@@ -99,7 +104,7 @@ const Header = () => {
                 fontSize: '13px',
                 textDecoration: 'underline',
                 cursor: 'pointer',
-                color: isDarkMode ? '#fff' : '#1C1C1C'
+                color: isDarkMode ? '#fff' : '#1a1a1a',
               }}
             >
               Вийти
@@ -115,7 +120,7 @@ const Header = () => {
                 fontSize: '13px',
                 textDecoration: 'underline',
                 cursor: 'pointer',
-                color: isDarkMode ? '#fff' : '#1C1C1C'
+                color: isDarkMode ? '#fff' : '#1a1a1a',
               }}
             >
               Вхід
@@ -128,7 +133,7 @@ const Header = () => {
                 fontSize: '13px',
                 textDecoration: 'underline',
                 cursor: 'pointer',
-                color: isDarkMode ? '#fff' : '#1C1C1C'
+                color: isDarkMode ? '#fff' : '#1a1a1a',
               }}
             >
               Реєстрація
