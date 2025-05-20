@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SunOutlined, MoonOutlined } from '@ant-design/icons';
 
 const API_BASE_URL = 'https://backend-avtologistika.onrender.com/api/userRoutes';
 
@@ -7,7 +8,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -19,7 +20,7 @@ const Header = () => {
   const fetchUserProfile = useCallback(async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) {
@@ -43,16 +44,25 @@ const Header = () => {
     else setIsLoaded(true);
   }, [fetchUserProfile]);
 
-  useEffect(() => {
-    const currentTheme = localStorage.getItem('theme');
-    setIsDarkMode(currentTheme === 'dark');
-  }, []);
+  const toggleTheme = () => {
+    const newTheme = isDarkMode ? 'light' : 'dark';
+    localStorage.setItem('theme', newTheme);
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.setAttribute('data-theme', newTheme);
+  };
 
   if (!isLoaded) return null;
 
   return (
     <header style={{ ...headerStyle, color: isDarkMode ? '#f0f0f0' : '#1a1a1a' }}>
-      <div style={leftStyle} onClick={() => navigate('/')}>Avtologistika</div>
+      <div style={leftBlock}>
+        <span onClick={() => navigate('/')} style={brandStyle}>
+          Avtologistika
+        </span>
+        <button onClick={toggleTheme} style={themeBtnStyle}>
+          {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+        </button>
+      </div>
       <div style={rightStyle}>
         {userName ? (
           <>
@@ -81,16 +91,31 @@ const headerStyle = {
   justifyContent: 'space-between',
   alignItems: 'center',
   padding: '0 20px',
-  backgroundColor: 'rgba(255, 255, 255, 0)', // full transparent
-  backdropFilter: 'blur(8px)',
-  WebkitBackdropFilter: 'blur(8px)',
-  borderBottom: 'none'
+  backgroundColor: 'transparent',
+  backdropFilter: 'blur(10px)',
+  WebkitBackdropFilter: 'blur(10px)',
+  borderBottom: 'none',
 };
 
-const leftStyle = {
+const leftBlock = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+};
+
+const brandStyle = {
   fontSize: '16px',
   fontWeight: 500,
   cursor: 'pointer',
+};
+
+const themeBtnStyle = {
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  fontSize: '18px',
+  color: 'inherit',
+  marginTop: '1px',
 };
 
 const rightStyle = {
