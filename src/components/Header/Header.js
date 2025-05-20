@@ -7,6 +7,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -44,6 +45,15 @@ const Header = () => {
     else setIsLoaded(true);
   }, [fetchUserProfile]);
 
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const currentTheme = localStorage.getItem('theme');
+      setIsDarkMode(currentTheme === 'dark');
+    });
+    observer.observe(document.documentElement, { attributes: true });
+    return () => observer.disconnect();
+  }, []);
+
   if (!isLoaded) return null;
 
   return (
@@ -58,54 +68,76 @@ const Header = () => {
       justifyContent: 'space-between',
       alignItems: 'center',
       padding: '0 20px',
+      backgroundColor: 'transparent',
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
-      backgroundColor: 'transparent',
-      color: getComputedStyle(document.documentElement).getPropertyValue('--text-color') || '#000',
+      color: isDarkMode ? '#fff' : '#1C1C1C',
     }}>
-      <div style={{
-        fontSize: '16px',
-        fontWeight: 500,
-        cursor: 'pointer',
-        color: 'inherit',
-      }} onClick={() => navigate('/')}>
+      <div style={{ fontSize: '16px', fontWeight: 500, cursor: 'pointer' }} onClick={() => navigate('/')}>
         Avtologistika
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'inherit' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         {userName ? (
           <>
             <span
-              style={{ cursor: 'pointer', textDecoration: 'underline', fontSize: '14px', color: 'inherit' }}
+              style={{
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                fontSize: '14px',
+                color: isDarkMode ? '#fff' : '#1C1C1C'
+              }}
               onClick={() => navigate('/worker')}
             >
               {userName}
             </span>
             <button
               onClick={handleLogout}
-              style={linkStyle}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '13px',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                color: isDarkMode ? '#fff' : '#1C1C1C'
+              }}
             >
               Вийти
             </button>
           </>
         ) : (
           <>
-            <button onClick={() => navigate('/login')} style={linkStyle}>Вхід</button>
-            <button onClick={() => navigate('/register')} style={linkStyle}>Реєстрація</button>
+            <button
+              onClick={() => navigate('/login')}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '13px',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                color: isDarkMode ? '#fff' : '#1C1C1C'
+              }}
+            >
+              Вхід
+            </button>
+            <button
+              onClick={() => navigate('/register')}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '13px',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                color: isDarkMode ? '#fff' : '#1C1C1C'
+              }}
+            >
+              Реєстрація
+            </button>
           </>
         )}
       </div>
     </header>
   );
-};
-
-const linkStyle = {
-  background: 'none',
-  border: 'none',
-  fontSize: '13px',
-  textDecoration: 'underline',
-  cursor: 'pointer',
-  color: 'inherit',
 };
 
 export default Header;
