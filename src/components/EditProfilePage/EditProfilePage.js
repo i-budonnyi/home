@@ -1,4 +1,4 @@
-// ✅ EditProfilePage.jsx — фронтенд React
+// ✅ EditProfilePage.jsx — фронтенд React (виправлено помилку CI)
 
 import React, { useState, useEffect } from 'react';
 
@@ -28,11 +28,11 @@ const EditProfilePage = () => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then(data => {
-        setFirstName(data.name || '');
-        setLastName(data.surname || '');
-        setEmail(data.email || '');
-        setPhone(data.phone || '');
+      .then(user => {
+        setFirstName(user.name || '');
+        setLastName(user.surname || '');
+        setEmail(user.email || '');
+        setPhone(user.phone || '');
       })
       .catch(err => {
         console.error('❌ Помилка завантаження профілю:', err);
@@ -68,7 +68,7 @@ const EditProfilePage = () => {
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      await res.json();
       setSuccess(true);
     } catch (err) {
       console.error("❌ Помилка оновлення:", err);
