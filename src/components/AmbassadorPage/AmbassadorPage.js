@@ -4,11 +4,10 @@ import { Layout, Card, Typography, message, Spin, Button, Input, List } from "an
 
 const { Title } = Typography;
 
-// ✅ Актуальні шляхи до Render-бекенду
 const API_BASE = "https://backend-avtologistika.onrender.com/api/ambassadorRoutes";
 const API_PROFILE = `${API_BASE}/profile`;
-const API_SELECTED_IDEAS = "https://backend-avtologistika.onrender.com/api/ideaRoutes/selected-ambassador-ideas"; 
-const API_FEEDBACK = "https://backend-avtologistika.onrender.com/api/feedbackRoutes"; 
+const API_SELECTED_IDEAS = "https://backend-avtologistika.onrender.com/api/ideaRoutes/selected-ambassador-ideas";
+const API_FEEDBACK = "https://backend-avtologistika.onrender.com/api/feedbackRoutes";
 
 const AmbassadorProfile = () => {
   const [ambassador, setAmbassador] = useState(null);
@@ -32,10 +31,11 @@ const AmbassadorProfile = () => {
       const response = await axios.get(API_PROFILE, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.status === 200 && response.data) {
+      console.log("👤 Амбасадор:", response.data);
+      if (response.status === 200 && response.data && response.data.id) {
         setAmbassador(response.data);
       } else {
-        throw new Error("❌ Амбасадора не знайдено.");
+        throw new Error("❌ Амбасадора не знайдено або відсутній ID.");
       }
     } catch (err) {
       console.error("❌ ПОМИЛКА ОТРИМАННЯ АМБАСАДОРА:", err.message);
@@ -47,7 +47,10 @@ const AmbassadorProfile = () => {
   }, []);
 
   const fetchSelectedIdeas = async () => {
-    if (!ambassador) return;
+    if (!ambassador?.id) {
+      console.warn("⚠️ Немає ID амбасадора");
+      return;
+    }
     try {
       setLoadingSelectedIdeas(true);
       const token = getAuthToken();
@@ -55,7 +58,8 @@ const AmbassadorProfile = () => {
       const response = await axios.get(`${API_SELECTED_IDEAS}/${ambassador.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.status === 200 && response.data) {
+      console.log("🔍 Відповідь з ідеями:", response.data);
+      if (response.status === 200 && Array.isArray(response.data)) {
         setSelectedIdeas(response.data);
       } else {
         throw new Error("❌ Ідеї, де амбасадора обрано, не знайдено.");
@@ -162,7 +166,7 @@ const AmbassadorProfile = () => {
               <Title level={4}>Ідеї, де обрали цього амбасадора</Title>
               {loadingSelectedIdeas ? (
                 <Spin size="small" />
-              ) : selectedIdeas && selectedIdeas.length > 0 ? (
+              ) : Array.isArray(selectedIdeas) && selectedIdeas.length > 0 ? (
                 selectedIdeas.map((idea) => (
                   <Card key={idea.id} style={{ marginTop: "10px" }}>
                     <p><strong>Назва:</strong> {idea.title}</p>
@@ -203,7 +207,7 @@ const AmbassadorProfile = () => {
                   </Card>
                 ))
               ) : (
-                <p>Немає ідей.</p>
+                <p>Немає ідей або не вдалося завантажити.</p>
               )}
             </>
           )}
