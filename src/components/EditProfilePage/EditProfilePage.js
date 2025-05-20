@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 const API_BASE_URL = "https://backend-avtologistika.onrender.com";
 
 const EditProfilePage = () => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [name, setName] = useState('');
+  const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -27,8 +27,8 @@ const EditProfilePage = () => {
         return res.json();
       })
       .then(user => {
-        setFirstName(user.first_name || user.name || '');
-        setLastName(user.last_name || user.surname || '');
+        setName(user.name || '');
+        setSurname(user.surname || '');
         setEmail(user.email || '');
         setPhone(user.phone || '');
       })
@@ -49,11 +49,11 @@ const EditProfilePage = () => {
     }
 
     const payload = {
-      name: firstName,
-      surname: lastName,
+      name,
+      surname,
       email,
       phone,
-      password: password || undefined,
+      password: password || undefined
     };
 
     try {
@@ -82,10 +82,10 @@ const EditProfilePage = () => {
 
       <form onSubmit={handleSubmit}>
         <label>Імʼя:</label>
-        <input value={firstName} onChange={e => setFirstName(e.target.value)} required style={inputStyle} />
+        <input value={name} onChange={e => setName(e.target.value)} required style={inputStyle} />
 
         <label>Прізвище:</label>
-        <input value={lastName} onChange={e => setLastName(e.target.value)} style={inputStyle} />
+        <input value={surname} onChange={e => setSurname(e.target.value)} style={inputStyle} />
 
         <label>Email:</label>
         <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={inputStyle} />
