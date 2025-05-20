@@ -9,14 +9,17 @@ import {
   Button,
   Input,
   List,
+  Select,
 } from "antd";
 
 const { Title } = Typography;
+const { Option } = Select;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const AMBASSADOR_API = `${API_BASE}/ambassadorRoutes`;
 const API_PROFILE = `${AMBASSADOR_API}/profile`;
 const API_FEEDBACK = `${API_BASE}/feedbackRoutes`;
+const API_UPDATE_STATUS = `${AMBASSADOR_API}/update-status`;
 
 const AmbassadorProfile = () => {
   const [ambassador, setAmbassador] = useState(null);
@@ -28,6 +31,7 @@ const AmbassadorProfile = () => {
   const [comments, setComments] = useState({});
   const [newComment, setNewComment] = useState("");
   const [selectedIdeaId, setSelectedIdeaId] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState(null);
 
   const getAuthToken = () => localStorage.getItem("token");
 
@@ -111,6 +115,24 @@ const AmbassadorProfile = () => {
     }
   };
 
+  const handleStatusChange = async (ideaId, newStatus) => {
+    try {
+      setUpdatingStatus(ideaId);
+      const token = getAuthToken();
+      await axios.patch(
+        API_UPDATE_STATUS,
+        { idea_id: ideaId, new_status: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      message.success("✅ Статус оновлено.");
+      fetchSelectedIdeas();
+    } catch (error) {
+      message.error("❌ Помилка при оновленні статусу.");
+    } finally {
+      setUpdatingStatus(null);
+    }
+  };
+
   const handleSelectIdea = (ideaId) => {
     setSelectedIdeaId(ideaId);
     fetchComments(ideaId);
@@ -172,6 +194,17 @@ const AmbassadorProfile = () => {
                     <p><strong>Назва:</strong> {idea.title}</p>
                     <p><strong>Опис:</strong> {idea.description}</p>
                     <p><strong>Статус:</strong> {idea.status}</p>
+                    <Select
+                      defaultValue={idea.status}
+                      style={{ width: 160 }}
+                      onChange={(value) => handleStatusChange(idea.id, value)}
+                      loading={updatingStatus === idea.id}
+                    >
+                      <Option value="new">new</Option>
+                      <Option value="approved">approved</Option>
+                      <Option value="rejected">rejected</Option>
+                      <Option value="archived">archived</Option>
+                    </Select>
                     <p><strong>Автор:</strong> {
                       idea.sender_first_name || idea.sender_last_name
                         ? [idea.sender_first_name, idea.sender_last_name].filter(Boolean).join(" ")
