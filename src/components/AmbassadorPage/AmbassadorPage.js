@@ -30,7 +30,7 @@ const AmbassadorProfile = () => {
       const response = await axios.get(API_PROFILE, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.status === 200 && response.data && response.data.id) {
+      if (response.status === 200 && response.data?.id) {
         setAmbassador(response.data);
       } else {
         throw new Error("❌ Амбасадора не знайдено або відсутній ID.");
@@ -53,7 +53,6 @@ const AmbassadorProfile = () => {
         setSelectedIdeas(response.data);
       } else {
         setSelectedIdeas([]);
-        console.warn("⚠️ Отримано не масив ідей");
       }
     } catch (err) {
       console.error("❌ ПОМИЛКА ВІДПОВІДІ ІДЕЙ:", err.message);
