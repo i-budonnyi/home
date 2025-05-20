@@ -163,7 +163,7 @@ const AmbassadorProfile = () => {
                     <p><strong>Назва:</strong> {idea.title}</p>
                     <p><strong>Опис:</strong> {idea.description}</p>
                     <p><strong>Статус:</strong> {idea.status}</p>
-                    <p><strong>Автор:</strong> {idea.author_name} ({idea.author_email})</p>
+                    <p><strong>Автор (user_id):</strong> {idea.user_id ?? "Невідомо"}</p>
                     <Button onClick={() => handleSelectIdea(idea.id)}>Показати коментарі</Button>
 
                     {selectedIdeaId === idea.id && (
