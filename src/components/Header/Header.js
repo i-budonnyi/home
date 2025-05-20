@@ -7,7 +7,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [textColor, setTextColor] = useState(getComputedStyle(document.documentElement).getPropertyValue('--text-color') || '#000');
+  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -44,15 +44,19 @@ const Header = () => {
   }, [fetchUserProfile]);
 
   useEffect(() => {
-    const updateTextColor = () => {
-      const theme = document.documentElement.getAttribute('data-theme');
-      setTextColor(theme === 'dark' ? '#ffffff' : '#000000');
+    const current = localStorage.getItem('theme') || 'light';
+    setTheme(current);
+
+    const handleThemeChange = () => {
+      const newTheme = localStorage.getItem('theme') || 'light';
+      setTheme(newTheme);
     };
-    updateTextColor();
-    const observer = new MutationObserver(updateTextColor);
-    observer.observe(document.documentElement, { attributes: true });
-    return () => observer.disconnect();
+
+    window.addEventListener('storage', handleThemeChange);
+    return () => window.removeEventListener('storage', handleThemeChange);
   }, []);
+
+  const textColor = theme === 'dark' ? '#ffffff' : '#000000';
 
   if (!isLoaded) return null;
 
@@ -62,7 +66,7 @@ const Header = () => {
       <div style={rightStyle}>
         {userName ? (
           <>
-            <span style={nameStyle} onClick={() => navigate('/worker')}>{userName}</span>
+            <span style={{ ...nameStyle, color: textColor }} onClick={() => navigate('/worker')}>{userName}</span>
             <button style={{ ...linkStyle, color: textColor }} onClick={handleLogout}>Вийти</button>
           </>
         ) : (
@@ -90,7 +94,6 @@ const headerStyle = {
   backgroundColor: 'transparent',
   backdropFilter: 'blur(8px)',
   WebkitBackdropFilter: 'blur(8px)',
-  fontWeight: 400
 };
 
 const leftStyle = {
