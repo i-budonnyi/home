@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+console.log('🌍 API_BASE_URL:', API_BASE_URL); // лог глобально
 
 const EditProfilePage = () => {
   const [firstName, setFirstName] = useState('');
@@ -13,11 +14,15 @@ const EditProfilePage = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    console.log('🔐 Token from localStorage:', token);
 
     if (!token || !API_BASE_URL) {
+      console.error('❌ ERROR: Missing token or API_BASE_URL');
       setError('Немає токена або API-адреси');
       return;
     }
+
+    console.log('📤 Sending GET request to:', `${API_BASE_URL}/api/self/profile`);
 
     fetch(`${API_BASE_URL}/api/self/profile`, {
       method: 'GET',
@@ -25,15 +30,20 @@ const EditProfilePage = () => {
         'Authorization': `Bearer ${token}`
       }
     })
-      .then(res => res.ok ? res.json() : Promise.reject(res.status))
+      .then(res => {
+        console.log('📥 GET Response status:', res.status);
+        if (!res.ok) throw new Error(`GET failed: HTTP ${res.status}`);
+        return res.json();
+      })
       .then(user => {
+        console.log('✅ GET success:', user);
         setFirstName(user.name || '');
         setLastName(user.surname || '');
         setEmail(user.email || '');
         setPhone(user.phone || '');
       })
       .catch(err => {
-        console.error('Помилка:', err);
+        console.error('❌ GET profile error:', err);
         setError('Не вдалося завантажити профіль.');
       });
   }, []);
@@ -44,11 +54,22 @@ const EditProfilePage = () => {
     setSuccess(false);
 
     const token = localStorage.getItem('token');
+    console.log('🔐 Token on submit:', token);
 
     if (!token || !API_BASE_URL) {
+      console.error('❌ ERROR: Missing token or API_BASE_URL');
       setError('Немає токена або API-адреси');
       return;
     }
+
+    const payload = {
+      name: firstName,
+      surname: lastName,
+      email,
+      phone,
+      password: password || undefined
+    };
+    console.log('📤 PATCH payload:', payload);
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/self/profile`, {
@@ -57,20 +78,16 @@ const EditProfilePage = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          name: firstName,
-          surname: lastName,
-          email,
-          phone,
-          password: password || undefined
-        })
+        body: JSON.stringify(payload)
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      await res.json();
+      console.log('📥 PATCH Response status:', res.status);
+      if (!res.ok) throw new Error(`PATCH failed: HTTP ${res.status}`);
+      const result = await res.json();
+      console.log('✅ PATCH success:', result);
       setSuccess(true);
     } catch (err) {
-      console.error('Помилка оновлення:', err);
+      console.error('❌ PATCH error:', err);
       setError('Не вдалося оновити профіль.');
     }
   };
