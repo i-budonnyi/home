@@ -13,32 +13,28 @@ const EditProfilePage = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    console.log('🔐 Token:', token);
-    console.log('🌍 API_BASE_URL:', API_BASE_URL);
-
-    if (!token || !API_BASE_URL) {
-      setError('Немає токена або API-адреси');
+    if (!token) {
+      setError('Немає токена');
       return;
     }
 
-    fetch(`${API_BASE_URL}/api/self/profile`, {
+    fetch(`${API_BASE_URL}/self/profile`, {
       method: 'GET',
-      headers: { Authorization: `Bearer ${token}` }
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     })
       .then(res => {
-        console.log('📥 GET status:', res.status);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then(user => {
-        console.log('✅ User:', user);
         setFirstName(user.name || '');
         setLastName(user.surname || '');
         setEmail(user.email || '');
         setPhone(user.phone || '');
       })
-      .catch(err => {
-        console.error('❌ GET error:', err);
+      .catch(() => {
         setError('Не вдалося завантажити профіль.');
       });
   }, []);
@@ -49,10 +45,8 @@ const EditProfilePage = () => {
     setSuccess(false);
 
     const token = localStorage.getItem('token');
-    console.log('📤 PATCH to:', `${API_BASE_URL}/api/self/profile`);
-
-    if (!token || !API_BASE_URL) {
-      setError('Немає токена або API-адреси');
+    if (!token) {
+      setError('Немає токена');
       return;
     }
 
@@ -61,25 +55,23 @@ const EditProfilePage = () => {
       surname: lastName,
       email,
       phone,
-      password: password || undefined,
+      password: password || undefined
     };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/self/profile`, {
+      const res = await fetch(`${API_BASE_URL}/self/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       });
 
-      console.log('📥 PATCH status:', res.status);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       await res.json();
       setSuccess(true);
-    } catch (err) {
-      console.error('❌ PATCH error:', err);
+    } catch {
       setError('Не вдалося оновити профіль.');
     }
   };
