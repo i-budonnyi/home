@@ -8,7 +8,6 @@ const Header = () => {
   const location = useLocation();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -20,23 +19,20 @@ const Header = () => {
   const fetchUserProfile = useCallback(async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
-        method: 'GET',
         headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
+          Authorization: `Bearer ${token}`
+        }
       });
 
       if (!response.ok) {
         if (response.status === 401) handleLogout();
-        else throw new Error('Не вдалося отримати профіль користувача');
+        else throw new Error('Помилка завантаження профілю');
       }
 
       const data = await response.json();
       const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim();
       setUserName(fullName || null);
-    } catch (error) {
-      console.error('[HEADER] ❌ Помилка профілю:', error.message);
+    } catch {
       localStorage.removeItem('token');
     } finally {
       setIsLoaded(true);
@@ -49,85 +45,73 @@ const Header = () => {
     else setIsLoaded(true);
   }, [fetchUserProfile]);
 
-  useEffect(() => {
-    const theme = localStorage.getItem('theme');
-    setIsDarkMode(theme === 'dark');
-  }, [location.pathname]);
-
   if (!isLoaded) return null;
-
-  const headerStyle = {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 999,
-    backdropFilter: 'blur(12px)',
-    backgroundColor: isDarkMode ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.7)',
-    color: isDarkMode ? '#fff' : '#000',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    height: '48px',
-    padding: '0 24px',
-    fontSize: '14px',
-    borderBottom: isDarkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.06)',
-    boxShadow: isDarkMode ? '0 2px 4px rgba(0,0,0,0.4)' : '0 2px 4px rgba(0,0,0,0.1)',
-  };
-
-  const buttonStyle = {
-    border: 'none',
-    borderRadius: '6px',
-    padding: '6px 12px',
-    cursor: 'pointer',
-    fontSize: '13px',
-    transition: '0.2s',
-    backdropFilter: 'blur(4px)',
-    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-    color: isDarkMode ? '#fff' : '#000',
-    marginLeft: 10
-  };
 
   return (
     <header style={headerStyle}>
-      <div
-        onClick={() => navigate('/')}
-        style={{ fontWeight: 600, cursor: 'pointer', fontSize: '15px' }}
-      >
-        Avtologistika
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div style={leftStyle} onClick={() => navigate('/')}>Avtologistika</div>
+      <div style={rightStyle}>
         {userName ? (
           <>
-            <span
-              onClick={() => navigate('/worker')}
-              style={{
-                marginRight: '12px',
-                cursor: 'pointer',
-                textDecoration: 'underline',
-                fontWeight: 500,
-              }}
-            >
-              {userName}
-            </span>
-            <button onClick={handleLogout} style={{ ...buttonStyle, backgroundColor: '#e74c3c', color: '#fff' }}>
-              Вийти
-            </button>
+            <span style={nameStyle} onClick={() => navigate('/worker')}>{userName}</span>
+            <button style={buttonStyle} onClick={handleLogout}>Вийти</button>
           </>
         ) : (
           <>
-            <button onClick={() => navigate('/login')} style={buttonStyle}>
-              Вхід
-            </button>
-            <button onClick={() => navigate('/register')} style={buttonStyle}>
-              Реєстрація
-            </button>
+            <button style={buttonStyle} onClick={() => navigate('/login')}>Вхід</button>
+            <button style={buttonStyle} onClick={() => navigate('/register')}>Реєстрація</button>
           </>
         )}
       </div>
     </header>
   );
+};
+
+const headerStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 999,
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  height: '48px',
+  padding: '0 24px',
+  backdropFilter: 'blur(14px)',
+  backgroundColor: 'rgba(255,255,255,0)', // повна прозорість
+  boxShadow: 'none',
+  borderBottom: 'none'
+};
+
+const leftStyle = {
+  fontWeight: 500,
+  fontSize: '15px',
+  cursor: 'pointer',
+  userSelect: 'none'
+};
+
+const rightStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '8px'
+};
+
+const nameStyle = {
+  cursor: 'pointer',
+  fontSize: '14px',
+  fontWeight: 400,
+  textDecoration: 'underline'
+};
+
+const buttonStyle = {
+  background: 'none',
+  border: 'none',
+  padding: '6px 12px',
+  cursor: 'pointer',
+  fontSize: '13px',
+  fontWeight: 400,
+  textDecoration: 'underline'
 };
 
 export default Header;
