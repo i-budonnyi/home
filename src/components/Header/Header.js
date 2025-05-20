@@ -28,18 +28,15 @@ const Header = () => {
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          handleLogout();
-        } else {
-          throw new Error('Не вдалося отримати профіль користувача');
-        }
+        if (response.status === 401) handleLogout();
+        else throw new Error('Не вдалося отримати профіль користувача');
       }
 
       const data = await response.json();
       const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim();
       setUserName(fullName || null);
     } catch (error) {
-      console.error('[ERROR] Помилка отримання профілю:', error.message);
+      console.error('[HEADER] ❌ Помилка профілю:', error.message);
       localStorage.removeItem('token');
     } finally {
       setIsLoaded(true);
@@ -48,111 +45,87 @@ const Header = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
-      fetchUserProfile(token);
-    } else {
-      setIsLoaded(true);
-    }
+    if (token) fetchUserProfile(token);
+    else setIsLoaded(true);
   }, [fetchUserProfile]);
 
   useEffect(() => {
-    const currentTheme = localStorage.getItem('theme');
-    setIsDarkMode(currentTheme === 'dark');
-  }, [location.pathname]); // 🔁 перевірка теми при зміні маршруту
+    const theme = localStorage.getItem('theme');
+    setIsDarkMode(theme === 'dark');
+  }, [location.pathname]);
 
   if (!isLoaded) return null;
 
+  const headerStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 999,
+    backdropFilter: 'blur(12px)',
+    backgroundColor: isDarkMode ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.7)',
+    color: isDarkMode ? '#fff' : '#000',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: '48px',
+    padding: '0 24px',
+    fontSize: '14px',
+    borderBottom: isDarkMode ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.06)',
+    boxShadow: isDarkMode ? '0 2px 4px rgba(0,0,0,0.4)' : '0 2px 4px rgba(0,0,0,0.1)',
+  };
+
+  const buttonStyle = {
+    border: 'none',
+    borderRadius: '6px',
+    padding: '6px 12px',
+    cursor: 'pointer',
+    fontSize: '13px',
+    transition: '0.2s',
+    backdropFilter: 'blur(4px)',
+    backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+    color: isDarkMode ? '#fff' : '#000',
+    marginLeft: 10
+  };
+
   return (
-    <header
-      style={{
-        height: '36px',
-        backgroundColor: isDarkMode ? '#1A1A1A' : '#003366',
-        color: 'white',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '0 16px',
-        fontSize: '13px',
-      }}
-    >
+    <header style={headerStyle}>
       <div
         onClick={() => navigate('/')}
-        style={{
-          cursor: 'pointer',
-          fontWeight: 600,
-          fontSize: '14px',
-        }}
+        style={{ fontWeight: 600, cursor: 'pointer', fontSize: '15px' }}
       >
         Avtologistika
       </div>
 
-      <nav>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
         {userName ? (
-          <div style={{ display: 'flex', alignItems: 'center' }}>
+          <>
             <span
               onClick={() => navigate('/worker')}
               style={{
-                marginRight: '10px',
+                marginRight: '12px',
                 cursor: 'pointer',
                 textDecoration: 'underline',
-                fontSize: '13px',
                 fontWeight: 500,
               }}
             >
               {userName}
             </span>
-            <button
-              onClick={handleLogout}
-              style={{
-                color: 'white',
-                backgroundColor: '#dc3545',
-                border: 'none',
-                borderRadius: '3px',
-                padding: '4px 8px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                lineHeight: '1',
-              }}
-            >
+            <button onClick={handleLogout} style={{ ...buttonStyle, backgroundColor: '#e74c3c', color: '#fff' }}>
               Вийти
             </button>
-          </div>
+          </>
         ) : (
           <>
-            <button
-              onClick={() => navigate('/login')}
-              style={{
-                color: 'white',
-                backgroundColor: '#28a745',
-                border: 'none',
-                borderRadius: '3px',
-                padding: '4px 8px',
-                cursor: 'pointer',
-                marginRight: '6px',
-                fontSize: '12px',
-                lineHeight: '1',
-              }}
-            >
+            <button onClick={() => navigate('/login')} style={buttonStyle}>
               Вхід
             </button>
-            <button
-              onClick={() => navigate('/register')}
-              style={{
-                color: 'white',
-                backgroundColor: '#17a2b8',
-                border: 'none',
-                borderRadius: '3px',
-                padding: '4px 8px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                lineHeight: '1',
-              }}
-            >
+            <button onClick={() => navigate('/register')} style={buttonStyle}>
               Реєстрація
             </button>
           </>
         )}
-      </nav>
+      </div>
     </header>
   );
 };
