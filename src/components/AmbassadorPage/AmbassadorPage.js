@@ -23,7 +23,7 @@ const AmbassadorProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [selectedIdeas, setSelectedIdeas] = useState([]);
+  const [selectedIdeas, setSelectedIdeas] = useState(null);
   const [loadingSelectedIdeas, setLoadingSelectedIdeas] = useState(false);
   const [comments, setComments] = useState({});
   const [newComment, setNewComment] = useState("");
@@ -57,7 +57,10 @@ const AmbassadorProfile = () => {
     if (!ambassador?.user_id) return;
     try {
       setLoadingSelectedIdeas(true);
-      const response = await axios.get(`${AMBASSADOR_API}/${ambassador.user_id}/ideas`);
+      const token = getAuthToken();
+      const response = await axios.get(`${AMBASSADOR_API}/${ambassador.user_id}/ideas`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (response.status === 200 && Array.isArray(response.data)) {
         setSelectedIdeas(response.data);
       } else {
@@ -115,7 +118,7 @@ const AmbassadorProfile = () => {
 
   const handleShowDetails = () => {
     setShowDetails((prev) => !prev);
-    if (!selectedIdeas.length && !loadingSelectedIdeas) {
+    if (!loadingSelectedIdeas && (!selectedIdeas || selectedIdeas.length === 0)) {
       fetchSelectedIdeas();
     }
   };
@@ -144,7 +147,7 @@ const AmbassadorProfile = () => {
   return (
     <Layout style={{ padding: "20px" }}>
       {ambassador ? (
-        <Card title={`Амбасадор: ${ambassador.first_name} ${ambassador.last_name}`}> {/* 🔥 Кнопку назад прибрали */}
+        <Card title={`Амбасадор: ${ambassador.first_name} ${ambassador.last_name}`}>
           <p><strong>Email:</strong> {ambassador.email}</p>
           <p><strong>Телефон:</strong> {ambassador.phone}</p>
           <p><strong>Посада:</strong> {ambassador.position || "Не вказано"}</p>
@@ -169,7 +172,11 @@ const AmbassadorProfile = () => {
                     <p><strong>Назва:</strong> {idea.title}</p>
                     <p><strong>Опис:</strong> {idea.description}</p>
                     <p><strong>Статус:</strong> {idea.status}</p>
-                    <p><strong>Автор:</strong> {idea.sender_first_name || idea.sender_last_name ? `${idea.sender_first_name || ""} ${idea.sender_last_name || ""}`.trim() : "Невідомо"}</p>
+                    <p><strong>Автор:</strong> {
+                      idea.sender_first_name || idea.sender_last_name
+                        ? [idea.sender_first_name, idea.sender_last_name].filter(Boolean).join(" ")
+                        : "Невідомо"
+                    }</p>
                     <p><strong>Email автора:</strong> {idea.sender_email || "Невідомо"}</p>
                     <Button onClick={() => handleSelectIdea(idea.id)}>Показати коментарі</Button>
 
