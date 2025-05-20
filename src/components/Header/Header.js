@@ -112,7 +112,7 @@ const nameStyle = {
   textDecoration: 'underline',
   fontSize: '14px',
 };
-
+// тимчасова зміна для пушу
 const linkStyle = {
   background: 'none',
   border: 'none',
