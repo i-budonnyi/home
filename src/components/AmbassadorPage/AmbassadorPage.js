@@ -10,7 +10,6 @@ import {
   Input,
   List,
 } from "antd";
-import { useNavigate } from "react-router-dom";
 
 const { Title } = Typography;
 
@@ -30,7 +29,6 @@ const AmbassadorProfile = () => {
   const [newComment, setNewComment] = useState("");
   const [selectedIdeaId, setSelectedIdeaId] = useState(null);
 
-  const navigate = useNavigate();
   const getAuthToken = () => localStorage.getItem("token");
 
   const fetchAmbassador = useCallback(async () => {
@@ -146,10 +144,7 @@ const AmbassadorProfile = () => {
   return (
     <Layout style={{ padding: "20px" }}>
       {ambassador ? (
-        <Card
-          title={`Амбасадор: ${ambassador.first_name} ${ambassador.last_name}`}
-          extra={<Button onClick={() => navigate("/worker")}>← Назад</Button>}
-        >
+        <Card title={`Амбасадор: ${ambassador.first_name} ${ambassador.last_name}`}> {/* 🔥 Кнопку назад прибрали */}
           <p><strong>Email:</strong> {ambassador.email}</p>
           <p><strong>Телефон:</strong> {ambassador.phone}</p>
           <p><strong>Посада:</strong> {ambassador.position || "Не вказано"}</p>
