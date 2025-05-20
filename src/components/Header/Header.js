@@ -8,7 +8,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark');
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -44,26 +44,32 @@ const Header = () => {
     else setIsLoaded(true);
   }, [fetchUserProfile]);
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
+
   const toggleTheme = () => {
     const newTheme = isDarkMode ? 'light' : 'dark';
     localStorage.setItem('theme', newTheme);
     setIsDarkMode(!isDarkMode);
-    document.documentElement.setAttribute('data-theme', newTheme);
   };
 
   if (!isLoaded) return null;
 
   return (
-    <header style={{ ...headerStyle, color: isDarkMode ? '#f0f0f0' : '#1a1a1a' }}>
+    <header style={{
+      ...headerStyle,
+      color: isDarkMode ? '#f0f0f0' : '#1a1a1a',
+      backgroundColor: isDarkMode ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)'
+    }}>
       <div style={leftBlock}>
-        <span onClick={() => navigate('/')} style={brandStyle}>
-          Avtologistika
-        </span>
-        <button onClick={toggleTheme} style={themeBtnStyle}>
+        <span onClick={() => navigate('/')} style={brandStyle}>Avtologistika</span>
+      </div>
+
+      <div style={rightStyle}>
+        <button onClick={toggleTheme} style={themeBtnStyle} title="Змінити тему">
           {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
         </button>
-      </div>
-      <div style={rightStyle}>
         {userName ? (
           <>
             <span style={nameStyle} onClick={() => navigate('/worker')}>{userName}</span>
@@ -91,31 +97,19 @@ const headerStyle = {
   justifyContent: 'space-between',
   alignItems: 'center',
   padding: '0 20px',
-  backgroundColor: 'transparent',
   backdropFilter: 'blur(10px)',
   WebkitBackdropFilter: 'blur(10px)',
-  borderBottom: 'none',
 };
 
 const leftBlock = {
   display: 'flex',
   alignItems: 'center',
-  gap: '12px',
 };
 
 const brandStyle = {
   fontSize: '16px',
   fontWeight: 500,
   cursor: 'pointer',
-};
-
-const themeBtnStyle = {
-  background: 'none',
-  border: 'none',
-  cursor: 'pointer',
-  fontSize: '18px',
-  color: 'inherit',
-  marginTop: '1px',
 };
 
 const rightStyle = {
@@ -137,6 +131,15 @@ const linkStyle = {
   fontSize: '13px',
   textDecoration: 'underline',
   cursor: 'pointer',
+};
+
+const themeBtnStyle = {
+  background: 'none',
+  border: 'none',
+  color: 'inherit',
+  fontSize: '18px',
+  cursor: 'pointer',
+  marginTop: '1px',
 };
 
 export default Header;
