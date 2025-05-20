@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+const API_BASE_URL = "https://backend-avtologistika.onrender.com";
+
 const EditProfilePage = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -11,36 +13,32 @@ const EditProfilePage = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-    console.log('🌍 API_BASE_URL (useEffect):', API_BASE_URL);
-    console.log('🔐 Token from localStorage:', token);
+    console.log('🔐 Token:', token);
+    console.log('🌍 API_BASE_URL:', API_BASE_URL);
 
     if (!token || !API_BASE_URL) {
-      console.error('❌ ERROR: Missing token or API_BASE_URL');
       setError('Немає токена або API-адреси');
       return;
     }
 
     fetch(`${API_BASE_URL}/api/self/profile`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => {
-        console.log('📥 GET Response status:', res.status);
-        if (!res.ok) throw new Error(`GET failed: HTTP ${res.status}`);
+        console.log('📥 GET status:', res.status);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then(user => {
-        console.log('✅ GET success:', user);
+        console.log('✅ User:', user);
         setFirstName(user.name || '');
         setLastName(user.surname || '');
         setEmail(user.email || '');
         setPhone(user.phone || '');
       })
       .catch(err => {
-        console.error('❌ GET profile error:', err);
+        console.error('❌ GET error:', err);
         setError('Не вдалося завантажити профіль.');
       });
   }, []);
@@ -51,12 +49,9 @@ const EditProfilePage = () => {
     setSuccess(false);
 
     const token = localStorage.getItem('token');
-    const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-    console.log('🌍 API_BASE_URL (submit):', API_BASE_URL);
-    console.log('🔐 Token on submit:', token);
+    console.log('📤 PATCH to:', `${API_BASE_URL}/api/self/profile`);
 
     if (!token || !API_BASE_URL) {
-      console.error('❌ ERROR: Missing token or API_BASE_URL');
       setError('Немає токена або API-адреси');
       return;
     }
@@ -66,24 +61,22 @@ const EditProfilePage = () => {
       surname: lastName,
       email,
       phone,
-      password: password || undefined
+      password: password || undefined,
     };
-    console.log('📤 PATCH payload:', payload);
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/self/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       });
 
-      console.log('📥 PATCH Response status:', res.status);
-      if (!res.ok) throw new Error(`PATCH failed: HTTP ${res.status}`);
-      const result = await res.json();
-      console.log('✅ PATCH success:', result);
+      console.log('📥 PATCH status:', res.status);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      await res.json();
       setSuccess(true);
     } catch (err) {
       console.error('❌ PATCH error:', err);
