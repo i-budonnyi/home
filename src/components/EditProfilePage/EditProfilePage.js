@@ -1,17 +1,24 @@
+// ✅ EditProfilePage.jsx — фронтенд React
+
 import React, { useState, useEffect } from 'react';
 
 const EditProfilePage = () => {
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Завантаження профілю при першому рендері
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/self/profile`, {
+    const url = `${process.env.REACT_APP_API_BASE_URL}/api/self/profile`;
+    console.log("🔗 GET:", url);
+
+    fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -22,8 +29,10 @@ const EditProfilePage = () => {
         return res.json();
       })
       .then(data => {
-        setName(data.name || '');
+        setFirstName(data.name || '');
+        setLastName(data.surname || '');
         setEmail(data.email || '');
+        setPhone(data.phone || '');
       })
       .catch(err => {
         console.error('❌ Помилка завантаження профілю:', err);
@@ -31,7 +40,6 @@ const EditProfilePage = () => {
       });
   }, []);
 
-  // Відправка змін на сервер
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -50,13 +58,17 @@ const EditProfilePage = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ name, email })
+        body: JSON.stringify({
+          name: firstName,
+          surname: lastName,
+          email,
+          phone,
+          password: password || undefined
+        })
       });
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-
-      console.log("✅ Оновлено:", data);
       setSuccess(true);
     } catch (err) {
       console.error("❌ Помилка оновлення:", err);
@@ -65,40 +77,41 @@ const EditProfilePage = () => {
   };
 
   return (
-    <div style={{ maxWidth: '500px', margin: '0 auto', padding: '2rem' }}>
-      <h2>Редагувати профіль</h2>
+    <div style={{ maxWidth: '600px', margin: '40px auto', padding: '2rem', background: '#fff', borderRadius: '8px' }}>
+      <h2 style={{ textAlign: 'center' }}>Редагувати профіль</h2>
       <form onSubmit={handleSubmit}>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {success && <p style={{ color: 'green' }}>Профіль успішно оновлено.</p>}
-        
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="name">Імʼя:</label><br />
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px' }}
-          />
-        </div>
+        {error && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
+        {success && <p style={{ color: 'green', textAlign: 'center' }}>Профіль оновлено.</p>}
 
-        <div style={{ marginBottom: '1rem' }}>
-          <label htmlFor="email">Email:</label><br />
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-            style={{ width: '100%', padding: '8px' }}
-          />
-        </div>
+        <label>Імʼя:</label>
+        <input value={firstName} onChange={e => setFirstName(e.target.value)} required style={inputStyle} />
 
-        <button type="submit" style={{ padding: '10px 20px' }}>Зберегти зміни</button>
+        <label>Прізвище:</label>
+        <input value={lastName} onChange={e => setLastName(e.target.value)} style={inputStyle} />
+
+        <label>Email:</label>
+        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={inputStyle} />
+
+        <label>Телефон:</label>
+        <input value={phone} onChange={e => setPhone(e.target.value)} style={inputStyle} />
+
+        <label>Новий пароль (не обовʼязково):</label>
+        <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={inputStyle} />
+
+        <button type="submit" style={{ ...inputStyle, background: '#007bff', color: '#fff', cursor: 'pointer' }}>
+          Зберегти зміни
+        </button>
       </form>
     </div>
   );
+};
+
+const inputStyle = {
+  width: '100%',
+  padding: '10px',
+  margin: '10px 0',
+  borderRadius: '5px',
+  border: '1px solid #ccc'
 };
 
 export default EditProfilePage;
