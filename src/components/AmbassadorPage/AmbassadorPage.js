@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Layout, Card, Typography, message, Spin, Button, Input, List } from "antd";
+import { useNavigate } from "react-router-dom";
 
 const { Title } = Typography;
 
-const API_BASE = "https://backend-avtologistika.onrender.com/api/ambassadorRoutes";
-const API_PROFILE = `${API_BASE}/profile`;
-const API_FEEDBACK = "https://backend-avtologistika.onrender.com/api/feedbackRoutes";
+const API_BASE = "https://backend-avtologistika.onrender.com/api";
+const AMBASSADOR_API = `${API_BASE}/ambassadorRoutes`;
+const API_PROFILE = `${AMBASSADOR_API}/profile`;
+const API_FEEDBACK = `${API_BASE}/feedbackRoutes`;
 
 const AmbassadorProfile = () => {
   const [ambassador, setAmbassador] = useState(null);
@@ -18,6 +20,8 @@ const AmbassadorProfile = () => {
   const [comments, setComments] = useState({});
   const [newComment, setNewComment] = useState("");
   const [selectedIdeaId, setSelectedIdeaId] = useState(null);
+
+  const navigate = useNavigate();
 
   const getAuthToken = () => localStorage.getItem("token");
 
@@ -48,7 +52,7 @@ const AmbassadorProfile = () => {
     if (!ambassador?.id) return;
     try {
       setLoadingSelectedIdeas(true);
-      const response = await axios.get(`${API_BASE}/${ambassador.id}/ideas`);
+      const response = await axios.get(`${AMBASSADOR_API}/${ambassador.id}/ideas`);
       if (response.status === 200 && Array.isArray(response.data)) {
         setSelectedIdeas(response.data);
       } else {
@@ -138,7 +142,10 @@ const AmbassadorProfile = () => {
   return (
     <Layout style={{ padding: "20px" }}>
       {ambassador ? (
-        <Card title={`Амбасадор: ${ambassador.first_name} ${ambassador.last_name}`}>
+        <Card
+          title={`Амбасадор: ${ambassador.first_name} ${ambassador.last_name}`}
+          extra={<Button onClick={() => navigate("/worker")}>← Назад</Button>}
+        >
           <p><strong>Email:</strong> {ambassador.email}</p>
           <p><strong>Телефон:</strong> {ambassador.phone}</p>
           <p><strong>Посада:</strong> {ambassador.position || "Не вказано"}</p>
