@@ -18,19 +18,17 @@ const EditProfilePage = () => {
       return;
     }
 
-    fetch(`${API_BASE_URL}/self/profile`, {
+    fetch(`${API_BASE_URL}/api/self/profile`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then(user => {
-        setFirstName(user.name || '');
-        setLastName(user.surname || '');
+        setFirstName(user.first_name || user.name || '');
+        setLastName(user.last_name || user.surname || '');
         setEmail(user.email || '');
         setPhone(user.phone || '');
       })
@@ -55,15 +53,15 @@ const EditProfilePage = () => {
       surname: lastName,
       email,
       phone,
-      password: password || undefined
+      password: password || undefined,
     };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/self/profile`, {
+      const res = await fetch(`${API_BASE_URL}/api/self/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify(payload)
       });
