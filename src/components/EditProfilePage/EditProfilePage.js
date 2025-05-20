@@ -1,5 +1,3 @@
-// ✅ EditProfilePage.jsx — фронтенд React (виправлено помилку CI)
-
 import React, { useState, useEffect } from 'react';
 
 const EditProfilePage = () => {
@@ -13,12 +11,14 @@ const EditProfilePage = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    const baseUrl = process.env.REACT_APP_API_BASE_URL;
 
-    const url = `${process.env.REACT_APP_API_BASE_URL}/api/self/profile`;
-    console.log("🔗 GET:", url);
+    if (!token || !baseUrl) {
+      console.error('❌ Не вказано токен або API_BASE_URL');
+      return;
+    }
 
-    fetch(url, {
+    fetch(`${baseUrl}/api/self/profile`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -46,13 +46,15 @@ const EditProfilePage = () => {
     setSuccess(false);
 
     const token = localStorage.getItem('token');
-    if (!token) {
-      setError('Необхідно увійти.');
+    const baseUrl = process.env.REACT_APP_API_BASE_URL;
+
+    if (!token || !baseUrl) {
+      setError('Немає токена або базової адреси API.');
       return;
     }
 
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/self/profile`, {
+      const res = await fetch(`${baseUrl}/api/self/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
