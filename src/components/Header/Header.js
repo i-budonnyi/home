@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Sun, Moon } from 'lucide-react';
 
 const API_BASE_URL = 'https://backend-avtologistika.onrender.com/api/userRoutes';
 
@@ -7,7 +8,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -19,7 +20,7 @@ const Header = () => {
   const fetchUserProfile = useCallback(async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!response.ok) {
@@ -43,36 +44,37 @@ const Header = () => {
     else setIsLoaded(true);
   }, [fetchUserProfile]);
 
-  useEffect(() => {
-    const current = localStorage.getItem('theme') || 'light';
-    setTheme(current);
-
-    const handleThemeChange = () => {
-      const newTheme = localStorage.getItem('theme') || 'light';
-      setTheme(newTheme);
-    };
-
-    window.addEventListener('storage', handleThemeChange);
-    return () => window.removeEventListener('storage', handleThemeChange);
-  }, []);
-
-  const textColor = theme === 'dark' ? '#ffffff' : '#000000';
+  const toggleTheme = () => {
+    const newTheme = isDarkMode ? 'light' : 'dark';
+    localStorage.setItem('theme', newTheme);
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.setAttribute('data-theme', newTheme);
+  };
 
   if (!isLoaded) return null;
 
+  const dynamicTextColor = isDarkMode ? '#FFFFFF' : '#000000';
+
   return (
-    <header style={{ ...headerStyle, color: textColor }}>
-      <div style={leftStyle} onClick={() => navigate('/')}>Avtologistika</div>
+    <header style={{ ...headerStyle, color: dynamicTextColor }}>
+      <div style={{ ...leftStyle, color: dynamicTextColor }} onClick={() => navigate('/')}>
+        Avtologistika
+      </div>
       <div style={rightStyle}>
+        <button onClick={toggleTheme} style={iconButtonStyle} aria-label="Toggle Theme">
+          {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
         {userName ? (
           <>
-            <span style={{ ...nameStyle, color: textColor }} onClick={() => navigate('/worker')}>{userName}</span>
-            <button style={{ ...linkStyle, color: textColor }} onClick={handleLogout}>Вийти</button>
+            <span style={{ ...nameStyle, color: dynamicTextColor }} onClick={() => navigate('/worker')}>
+              {userName}
+            </span>
+            <button style={{ ...linkStyle, color: dynamicTextColor }} onClick={handleLogout}>Вийти</button>
           </>
         ) : (
           <>
-            <button style={{ ...linkStyle, color: textColor }} onClick={() => navigate('/login')}>Вхід</button>
-            <button style={{ ...linkStyle, color: textColor }} onClick={() => navigate('/register')}>Реєстрація</button>
+            <button style={{ ...linkStyle, color: dynamicTextColor }} onClick={() => navigate('/login')}>Вхід</button>
+            <button style={{ ...linkStyle, color: dynamicTextColor }} onClick={() => navigate('/register')}>Реєстрація</button>
           </>
         )}
       </div>
@@ -119,6 +121,14 @@ const linkStyle = {
   border: 'none',
   fontSize: '13px',
   textDecoration: 'underline',
+  cursor: 'pointer',
+};
+
+const iconButtonStyle = {
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  margin: 0,
   cursor: 'pointer',
 };
 
