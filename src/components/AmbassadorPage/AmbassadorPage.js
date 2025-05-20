@@ -31,11 +31,13 @@ const AmbassadorProfile = () => {
       setError(null);
       const token = getAuthToken();
       if (!token) throw new Error("❌ Необхідно авторизуватися.");
+
       console.log("[FRONT] 🔐 Запит профілю амбасадора...");
       const response = await axios.get(API_PROFILE, {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log("[FRONT] ✅ Отримано профіль:", response.data);
+
       if (response.status === 200 && response.data?.id) {
         setAmbassador(response.data);
       } else {
