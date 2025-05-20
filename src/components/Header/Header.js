@@ -7,7 +7,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(document.documentElement.getAttribute('data-theme') === 'dark');
+  const [textColor, setTextColor] = useState(getComputedStyle(document.documentElement).getPropertyValue('--text-color') || '#000');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -19,9 +19,7 @@ const Header = () => {
   const fetchUserProfile = useCallback(async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (!response.ok) {
@@ -45,12 +43,13 @@ const Header = () => {
     else setIsLoaded(true);
   }, [fetchUserProfile]);
 
-  // 🔄 React to theme change without reloading
   useEffect(() => {
-    const observer = new MutationObserver(() => {
-      const current = document.documentElement.getAttribute('data-theme');
-      setIsDarkMode(current === 'dark');
-    });
+    const updateTextColor = () => {
+      const theme = document.documentElement.getAttribute('data-theme');
+      setTextColor(theme === 'dark' ? '#ffffff' : '#000000');
+    };
+    updateTextColor();
+    const observer = new MutationObserver(updateTextColor);
     observer.observe(document.documentElement, { attributes: true });
     return () => observer.disconnect();
   }, []);
@@ -58,91 +57,66 @@ const Header = () => {
   if (!isLoaded) return null;
 
   return (
-    <header style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 1000,
-      height: '48px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: '0 20px',
-      backgroundColor: 'transparent',
-      backdropFilter: 'blur(8px)',
-      WebkitBackdropFilter: 'blur(8px)',
-      color: isDarkMode ? '#fff' : '#1a1a1a',
-      fontWeight: 400
-    }}>
-      <div
-        style={{ fontSize: '16px', fontWeight: 500, cursor: 'pointer' }}
-        onClick={() => navigate('/')}
-      >
-        Avtologistika
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <header style={{ ...headerStyle, color: textColor }}>
+      <div style={leftStyle} onClick={() => navigate('/')}>Avtologistika</div>
+      <div style={rightStyle}>
         {userName ? (
           <>
-            <span
-              onClick={() => navigate('/worker')}
-              style={{
-                cursor: 'pointer',
-                textDecoration: 'underline',
-                fontSize: '14px',
-                color: isDarkMode ? '#fff' : '#1a1a1a',
-              }}
-            >
-              {userName}
-            </span>
-            <button
-              onClick={handleLogout}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '13px',
-                textDecoration: 'underline',
-                cursor: 'pointer',
-                color: isDarkMode ? '#fff' : '#1a1a1a',
-              }}
-            >
-              Вийти
-            </button>
+            <span style={nameStyle} onClick={() => navigate('/worker')}>{userName}</span>
+            <button style={{ ...linkStyle, color: textColor }} onClick={handleLogout}>Вийти</button>
           </>
         ) : (
           <>
-            <button
-              onClick={() => navigate('/login')}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '13px',
-                textDecoration: 'underline',
-                cursor: 'pointer',
-                color: isDarkMode ? '#fff' : '#1a1a1a',
-              }}
-            >
-              Вхід
-            </button>
-            <button
-              onClick={() => navigate('/register')}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '13px',
-                textDecoration: 'underline',
-                cursor: 'pointer',
-                color: isDarkMode ? '#fff' : '#1a1a1a',
-              }}
-            >
-              Реєстрація
-            </button>
+            <button style={{ ...linkStyle, color: textColor }} onClick={() => navigate('/login')}>Вхід</button>
+            <button style={{ ...linkStyle, color: textColor }} onClick={() => navigate('/register')}>Реєстрація</button>
           </>
         )}
       </div>
     </header>
   );
+};
+
+const headerStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 1000,
+  height: '48px',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '0 20px',
+  backgroundColor: 'transparent',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
+  fontWeight: 400
+};
+
+const leftStyle = {
+  fontSize: '16px',
+  fontWeight: 500,
+  cursor: 'pointer',
+};
+
+const rightStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+};
+
+const nameStyle = {
+  cursor: 'pointer',
+  textDecoration: 'underline',
+  fontSize: '14px',
+};
+
+const linkStyle = {
+  background: 'none',
+  border: 'none',
+  fontSize: '13px',
+  textDecoration: 'underline',
+  cursor: 'pointer',
 };
 
 export default Header;
