@@ -1,121 +1,97 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  Layout, Typography, Button, Input, Form, message as antdMessage,
-  ConfigProvider, theme, Card
-} from "antd";
-import { SaveOutlined, ArrowLeftOutlined } from "@ant-design/icons";
-import axios from "axios";
-
-const { Content } = Layout;
-const { Title } = Typography;
-const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
+import React, { useState, useEffect } from 'react';
 
 const EditProfilePage = () => {
-  const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const token = localStorage.getItem("token");
-  const isDarkMode = localStorage.getItem("theme") === "dark";
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  // ... інші поля профілю, за потреби
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (!token) return navigate("/login");
-
-    const fetchProfile = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        form.setFieldsValue({
-          first_name: res.data.first_name,
-          last_name: res.data.last_name,
-          email: res.data.email,
-          phone: res.data.phone,
-        });
-      } catch (err) {
-        console.error("[FETCH_PROFILE_ERROR]", err);
-        antdMessage.error("Не вдалося завантажити профіль.");
-      }
-    };
-
-    fetchProfile();
-  }, [form, navigate, token]);
-
-  const handleSave = async (values) => {
-    try {
-      setLoading(true);
-      await axios.patch(`${API_BASE_URL}/self/profile`, {
-        ...values,
-        edited_once: true,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
+    // Отримати поточний профіль при завантаженні компонента
+    const token = localStorage.getItem('token'); // отримуємо токен, збережений при авторизації
+    if (!token) {
+      return; // Можна перенаправити на логін або обробити відсутність токена
+    }
+    fetch(`${process.env.REACT_APP_API_BASE_URL}/api/self/profile`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.ok ? res.json() : Promise.reject(res.status))
+      .then(data => {
+        // заповнюємо стан початковими значеннями профілю
+        setName(data.name);
+        setEmail(data.email);
+        // ... встановити інші поля
+      })
+      .catch(errStatus => {
+        console.error('Failed to load profile, status:', errStatus);
       });
-      antdMessage.success("Профіль оновлено.");
-      navigate("/worker");
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess(false);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Необхідно увійти в систему.');
+      return;
+    }
+    try {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/self/profile`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, email /*, ...інші поля*/ })
+      });
+      if (!response.ok) {
+        // Якщо статус не OK, викидаємо помилку з текстом статусу
+        throw new Error(`HTTP ${response.status}`);
+      }
+      // Припустимо, сервер повертає оновлені дані користувача:
+      const updatedUser = await response.json();
+      console.log('Profile updated:', updatedUser);
+      setSuccess(true);
     } catch (err) {
-      console.error("[UPDATE_PROFILE_ERROR]", err);
-      antdMessage.error("Помилка збереження профілю.");
-    } finally {
-      setLoading(false);
+      console.error('Update failed:', err);
+      // Встановлюємо зрозуміле повідомлення про помилку для користувача
+      setError('Не вдалося оновити профіль. Спробуйте ще раз або пізніше.');
     }
   };
 
-  const themeMode = {
-    algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
-    token: {
-      colorPrimary: "#1E63F2",
-      fontFamily: "Roboto, sans-serif",
-      borderRadius: 20,
-      colorTextBase: isDarkMode ? "#E1E6EB" : "#1C1C1C",
-      colorBgContainer: isDarkMode ? "#1E1E1E" : "#FFFFFF",
-      colorBgLayout: isDarkMode ? "#121212" : "#F0F2F5",
-      colorBorder: isDarkMode ? "#2C313A" : "#DDE1E6",
-    },
-  };
-
   return (
-    <ConfigProvider theme={themeMode}>
-      <Layout style={{ minHeight: "100vh" }}>
-        <Content style={{ padding: "40px 24px", background: themeMode.token.colorBgLayout }}>
-          <Button
-            type="link"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/worker")}
-            style={{ marginBottom: 24 }}
-          >
-            Назад до профілю
-          </Button>
-
-          <Card style={{ maxWidth: 720, margin: "0 auto", borderRadius: 20, padding: 28 }}>
-            <Title level={3}>Редагування профілю</Title>
-            <Form layout="vertical" form={form} onFinish={handleSave}>
-              <Form.Item name="first_name" label="Ім’я">
-                <Input placeholder="Ваше ім’я" />
-              </Form.Item>
-              <Form.Item name="last_name" label="Прізвище">
-                <Input placeholder="Ваше прізвище" />
-              </Form.Item>
-              <Form.Item name="email" label="Email">
-                <Input placeholder="Email" type="email" disabled />
-              </Form.Item>
-              <Form.Item name="phone" label="Телефон">
-                <Input placeholder="Номер телефону" />
-              </Form.Item>
-              <Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  icon={<SaveOutlined />}
-                  loading={loading}
-                >
-                  Зберегти
-                </Button>
-              </Form.Item>
-            </Form>
-          </Card>
-        </Content>
-      </Layout>
-    </ConfigProvider>
+    <div>
+      <h2>Редагувати профіль</h2>
+      <form onSubmit={handleSubmit}>
+        {error && <p style={{ color: 'red' }}>{error}</p>}
+        {success && <p style={{ color: 'green' }}>Профіль успішно оновлено.</p>}
+        <div>
+          <label htmlFor="name">Імʼя:</label><br />
+          <input 
+            id="name"
+            type="text" 
+            value={name} 
+            onChange={e => setName(e.target.value)} 
+            required 
+          />
+        </div>
+        <div>
+          <label htmlFor="email">Email:</label><br />
+          <input 
+            id="email"
+            type="email" 
+            value={email} 
+            onChange={e => setEmail(e.target.value)} 
+            required 
+          />
+        </div>
+        {/* При необхідності додайте поля для інших даних профілю */}
+        <button type="submit">Зберегти зміни</button>
+      </form>
+    </div>
   );
 };
 
