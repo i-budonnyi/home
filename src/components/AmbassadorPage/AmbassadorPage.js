@@ -6,7 +6,6 @@ const { Title } = Typography;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api/ambassadorRoutes";
 const API_PROFILE = `${API_BASE}/profile`;
-const API_SELECTED_IDEAS = `${API_BASE}`; // Зміни для маршруту /:id/ideas
 const API_FEEDBACK = "https://backend-avtologistika.onrender.com/api/feedbackRoutes";
 
 const AmbassadorProfile = () => {
@@ -14,7 +13,7 @@ const AmbassadorProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [selectedIdeas, setSelectedIdeas] = useState(null);
+  const [selectedIdeas, setSelectedIdeas] = useState([]);
   const [loadingSelectedIdeas, setLoadingSelectedIdeas] = useState(false);
   const [comments, setComments] = useState({});
   const [newComment, setNewComment] = useState("");
@@ -49,14 +48,16 @@ const AmbassadorProfile = () => {
     if (!ambassador?.id) return;
     try {
       setLoadingSelectedIdeas(true);
-      const response = await axios.get(`${API_SELECTED_IDEAS}/${ambassador.id}/ideas`);
+      const response = await axios.get(`${API_BASE}/${ambassador.id}/ideas`);
       if (response.status === 200 && Array.isArray(response.data)) {
         setSelectedIdeas(response.data);
       } else {
-        throw new Error("❌ Ідеї не знайдено");
+        setSelectedIdeas([]);
+        console.warn("⚠️ Отримано не масив ідей");
       }
     } catch (err) {
       console.error("❌ ПОМИЛКА ВІДПОВІДІ ІДЕЙ:", err.message);
+      setSelectedIdeas([]);
       message.error(err.message || "❌ Сталася помилка при отриманні ідей");
     } finally {
       setLoadingSelectedIdeas(false);
@@ -109,7 +110,7 @@ const AmbassadorProfile = () => {
 
   const handleShowDetails = () => {
     setShowDetails((prev) => !prev);
-    if (!selectedIdeas && !loadingSelectedIdeas) {
+    if (!selectedIdeas.length && !loadingSelectedIdeas) {
       fetchSelectedIdeas();
     }
   };
@@ -157,7 +158,7 @@ const AmbassadorProfile = () => {
               <Title level={4}>Ідеї, де обрали цього амбасадора</Title>
               {loadingSelectedIdeas ? (
                 <Spin size="small" />
-              ) : Array.isArray(selectedIdeas) && selectedIdeas.length > 0 ? (
+              ) : selectedIdeas.length > 0 ? (
                 selectedIdeas.map((idea) => (
                   <Card key={idea.id} style={{ marginTop: "10px" }}>
                     <p><strong>Назва:</strong> {idea.title}</p>
@@ -198,7 +199,7 @@ const AmbassadorProfile = () => {
                   </Card>
                 ))
               ) : (
-                <p>Немає ідей або не вдалося завантажити.</p>
+                <p>Цей амбасадор ще не має ідей.</p>
               )}
             </>
           )}
