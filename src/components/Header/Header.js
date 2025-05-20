@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SunOutlined, MoonOutlined } from '@ant-design/icons';
+import { Sun, Moon } from 'lucide-react';
 
 const API_BASE_URL = 'https://backend-avtologistika.onrender.com/api/userRoutes';
 
@@ -8,7 +8,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -17,10 +17,19 @@ const Header = () => {
     navigate('/');
   }, [navigate]);
 
+  const toggleTheme = () => {
+    const newTheme = isDarkMode ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    setIsDarkMode(!isDarkMode);
+  };
+
   const fetchUserProfile = useCallback(async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
@@ -44,31 +53,14 @@ const Header = () => {
     else setIsLoaded(true);
   }, [fetchUserProfile]);
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
-  }, [isDarkMode]);
-
-  const toggleTheme = () => {
-    const newTheme = isDarkMode ? 'light' : 'dark';
-    localStorage.setItem('theme', newTheme);
-    setIsDarkMode(!isDarkMode);
-  };
-
   if (!isLoaded) return null;
 
   return (
-    <header style={{
-      ...headerStyle,
-      color: isDarkMode ? '#f0f0f0' : '#1a1a1a',
-      backgroundColor: isDarkMode ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)'
-    }}>
-      <div style={leftBlock}>
-        <span onClick={() => navigate('/')} style={brandStyle}>Avtologistika</span>
-      </div>
-
+    <header style={headerStyle}>
+      <div style={leftStyle} onClick={() => navigate('/')}>Avtologistika</div>
       <div style={rightStyle}>
-        <button onClick={toggleTheme} style={themeBtnStyle} title="Змінити тему">
-          {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+        <button onClick={toggleTheme} style={iconButtonStyle} aria-label="Toggle Theme">
+          {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
         </button>
         {userName ? (
           <>
@@ -97,16 +89,13 @@ const headerStyle = {
   justifyContent: 'space-between',
   alignItems: 'center',
   padding: '0 20px',
-  backdropFilter: 'blur(10px)',
-  WebkitBackdropFilter: 'blur(10px)',
+  backgroundColor: 'transparent',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
+  color: 'inherit',
 };
 
-const leftBlock = {
-  display: 'flex',
-  alignItems: 'center',
-};
-
-const brandStyle = {
+const leftStyle = {
   fontSize: '16px',
   fontWeight: 500,
   cursor: 'pointer',
@@ -133,13 +122,13 @@ const linkStyle = {
   cursor: 'pointer',
 };
 
-const themeBtnStyle = {
+const iconButtonStyle = {
   background: 'none',
   border: 'none',
-  color: 'inherit',
-  fontSize: '18px',
+  padding: 0,
+  margin: 0,
   cursor: 'pointer',
-  marginTop: '1px',
+  color: 'inherit',
 };
 
 export default Header;
