@@ -11,25 +11,17 @@ const Header = () => {
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
-    localStorage.removeItem('user');
     setUserName(null);
     navigate('/');
   }, [navigate]);
 
   const fetchUserProfile = useCallback(async (token) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+      const res = await fetch(`${API_BASE_URL}/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      if (!response.ok) {
-        if (response.status === 401) handleLogout();
-        else throw new Error('Помилка завантаження профілю');
-      }
-
-      const data = await response.json();
+      if (!res.ok) throw new Error('Не вдалося отримати профіль');
+      const data = await res.json();
       const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim();
       setUserName(fullName || null);
     } catch {
@@ -37,29 +29,28 @@ const Header = () => {
     } finally {
       setIsLoaded(true);
     }
-  }, [handleLogout]);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) fetchUserProfile(token);
-    else setIsLoaded(true);
+    token ? fetchUserProfile(token) : setIsLoaded(true);
   }, [fetchUserProfile]);
 
   if (!isLoaded) return null;
 
   return (
     <header style={headerStyle}>
-      <div style={leftStyle} onClick={() => navigate('/')}>Avtologistika</div>
-      <div style={rightStyle}>
+      <span style={titleStyle} onClick={() => navigate('/')}>Avtologistika</span>
+      <div style={navStyle}>
         {userName ? (
           <>
-            <span style={nameStyle} onClick={() => navigate('/worker')}>{userName}</span>
-            <button style={buttonStyle} onClick={handleLogout}>Вийти</button>
+            <span style={linkStyle} onClick={() => navigate('/worker')}>{userName}</span>
+            <span style={linkStyle} onClick={handleLogout}>Вийти</span>
           </>
         ) : (
           <>
-            <button style={buttonStyle} onClick={() => navigate('/login')}>Вхід</button>
-            <button style={buttonStyle} onClick={() => navigate('/register')}>Реєстрація</button>
+            <span style={linkStyle} onClick={() => navigate('/login')}>Вхід</span>
+            <span style={linkStyle} onClick={() => navigate('/register')}>Реєстрація</span>
           </>
         )}
       </div>
@@ -72,46 +63,35 @@ const headerStyle = {
   top: 0,
   left: 0,
   right: 0,
-  zIndex: 999,
+  height: '44px',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  height: '48px',
   padding: '0 24px',
-  backdropFilter: 'blur(14px)',
-  backgroundColor: 'rgba(255,255,255,0)', // повна прозорість
+  backdropFilter: 'blur(12px)',
+  background: 'transparent',
+  border: 'none',
   boxShadow: 'none',
-  borderBottom: 'none'
+  zIndex: 1000
 };
 
-const leftStyle = {
-  fontWeight: 500,
-  fontSize: '15px',
+const titleStyle = {
+  fontSize: '14px',
+  fontWeight: 400,
   cursor: 'pointer',
   userSelect: 'none'
 };
 
-const rightStyle = {
+const navStyle = {
   display: 'flex',
-  alignItems: 'center',
-  gap: '8px'
+  gap: '16px',
+  fontSize: '13px'
 };
 
-const nameStyle = {
+const linkStyle = {
   cursor: 'pointer',
-  fontSize: '14px',
-  fontWeight: 400,
-  textDecoration: 'underline'
-};
-
-const buttonStyle = {
-  background: 'none',
-  border: 'none',
-  padding: '6px 12px',
-  cursor: 'pointer',
-  fontSize: '13px',
-  fontWeight: 400,
-  textDecoration: 'underline'
+  textDecoration: 'none',
+  fontWeight: 400
 };
 
 export default Header;
