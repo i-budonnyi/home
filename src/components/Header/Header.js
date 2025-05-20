@@ -43,17 +43,13 @@ const Header = () => {
     else setIsLoaded(true);
   }, [fetchUserProfile]);
 
-  // Реагуємо на зміну атрибуту data-theme
   useEffect(() => {
-    const updateTheme = () => {
-      const newTheme = document.documentElement.getAttribute('data-theme') || 'light';
-      setTheme(newTheme);
-    };
+    const observer = new MutationObserver(() => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      setTheme(currentTheme);
+    });
 
-    updateTheme();
-
-    const observer = new MutationObserver(updateTheme);
-    observer.observe(document.documentElement, { attributes: true });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     return () => observer.disconnect();
   }, []);
@@ -73,9 +69,7 @@ const Header = () => {
             <span style={{ ...nameStyle, color: textColor }} onClick={() => navigate('/worker')}>
               {userName}
             </span>
-            <button style={{ ...linkStyle, color: textColor }} onClick={handleLogout}>
-              Вийти
-            </button>
+            <button style={{ ...linkStyle, color: textColor }} onClick={handleLogout}>Вийти</button>
           </>
         ) : (
           <>
@@ -94,7 +88,7 @@ const headerStyle = {
   left: 0,
   right: 0,
   zIndex: 1000,
-  height: '46px',
+  height: '48px',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
@@ -102,25 +96,25 @@ const headerStyle = {
   backgroundColor: 'transparent',
   backdropFilter: 'blur(8px)',
   WebkitBackdropFilter: 'blur(8px)',
-  transition: 'color 0.2s ease'
+  transition: 'color 0.3s ease',
 };
 
 const leftStyle = {
   fontSize: '16px',
   fontWeight: 500,
-  cursor: 'pointer'
+  cursor: 'pointer',
 };
 
 const rightStyle = {
   display: 'flex',
   alignItems: 'center',
-  gap: '10px'
+  gap: '10px',
 };
 
 const nameStyle = {
   cursor: 'pointer',
   textDecoration: 'underline',
-  fontSize: '14px'
+  fontSize: '14px',
 };
 
 const linkStyle = {
@@ -128,7 +122,7 @@ const linkStyle = {
   border: 'none',
   fontSize: '13px',
   textDecoration: 'underline',
-  cursor: 'pointer'
+  cursor: 'pointer',
 };
 
 export default Header;
