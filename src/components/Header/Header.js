@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sun, Moon } from 'lucide-react';
 
 const API_BASE_URL = 'https://backend-avtologistika.onrender.com/api/userRoutes';
 
@@ -8,7 +7,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem('theme') === 'dark');
+  const [textColor, setTextColor] = useState(getComputedStyle(document.documentElement).color || '#000');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -20,7 +19,7 @@ const Header = () => {
   const fetchUserProfile = useCallback(async (token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (!response.ok) {
@@ -44,37 +43,41 @@ const Header = () => {
     else setIsLoaded(true);
   }, [fetchUserProfile]);
 
-  const toggleTheme = () => {
-    const newTheme = isDarkMode ? 'light' : 'dark';
-    localStorage.setItem('theme', newTheme);
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.setAttribute('data-theme', newTheme);
-  };
+  useEffect(() => {
+    const updateColor = () => {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      setTextColor(isDark ? '#ffffff' : '#000000');
+    };
+
+    updateColor();
+
+    const observer = new MutationObserver(updateColor);
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
 
   if (!isLoaded) return null;
 
-  const dynamicTextColor = isDarkMode ? '#FFFFFF' : '#000000';
-
   return (
-    <header style={{ ...headerStyle, color: dynamicTextColor }}>
-      <div style={{ ...leftStyle, color: dynamicTextColor }} onClick={() => navigate('/')}>
+    <header style={{ ...headerStyle, color: textColor }}>
+      <div style={{ ...leftStyle, color: textColor }} onClick={() => navigate('/')}>
         Avtologistika
       </div>
       <div style={rightStyle}>
-        <button onClick={toggleTheme} style={iconButtonStyle} aria-label="Toggle Theme">
-          {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
         {userName ? (
           <>
-            <span style={{ ...nameStyle, color: dynamicTextColor }} onClick={() => navigate('/worker')}>
+            <span style={{ ...nameStyle, color: textColor }} onClick={() => navigate('/worker')}>
               {userName}
             </span>
-            <button style={{ ...linkStyle, color: dynamicTextColor }} onClick={handleLogout}>Вийти</button>
+            <button style={{ ...linkStyle, color: textColor }} onClick={handleLogout}>
+              Вийти
+            </button>
           </>
         ) : (
           <>
-            <button style={{ ...linkStyle, color: dynamicTextColor }} onClick={() => navigate('/login')}>Вхід</button>
-            <button style={{ ...linkStyle, color: dynamicTextColor }} onClick={() => navigate('/register')}>Реєстрація</button>
+            <button style={{ ...linkStyle, color: textColor }} onClick={() => navigate('/login')}>Вхід</button>
+            <button style={{ ...linkStyle, color: textColor }} onClick={() => navigate('/register')}>Реєстрація</button>
           </>
         )}
       </div>
@@ -96,24 +99,25 @@ const headerStyle = {
   backgroundColor: 'transparent',
   backdropFilter: 'blur(8px)',
   WebkitBackdropFilter: 'blur(8px)',
+  transition: 'color 0.3s ease'
 };
 
 const leftStyle = {
   fontSize: '16px',
   fontWeight: 500,
-  cursor: 'pointer',
+  cursor: 'pointer'
 };
 
 const rightStyle = {
   display: 'flex',
   alignItems: 'center',
-  gap: '10px',
+  gap: '10px'
 };
 
 const nameStyle = {
   cursor: 'pointer',
   textDecoration: 'underline',
-  fontSize: '14px',
+  fontSize: '14px'
 };
 
 const linkStyle = {
@@ -121,15 +125,7 @@ const linkStyle = {
   border: 'none',
   fontSize: '13px',
   textDecoration: 'underline',
-  cursor: 'pointer',
-};
-
-const iconButtonStyle = {
-  background: 'none',
-  border: 'none',
-  padding: 0,
-  margin: 0,
-  cursor: 'pointer',
+  cursor: 'pointer'
 };
 
 export default Header;
