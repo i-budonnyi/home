@@ -78,10 +78,10 @@ const EditProfilePage = () => {
   return (
     <div style={{ maxWidth: '600px', margin: '40px auto', padding: '2rem', background: '#fff', borderRadius: '8px' }}>
       <h2 style={{ textAlign: 'center' }}>Редагувати профіль</h2>
-      <form onSubmit={handleSubmit}>
-        {error && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
-        {success && <p style={{ color: 'green', textAlign: 'center' }}>Профіль оновлено.</p>}
+      {error && <p style={{ color: 'red', textAlign: 'center', fontWeight: 'bold' }}>{error}</p>}
+      {success && <p style={{ color: 'green', textAlign: 'center', fontWeight: 'bold' }}>Профіль оновлено.</p>}
 
+      <form onSubmit={handleSubmit}>
         <label>Імʼя:</label>
         <input value={firstName} onChange={e => setFirstName(e.target.value)} required style={inputStyle} />
 
