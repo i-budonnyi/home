@@ -7,7 +7,7 @@ const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [textColor, setTextColor] = useState(getComputedStyle(document.documentElement).color || '#000');
+  const [theme, setTheme] = useState(document.documentElement.getAttribute('data-theme') || 'light');
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
@@ -43,19 +43,22 @@ const Header = () => {
     else setIsLoaded(true);
   }, [fetchUserProfile]);
 
+  // Реагуємо на зміну атрибуту data-theme
   useEffect(() => {
-    const updateColor = () => {
-      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      setTextColor(isDark ? '#ffffff' : '#000000');
+    const updateTheme = () => {
+      const newTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      setTheme(newTheme);
     };
 
-    updateColor();
+    updateTheme();
 
-    const observer = new MutationObserver(updateColor);
+    const observer = new MutationObserver(updateTheme);
     observer.observe(document.documentElement, { attributes: true });
 
     return () => observer.disconnect();
   }, []);
+
+  const textColor = theme === 'dark' ? '#ffffff' : '#000000';
 
   if (!isLoaded) return null;
 
@@ -91,7 +94,7 @@ const headerStyle = {
   left: 0,
   right: 0,
   zIndex: 1000,
-  height: '48px',
+  height: '46px',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
@@ -99,7 +102,7 @@ const headerStyle = {
   backgroundColor: 'transparent',
   backdropFilter: 'blur(8px)',
   WebkitBackdropFilter: 'blur(8px)',
-  transition: 'color 0.3s ease'
+  transition: 'color 0.2s ease'
 };
 
 const leftStyle = {
