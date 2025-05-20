@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
 const EditProfilePage = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -11,23 +13,19 @@ const EditProfilePage = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    const baseUrl = process.env.REACT_APP_API_BASE_URL;
 
-    if (!token || !baseUrl) {
-      console.error('❌ Не вказано токен або API_BASE_URL');
+    if (!token || !API_BASE_URL) {
+      setError('Немає токена або API-адреси');
       return;
     }
 
-    fetch(`${baseUrl}/api/self/profile`, {
+    fetch(`${API_BASE_URL}/api/self/profile`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
       }
     })
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
+      .then(res => res.ok ? res.json() : Promise.reject(res.status))
       .then(user => {
         setFirstName(user.name || '');
         setLastName(user.surname || '');
@@ -35,7 +33,7 @@ const EditProfilePage = () => {
         setPhone(user.phone || '');
       })
       .catch(err => {
-        console.error('❌ Помилка завантаження профілю:', err);
+        console.error('Помилка:', err);
         setError('Не вдалося завантажити профіль.');
       });
   }, []);
@@ -46,15 +44,14 @@ const EditProfilePage = () => {
     setSuccess(false);
 
     const token = localStorage.getItem('token');
-    const baseUrl = process.env.REACT_APP_API_BASE_URL;
 
-    if (!token || !baseUrl) {
-      setError('Немає токена або базової адреси API.');
+    if (!token || !API_BASE_URL) {
+      setError('Немає токена або API-адреси');
       return;
     }
 
     try {
-      const res = await fetch(`${baseUrl}/api/self/profile`, {
+      const res = await fetch(`${API_BASE_URL}/api/self/profile`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -73,7 +70,7 @@ const EditProfilePage = () => {
       await res.json();
       setSuccess(true);
     } catch (err) {
-      console.error("❌ Помилка оновлення:", err);
+      console.error('Помилка оновлення:', err);
       setError('Не вдалося оновити профіль.');
     }
   };
