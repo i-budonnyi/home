@@ -1,86 +1,117 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const API_BASE_URL = 'https://backend-avtologistika.onrender.com/api/userRoutes';
 
 const Header = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const handleLogout = useCallback(() => {
-    localStorage.removeItem("token");
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUserName(null);
-    navigate("/");
+    navigate('/');
   }, [navigate]);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const name = localStorage.getItem("userName");
-    if (token && name) {
-      setUserName(name);
+  const fetchUserProfile = useCallback(async (token) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) handleLogout();
+        else throw new Error('Помилка профілю');
+      }
+
+      const data = await response.json();
+      const fullName = `${data.first_name || ''} ${data.last_name || ''}`.trim();
+      setUserName(fullName || null);
+    } catch {
+      localStorage.removeItem('token');
+    } finally {
+      setIsLoaded(true);
     }
-    setIsLoaded(true);
+  }, [handleLogout]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) fetchUserProfile(token);
+    else setIsLoaded(true);
+  }, [fetchUserProfile]);
+
+  useEffect(() => {
+    const currentTheme = localStorage.getItem('theme');
+    setIsDarkMode(currentTheme === 'dark');
   }, []);
 
   if (!isLoaded) return null;
 
   return (
-    <header
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "12px 24px",
-        fontSize: "14px",
-        position: "sticky",
-        top: 0,
-        zIndex: 10,
-        backdropFilter: "none",
-        background: "transparent",
-        color: "inherit",
-      }}
-    >
-      <div
-        style={{ cursor: "pointer", fontWeight: 500 }}
-        onClick={() => navigate("/")}
-      >
-        Avtologistika
-      </div>
-
-      <nav style={{ display: "flex", gap: "12px" }}>
+    <header style={{ ...headerStyle, color: isDarkMode ? '#f0f0f0' : '#1a1a1a' }}>
+      <div style={leftStyle} onClick={() => navigate('/')}>Avtologistika</div>
+      <div style={rightStyle}>
         {userName ? (
           <>
-            <span
-              onClick={() => navigate("/worker")}
-              style={{ cursor: "pointer", textDecoration: "underline" }}
-            >
-              {userName}
-            </span>
-            <span
-              onClick={handleLogout}
-              style={{ cursor: "pointer", textDecoration: "underline" }}
-            >
-              Вийти
-            </span>
+            <span style={nameStyle} onClick={() => navigate('/worker')}>{userName}</span>
+            <button style={linkStyle} onClick={handleLogout}>Вийти</button>
           </>
         ) : (
           <>
-            <span
-              onClick={() => navigate("/login")}
-              style={{ cursor: "pointer", textDecoration: "underline" }}
-            >
-              Вхід
-            </span>
-            <span
-              onClick={() => navigate("/register")}
-              style={{ cursor: "pointer", textDecoration: "underline" }}
-            >
-              Реєстрація
-            </span>
+            <button style={linkStyle} onClick={() => navigate('/login')}>Вхід</button>
+            <button style={linkStyle} onClick={() => navigate('/register')}>Реєстрація</button>
           </>
         )}
-      </nav>
+      </div>
     </header>
   );
+};
+
+const headerStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 1000,
+  height: '48px',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  padding: '0 20px',
+  backgroundColor: 'rgba(255, 255, 255, 0)', // full transparent
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
+  borderBottom: 'none'
+};
+
+const leftStyle = {
+  fontSize: '16px',
+  fontWeight: 500,
+  cursor: 'pointer',
+};
+
+const rightStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+};
+
+const nameStyle = {
+  cursor: 'pointer',
+  textDecoration: 'underline',
+  fontSize: '14px',
+};
+
+const linkStyle = {
+  background: 'none',
+  border: 'none',
+  color: 'inherit',
+  fontSize: '13px',
+  textDecoration: 'underline',
+  cursor: 'pointer',
 };
 
 export default Header;
