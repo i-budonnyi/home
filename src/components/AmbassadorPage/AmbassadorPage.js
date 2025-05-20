@@ -24,94 +24,80 @@ const AmbassadorProfile = () => {
   const navigate = useNavigate();
   const getAuthToken = () => localStorage.getItem("token");
 
-  // 🔐 Отримати амбасадора
   const fetchAmbassador = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const token = getAuthToken();
-      if (!token) throw new Error("❌ Необхідно авторизуватися.");
-      console.log("[FRONT] 🔐 Запит профілю амбасадора...");
+      if (!token) throw new Error("\u274c \u041d\u0435\u043e\u0431\u0445\u0456\u0434\u043d\u043e \u0430\u0432\u0442\u043e\u0440\u0438\u0437\u0443\u0432\u0430\u0442\u0438\u0441\u044f.");
       const response = await axios.get(API_PROFILE, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("[FRONT] ✅ Отримано профіль:", response.data);
       if (response.status === 200 && response.data?.id) {
         setAmbassador(response.data);
       } else {
-        throw new Error("❌ Амбасадора не знайдено або відсутній ID.");
+        throw new Error("\u274c \u0410\u043c\u0431\u0430\u0441\u0430\u0434\u043e\u0440\u0430 \u043d\u0435 \u0437\u043d\u0430\u0439\u0434\u0435\u043d\u043e \u0430\u0431\u043e \u0432\u0456\u0434\u0441\u0443\u0442\u043d\u0456\u0439 ID.");
       }
     } catch (err) {
-      console.error("❌ ПОМИЛКА ОТРИМАННЯ АМБАСАДОРА:", err.message);
-      message.error(err.message || "❌ Сталася помилка при отриманні амбасадора.");
+      message.error(err.message || "\u274c \u0421\u0442\u0430\u043b\u0430\u0441\u044f \u043f\u043e\u043c\u0438\u043b\u043a\u0430 \u043f\u0440\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u043d\u043d\u0456 \u0430\u043c\u0431\u0430\u0441\u0430\u0434\u043e\u0440\u0430.");
       setError(err.message);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // 📡 Отримати ідеї
   const fetchSelectedIdeas = async () => {
     if (!ambassador?.user_id) return;
     try {
       setLoadingSelectedIdeas(true);
-      console.log(`[FRONT] 📡 Отримуємо ідеї для user_id=${ambassador.user_id}`);
       const response = await axios.get(`${AMBASSADOR_API}/${ambassador.user_id}/ideas`);
-      console.log("[FRONT] ✅ Отримано ідеї:", response.data);
       if (response.status === 200 && Array.isArray(response.data)) {
         setSelectedIdeas(response.data);
       } else {
         setSelectedIdeas([]);
       }
     } catch (err) {
-      console.error("❌ ПОМИЛКА ВІДПОВІДІ ІДЕЙ:", err.message);
       setSelectedIdeas([]);
-      message.error(err.message || "❌ Сталася помилка при отриманні ідей");
+      message.error(err.message || "\u274c \u0421\u0442\u0430\u043b\u0430\u0441\u044f \u043f\u043e\u043c\u0438\u043b\u043a\u0430 \u043f\u0440\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u043d\u043d\u0456 \u0456\u0434\u0435\u0439");
     } finally {
       setLoadingSelectedIdeas(false);
     }
   };
 
-  // 💬 Коментарі
   const fetchComments = async (ideaId) => {
     try {
       const token = getAuthToken();
-      console.log("[FRONT] 💬 Отримуємо коментарі для ідеї:", ideaId);
       const response = await axios.get(`${API_FEEDBACK}/list`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { idea_id: ideaId },
       });
-      console.log("[FRONT] ✅ Коментарі:", response.data);
       if (response.status === 200) {
         setComments((prev) => ({ ...prev, [ideaId]: response.data }));
       } else {
-        message.error("❌ Не вдалося завантажити коментарі.");
+        message.error("\u274c \u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0437\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0438\u0442\u0438 \u043a\u043e\u043c\u0435\u043d\u0442\u0430\u0440\u0456.");
       }
     } catch (error) {
-      console.error("❌ ПОМИЛКА ОТРИМАННЯ КОМЕНТАРІВ", error.message);
-      message.error("❌ Сталася помилка при отриманні коментарів.");
+      message.error("\u274c \u0421\u0442\u0430\u043b\u0430\u0441\u044f \u043f\u043e\u043c\u0438\u043b\u043a\u0430 \u043f\u0440\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u043d\u043d\u0456 \u043a\u043e\u043c\u0435\u043d\u0442\u0430\u0440\u0456\u0432.");
     }
   };
 
   const handleAddComment = async (ideaId) => {
     if (!newComment.trim()) {
-      message.error("❌ Коментар не може бути порожнім.");
+      message.error("\u274c \u041a\u043e\u043c\u0435\u043d\u0442\u0430\u0440 \u043d\u0435 \u043c\u043e\u0436\u0435 \u0431\u0443\u0442\u0438 \u043f\u043e\u0440\u043e\u0436\u043d\u0456\u043c.");
       return;
     }
     try {
       const token = getAuthToken();
-      console.log("[FRONT] ✏️ Додаємо коментар до ідеї ID:", ideaId);
       await axios.post(
         `${API_FEEDBACK}/add`,
         { idea_id: ideaId, text: newComment },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      message.success("✅ Коментар успішно додано.");
+      message.success("\u2705 \u041a\u043e\u043c\u0435\u043d\u0442\u0430\u0440 \u0443\u0441\u043f\u0456\u0448\u043d\u043e \u0434\u043e\u0434\u0430\u043d\u043e.");
       setNewComment("");
       fetchComments(ideaId);
     } catch (error) {
-      console.error("❌ ПОМИЛКА ДОДАВАННЯ КОМЕНТАРЯ", error.message);
-      message.error("❌ Сталася помилка при додаванні коментаря.");
+      message.error("\u274c \u0421\u0442\u0430\u043b\u0430\u0441\u044f \u043f\u043e\u043c\u0438\u043b\u043a\u0430 \u043f\u0440\u0438 \u0434\u043e\u0434\u0430\u0432\u0430\u043d\u043d\u0456 \u043a\u043e\u043c\u0435\u043d\u0442\u0430\u0440\u044f.");
     }
   };
 
@@ -135,7 +121,7 @@ const AmbassadorProfile = () => {
     return (
       <Layout style={{ padding: "20px", textAlign: "center" }}>
         <Spin size="large" />
-        <Title level={3}>⏳ Завантаження...</Title>
+        <Title level={3}>\u23f3 \u0417\u0430\u0432\u0430\u043d\u0442\u0430\u0436\u0435\u043d\u043d\u044f...</Title>
       </Layout>
     );
   }
@@ -143,7 +129,7 @@ const AmbassadorProfile = () => {
   if (error) {
     return (
       <Layout style={{ padding: "20px", textAlign: "center" }}>
-        <Title level={3} style={{ color: "red" }}>❌ {error}</Title>
+        <Title level={3} style={{ color: "red" }}>\u274c {error}</Title>
       </Layout>
     );
   }
@@ -153,7 +139,7 @@ const AmbassadorProfile = () => {
       {ambassador ? (
         <Card
           title={`Амбасадор: ${ambassador.first_name} ${ambassador.last_name}`}
-          extra={<Button onClick={() => navigate("/worker")}>← Назад</Button>}
+          extra={<Button onClick={() => navigate("/worker")}>\u2190 \u041d\u0430\u0437\u0430\u0434</Button>}
         >
           <p><strong>Email:</strong> {ambassador.email}</p>
           <p><strong>Телефон:</strong> {ambassador.phone}</p>
@@ -220,7 +206,7 @@ const AmbassadorProfile = () => {
           )}
         </Card>
       ) : (
-        <Title level={4} style={{ color: "gray" }}>📭 Інформація про амбасадора відсутня</Title>
+        <Title level={4} style={{ color: "gray" }}>\ud83d\udceb Інформація про амбасадора відсутня</Title>
       )}
     </Layout>
   );
