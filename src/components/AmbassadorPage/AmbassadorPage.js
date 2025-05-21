@@ -110,6 +110,9 @@ const AmbassadorPage = () => {
   };
 
   const handleStatusChange = async (ideaId, newStatus) => {
+    const currentIdea = selectedIdeas.find((idea) => idea.id === ideaId);
+    if (!currentIdea || currentIdea.status === newStatus) return;
+
     try {
       setUpdatingStatus(ideaId);
       const token = getAuthToken();
@@ -121,10 +124,14 @@ const AmbassadorPage = () => {
       message.success("✅ Статус оновлено.");
       fetchSelectedIdeas();
     } catch (error) {
-      console.error("❌ Сталася помилка при оновленні статусу:", error.response || error);
-      const errMsg =
-        error?.response?.data?.message || "❌ Помилка при оновленні статусу.";
-      message.error(errMsg);
+      console.error("❌ Сталася помилка при оновленні статусу:", error);
+      if (error.code === "ERR_NETWORK") {
+        message.error("❌ Мережева помилка. Спробуйте пізніше.");
+      } else {
+        const errMsg =
+          error?.response?.data?.message || "❌ Помилка при оновленні статусу.";
+        message.error(errMsg);
+      }
     } finally {
       setUpdatingStatus(null);
     }
@@ -198,6 +205,7 @@ const AmbassadorPage = () => {
                       loading={updatingStatus === idea.id}
                     >
                       <Option value="new">new</Option>
+                      <Option value="pending">pending</Option>
                       <Option value="approved">approved</Option>
                       <Option value="rejected">rejected</Option>
                       <Option value="archived">archived</Option>
