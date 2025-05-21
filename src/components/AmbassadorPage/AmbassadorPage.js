@@ -97,7 +97,7 @@ const AmbassadorPage = () => {
       const token = getToken();
       const body = {
         idea_id: ideaId,
-        new_status: "до_секретаря",
+        new_status: "нове", // ← ТУТ тимчасовий статус
       };
       console.log("📤 Запит на API:", API_UPDATE_STATUS);
       console.log("📦 Тіло запиту:", body);
@@ -124,10 +124,9 @@ const AmbassadorPage = () => {
 
       message.success("✅ Статус оновлено");
 
-      // локальне оновлення
       setIdeas((prev) =>
         prev.map((idea) =>
-          idea.id === ideaId ? { ...idea, status: "до_секретаря" } : idea
+          idea.id === ideaId ? { ...idea, status: "нове" } : idea
         )
       );
     } catch (err) {
@@ -213,10 +212,10 @@ const AmbassadorPage = () => {
               type="primary"
               onClick={() => handleStatusChange(idea.id)}
               loading={updatingStatus === idea.id}
-              disabled={idea.status === "до_секретаря"}
+              disabled={idea.status === "нове"}
               style={{ marginBottom: 12 }}
             >
-              Встановити статус "до_секретаря"
+              Встановити статус "нове"
             </Button>
 
             <Button onClick={() => {
