@@ -20,6 +20,15 @@ const API_LIKE_URL = `${API_BASE}/likeRoutes`;
 const API_COMMENT_URL = `${API_BASE}/commentRoutes`;
 const API_SUBSCRIBE_URL = `${API_BASE}/subscriptionRoutes`;
 
+const STATUS_TRANSLATION = {
+  "до_секретаря": "Амбасадор рекомендує секретарю",
+  "нове": "Нове",
+  "очікує": "Очікує",
+  "відхилено": "Відхилено",
+  "відхилено_з_переглядом": "Відхилено з переглядом",
+  "відхилено_на_доопрацювання": "Відхилено на доопрацювання"
+};
+
 const BlogPage = () => {
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -93,7 +102,7 @@ const BlogPage = () => {
       );
 
       setEntries(allEntries);
-      allEntries.forEach((entry) => {
+      allEntries.forEach(entry => {
         fetchLikes(entry);
         fetchComments(entry);
       });
@@ -146,16 +155,16 @@ const BlogPage = () => {
       const isSub = subscribedEntries[entry.id];
       const method = isSub ? "delete" : "post";
       const url = `${API_SUBSCRIBE_URL}/${isSub ? "unsubscribe" : "subscribe"}`;
-      const res = await axios({
+      await axios({
         method,
         url,
         data: { entry_id: entry.id, entry_type: entry.entryType },
         headers: { Authorization: `Bearer ${token}` }
       });
       setSubscribedEntries(prev => ({ ...prev, [entry.id]: !isSub }));
-      message.success(res.data.message);
+      message.success(isSub ? "Відписано" : "Підписано");
     } catch (err) {
-      message.error("Не вдалося виконати операцію.");
+      message.error("Не вдалося змінити підписку.");
     }
   };
 
@@ -187,6 +196,9 @@ const BlogPage = () => {
       default: return "default";
     }
   };
+
+  const translateStatus = (status) =>
+    STATUS_TRANSLATION[status] || decodeURIComponent(status || "").replace(/_/g, " ");
 
   const filteredEntries = filteredType === "all"
     ? entries
@@ -234,6 +246,12 @@ const BlogPage = () => {
                   <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
                   <Text strong>Автор: {entry.authorname}</Text>
                 </div>
+
+                {entry.status && (
+                  <p style={{ marginTop: 8 }}>
+                    <b>Статус:</b> {translateStatus(entry.status)}
+                  </p>
+                )}
 
                 <Divider style={{ margin: "8px 0" }} />
                 <Text>{entry.description || "Без опису"}</Text>
