@@ -135,6 +135,19 @@ const BlogPage = () => {
     fetchSubscriptions();
   }, [fetchAllEntries, fetchSubscriptions]);
 
+  // Прокрутка до конкретного запису за hash
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith("#entry-")) {
+      const element = document.getElementById(hash.slice(1));
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 300);
+      }
+    }
+  }, [entries]);
+
   const toggleLike = async (entry) => {
     try {
       const token = getAuthToken();
@@ -175,16 +188,23 @@ const BlogPage = () => {
 
     try {
       const token = getAuthToken();
-      await axios.post(`${API_COMMENT_URL}/add`, {
+      const res = await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
         entry_type: entry.entryType,
         comment
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
+
+      if (!res.data || !res.data.success) {
+        throw new Error("Сервер не підтвердив додавання");
+      }
+
       setNewComment(prev => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
+      message.success("Коментар додано");
     } catch (err) {
+      console.error("🚫 Коментар не додано:", err.message);
       message.error("Не вдалося додати коментар.");
     }
   };
@@ -193,7 +213,7 @@ const BlogPage = () => {
     const shareUrl = `${window.location.origin}/blog#entry-${entry.entryType}-${entry.id}`;
     navigator.clipboard.writeText(shareUrl);
     window.open(shareUrl, "_blank");
-    message.success("Посилання скопійовано в буфер і відкрито у новій вкладці");
+    message.success("Посилання скопійовано і відкрито у новій вкладці");
   };
 
   const getTagColor = (type) => {
