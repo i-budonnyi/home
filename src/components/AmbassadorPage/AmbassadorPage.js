@@ -9,9 +9,11 @@ import {
   Input,
   List,
   Select,
+  Divider,
 } from "antd";
+import { CommentOutlined, ReloadOutlined } from "@ant-design/icons";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { Option } = Select;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
@@ -20,89 +22,103 @@ const API_PROFILE = `${AMBASSADOR_API}/profile`;
 const API_FEEDBACK = `${API_BASE}/feedbackRoutes`;
 const API_UPDATE_STATUS = `${AMBASSADOR_API}/update-status`;
 
+const STATUS_OPTIONS = [
+  { value: "нове", label: "🆕 Нове" },
+  { value: "очікує", label: "⏳ Очікує" },
+  { value: "до_секретаря", label: "📩 До секретаря" },
+  { value: "відхилено", label: "❌ Відхилено" },
+  { value: "відхилено_з_переглядом", label: "🔁 Відхилено з переглядом" },
+  { value: "відхилено_на_доопрацювання", label: "🛠️ На доопрацювання" },
+];
+
 const AmbassadorPage = () => {
   const [ambassador, setAmbassador] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showDetails, setShowDetails] = useState(false);
-  const [selectedIdeas, setSelectedIdeas] = useState([]);
-  const [loadingSelectedIdeas, setLoadingSelectedIdeas] = useState(false);
+  const [ideas, setIdeas] = useState([]);
   const [comments, setComments] = useState({});
-  const [newComment, setNewComment] = useState("");
   const [selectedIdeaId, setSelectedIdeaId] = useState(null);
-  const [updatingStatus, setUpdatingStatus] = useState(null);
+  const [newComment, setNewComment] = useState("");
+  const [statusLoading, setStatusLoading] = useState(null);
+  const [loadingIdeas, setLoadingIdeas] = useState(false);
 
-  const getAuthToken = () => localStorage.getItem("token");
+  const token = localStorage.getItem("token");
+
+  const translateStatus = (value) =>
+    STATUS_OPTIONS.find((s) => s.value === value)?.label || value;
 
   const fetchAmbassador = useCallback(async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const token = getAuthToken();
-      if (!token) throw new Error("❌ Необхідно авторизуватися.");
-      const response = await fetch(API_PROFILE, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await fetch(API_PROFILE, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.message || "❌ Не вдалося отримати профіль.");
-      }
-      const data = await response.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
       setAmbassador(data);
     } catch (err) {
       message.error(err.message);
-      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
-  const fetchSelectedIdeas = async () => {
+  const fetchIdeas = useCallback(async () => {
     if (!ambassador?.user_id) return;
+    setLoadingIdeas(true);
     try {
-      setLoadingSelectedIdeas(true);
-      const token = getAuthToken();
-      const response = await fetch(`${AMBASSADOR_API}/${ambassador.user_id}/ideas`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await fetch(`${AMBASSADOR_API}/${ambassador.user_id}/ideas`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error("❌ Ідеї не завантажено.");
-      const data = await response.json();
-      setSelectedIdeas(Array.isArray(data) ? data : []);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      setIdeas(data);
     } catch (err) {
-      console.error("❌ Ідеї:", err);
-      message.error(err.message);
+      message.error("Помилка при завантаженні ідей");
     } finally {
-      setLoadingSelectedIdeas(false);
+      setLoadingIdeas(false);
     }
-  };
+  }, [ambassador?.user_id, token]);
 
   const fetchComments = async (ideaId) => {
     try {
-      const token = getAuthToken();
-      const response = await fetch(`${API_FEEDBACK}/list?idea_id=${ideaId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await fetch(`${API_FEEDBACK}/list?idea_id=${ideaId}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error("❌ Коментарі не завантажено.");
-      const data = await response.json();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
       setComments((prev) => ({ ...prev, [ideaId]: data }));
-    } catch (error) {
-      console.error("❌ Коментарі:", error);
-      message.error(error.message);
+    } catch (err) {
+      message.error("Не вдалося завантажити коментарі");
     }
   };
 
-  const handleAddComment = async (ideaId) => {
-    if (!newComment.trim()) {
-      return message.error("❌ Порожній коментар.");
-    }
+  const updateStatus = async (ideaId, newStatus) => {
+    if (!newStatus) return;
+    setStatusLoading(ideaId);
     try {
-      const token = getAuthToken();
-      const response = await fetch(`${API_FEEDBACK}/add`, {
+      const res = await fetch(API_UPDATE_STATUS, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ idea_id: ideaId, new_status: newStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+      message.success("Статус оновлено");
+      await fetchIdeas();
+    } catch (err) {
+      message.error("Не вдалося оновити статус");
+    } finally {
+      setStatusLoading(null);
+    }
+  };
+
+  const submitComment = async (ideaId) => {
+    if (!newComment.trim()) return message.warning("Введіть коментар");
+    try {
+      const res = await fetch(`${API_FEEDBACK}/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -110,59 +126,12 @@ const AmbassadorPage = () => {
         },
         body: JSON.stringify({ idea_id: ideaId, text: newComment }),
       });
-      if (!response.ok) throw new Error("❌ Не вдалося додати коментар.");
+      if (!res.ok) throw new Error("Коментар не додано");
+      message.success("Коментар додано");
       setNewComment("");
-      message.success("✅ Коментар додано.");
       fetchComments(ideaId);
-    } catch (error) {
-      console.error("❌ Додавання коментаря:", error);
-      message.error(error.message);
-    }
-  };
-
-  const handleStatusChange = async (ideaId, newStatus) => {
-    const currentIdea = selectedIdeas.find((idea) => idea.id === ideaId);
-    if (!currentIdea || currentIdea.status === newStatus) return;
-
-    try {
-      setUpdatingStatus(ideaId);
-      const token = getAuthToken();
-      const response = await fetch(API_UPDATE_STATUS, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          idea_id: ideaId,
-          new_status: newStatus,
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "❌ Помилка при оновленні статусу");
-      }
-
-      message.success("✅ Статус оновлено.");
-      fetchSelectedIdeas();
-    } catch (error) {
-      console.error("❌ Оновлення статусу:", error);
-      message.error(error.message || "❌ Не вдалося оновити статус.");
-    } finally {
-      setUpdatingStatus(null);
-    }
-  };
-
-  const handleSelectIdea = (ideaId) => {
-    setSelectedIdeaId(ideaId);
-    fetchComments(ideaId);
-  };
-
-  const handleShowDetails = () => {
-    setShowDetails((prev) => !prev);
-    if (!loadingSelectedIdeas && selectedIdeas.length === 0) {
-      fetchSelectedIdeas();
+    } catch (err) {
+      message.error(err.message);
     }
   };
 
@@ -170,105 +139,121 @@ const AmbassadorPage = () => {
     fetchAmbassador();
   }, [fetchAmbassador]);
 
+  useEffect(() => {
+    if (ambassador?.user_id) fetchIdeas();
+  }, [ambassador?.user_id, fetchIdeas]);
+
   if (loading) {
     return (
-      <Layout style={{ padding: 20, textAlign: "center" }}>
+      <Layout style={{ padding: 48, textAlign: "center" }}>
         <Spin size="large" />
-        <Title level={3}>⏳ Завантаження...</Title>
+        <Title>Завантаження профілю...</Title>
       </Layout>
     );
   }
 
-  if (error) {
+  if (!ambassador) {
     return (
-      <Layout style={{ padding: 20, textAlign: "center" }}>
-        <Title level={3} style={{ color: "red" }}>❌ {error}</Title>
+      <Layout style={{ padding: 48 }}>
+        <Title level={3} type="danger">❌ Профіль амбасадора не знайдено</Title>
       </Layout>
     );
   }
 
   return (
-    <Layout style={{ padding: 20 }}>
-      {ambassador ? (
-        <Card title={`Амбасадор: ${ambassador.first_name} ${ambassador.last_name}`}>
-          <p><strong>Email:</strong> {ambassador.email}</p>
-          <p><strong>Телефон:</strong> {ambassador.phone}</p>
-          <p><strong>Посада:</strong> {ambassador.position || "Не вказано"}</p>
-          <Button onClick={handleShowDetails} type="primary" loading={loadingSelectedIdeas}>
-            {showDetails ? "Сховати деталі" : "Показати ідеї"}
-          </Button>
+    <Layout style={{ padding: 24, maxWidth: 1000, margin: "0 auto" }}>
+      <Card bordered hoverable style={{ marginBottom: 24 }}>
+        <Title level={3}>
+          👤 {ambassador.first_name} {ambassador.last_name}
+        </Title>
+        <Text>Email: {ambassador.email}</Text> <br />
+        <Text>Телефон: {ambassador.phone}</Text> <br />
+        <Text>Посада: {ambassador.position || "Не вказано"}</Text> <br />
+        <Divider />
+        <Button
+          icon={<ReloadOutlined />}
+          onClick={fetchIdeas}
+          loading={loadingIdeas}
+        >
+          Оновити список ідей
+        </Button>
+      </Card>
 
-          {showDetails && (
-            <>
-              <p><strong>ID користувача:</strong> {ambassador.user_id}</p>
-              <hr />
-              <Title level={4}>Ідеї, де обрали цього амбасадора</Title>
-              {loadingSelectedIdeas ? (
-                <Spin size="small" />
-              ) : selectedIdeas.length > 0 ? (
-                selectedIdeas.map((idea) => (
-                  <Card key={idea.id} style={{ marginTop: 10 }}>
-                    <p><strong>Назва:</strong> {idea.title}</p>
-                    <p><strong>Опис:</strong> {idea.description}</p>
-                    <p><strong>Статус:</strong> {idea.status}</p>
-                    <Select
-                      value={idea.status}
-                      style={{ width: 160 }}
-                      onChange={(value) => handleStatusChange(idea.id, value)}
-                      loading={updatingStatus === idea.id}
-                    >
-                      <Option value="new">new</Option>
-                      <Option value="pending">pending</Option>
-                      <Option value="approved">approved</Option>
-                      <Option value="rejected">rejected</Option>
-                      <Option value="archived">archived</Option>
-                    </Select>
-                    <p><strong>Автор:</strong> {[
-                      idea.sender_first_name,
-                      idea.sender_last_name,
-                    ].filter(Boolean).join(" ") || "Невідомо"}</p>
-                    <p><strong>Email автора:</strong> {idea.sender_email || "Невідомо"}</p>
-                    <Button onClick={() => handleSelectIdea(idea.id)}>Показати коментарі</Button>
-
-                    {selectedIdeaId === idea.id && (
-                      <>
-                        <Title level={5}>Коментарі</Title>
-                        <List
-                          dataSource={comments[idea.id] || []}
-                          renderItem={(item) => (
-                            <List.Item>
-                              <Card>
-                                <p><strong>{item.sender_first_name} {item.sender_last_name}</strong></p>
-                                <p>{item.text}</p>
-                              </Card>
-                            </List.Item>
-                          )}
-                        />
-                        <Input.TextArea
-                          rows={4}
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          placeholder="Напишіть ваш коментар..."
-                        />
-                        <Button
-                          type="primary"
-                          onClick={() => handleAddComment(idea.id)}
-                          style={{ marginTop: 10 }}
-                        >
-                          Додати коментар
-                        </Button>
-                      </>
-                    )}
-                  </Card>
-                ))
-              ) : (
-                <p>Цей амбасадор ще не має ідей.</p>
-              )}
-            </>
-          )}
+      {ideas.length === 0 ? (
+        <Card>
+          <Text>Немає ідей для цього амбасадора.</Text>
         </Card>
       ) : (
-        <Title level={4} style={{ color: "gray" }}>📭 Інформація про амбасадора відсутня</Title>
+        ideas.map((idea) => (
+          <Card
+            key={idea.id}
+            title={`Ідея: ${idea.title}`}
+            style={{ marginBottom: 24 }}
+          >
+            <p><Text strong>Опис:</Text> {idea.description}</p>
+            <p><Text strong>Автор:</Text> {idea.sender_first_name} {idea.sender_last_name}</p>
+            <p><Text strong>Email:</Text> {idea.sender_email}</p>
+            <p><Text strong>Статус:</Text> {translateStatus(idea.status)}</p>
+
+            <Select
+              value={idea.status}
+              style={{ width: 280, marginBottom: 12 }}
+              onChange={(value) => updateStatus(idea.id, value)}
+              loading={statusLoading === idea.id}
+            >
+              {STATUS_OPTIONS.map((status) => (
+                <Option key={status.value} value={status.value}>
+                  {status.label}
+                </Option>
+              ))}
+            </Select>
+
+            <Button
+              type="dashed"
+              icon={<CommentOutlined />}
+              onClick={() => {
+                setSelectedIdeaId(idea.id);
+                fetchComments(idea.id);
+              }}
+              style={{ marginLeft: 8 }}
+            >
+              Коментарі
+            </Button>
+
+            {selectedIdeaId === idea.id && (
+              <div style={{ marginTop: 20 }}>
+                <List
+                  header={<b>Коментарі</b>}
+                  dataSource={comments[idea.id] || []}
+                  renderItem={(item) => (
+                    <List.Item>
+                      <Card size="small" style={{ width: "100%" }}>
+                        <Text strong>
+                          {item.sender_first_name} {item.sender_last_name}
+                        </Text>
+                        <p>{item.text}</p>
+                      </Card>
+                    </List.Item>
+                  )}
+                />
+                <Input.TextArea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows={3}
+                  placeholder="Додати новий коментар..."
+                  style={{ marginTop: 10 }}
+                />
+                <Button
+                  type="primary"
+                  onClick={() => submitComment(idea.id)}
+                  style={{ marginTop: 10 }}
+                >
+                  Надіслати
+                </Button>
+              </div>
+            )}
+          </Card>
+        ))
       )}
     </Layout>
   );
