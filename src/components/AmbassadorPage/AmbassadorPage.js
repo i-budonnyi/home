@@ -41,6 +41,8 @@ const AmbassadorPage = () => {
       const token = getAuthToken();
       if (!token) throw new Error("❌ Необхідно авторизуватися.");
       const response = await fetch(API_PROFILE, {
+        method: "GET",
+        mode: "cors",
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -69,6 +71,8 @@ const AmbassadorPage = () => {
       setLoadingSelectedIdeas(true);
       const token = getAuthToken();
       const response = await fetch(`${AMBASSADOR_API}/${ambassador.user_id}/ideas`, {
+        method: "GET",
+        mode: "cors",
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -89,6 +93,8 @@ const AmbassadorPage = () => {
     try {
       const token = getAuthToken();
       const response = await fetch(`${API_FEEDBACK}/list?idea_id=${ideaId}`, {
+        method: "GET",
+        mode: "cors",
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -110,6 +116,7 @@ const AmbassadorPage = () => {
       const token = getAuthToken();
       const response = await fetch(`${API_FEEDBACK}/add`, {
         method: "POST",
+        mode: "cors",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -135,6 +142,7 @@ const AmbassadorPage = () => {
       const token = getAuthToken();
       const response = await fetch(API_UPDATE_STATUS, {
         method: "PATCH",
+        mode: "cors",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
