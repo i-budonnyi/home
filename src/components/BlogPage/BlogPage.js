@@ -6,7 +6,8 @@ import {
 import {
   HeartOutlined, HeartFilled,
   UserAddOutlined, SendOutlined,
-  ShareAltOutlined
+  ShareAltOutlined,
+  CopyOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 
@@ -38,8 +39,7 @@ const BlogPage = () => {
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
   const [filteredType, setFilteredType] = useState("all");
-  const [shareModalVisible, setShareModalVisible] = useState(false);
-  const [currentShareUrl, setCurrentShareUrl] = useState("");
+  const [shareModal, setShareModal] = useState({ visible: false, url: "" });
 
   const getAuthToken = () => localStorage.getItem("token");
 
@@ -83,29 +83,27 @@ const BlogPage = () => {
       ]);
 
       const blogs = blogsRes.data?.blogs?.map(b => ({
-        ...b,
-        entryType: "blog",
+        ...b, entryType: "blog",
         authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author_email || "Невідомий"
       })) || [];
 
       const ideas = blogsRes.data?.ideas?.map(i => ({
-        ...i,
-        entryType: "idea",
+        ...i, entryType: "idea",
         authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author_email || "Невідомий"
       })) || [];
 
       const problems = problemsRes.data?.map(p => ({
-        ...p,
-        entryType: "problem",
+        ...p, entryType: "problem",
         authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author_email || "Невідомий"
       })) || [];
 
-      const allEntries = [...blogs, ...ideas, ...problems].sort(
+      const all = [...blogs, ...ideas, ...problems].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
 
-      setEntries(allEntries);
-      allEntries.forEach(entry => {
+      setEntries(all);
+
+      all.forEach(entry => {
         fetchLikes(entry);
         fetchComments(entry);
       });
@@ -135,16 +133,20 @@ const BlogPage = () => {
   useEffect(() => {
     fetchAllEntries();
     fetchSubscriptions();
-
-    // Scroll to entry if link has anchor
-    const hash = window.location.hash;
-    if (hash.startsWith("#entry-")) {
-      const element = document.getElementById(hash.substring(1));
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
-      }
-    }
   }, [fetchAllEntries, fetchSubscriptions]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get("entryType");
+    const id = params.get("id");
+    if (type && id) {
+      setFilteredType(type);
+      setTimeout(() => {
+        const el = document.getElementById(`entry-${type}-${id}`);
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      }, 500);
+    }
+  }, [entries]);
 
   const toggleLike = async (entry) => {
     try {
@@ -156,7 +158,7 @@ const BlogPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchLikes(entry);
-    } catch (err) {
+    } catch {
       message.error("Не вдалося змінити лайк.");
     }
   };
@@ -167,15 +169,10 @@ const BlogPage = () => {
       const isSub = subscribedEntries[entry.id];
       const method = isSub ? "delete" : "post";
       const url = `${API_SUBSCRIBE_URL}/${isSub ? "unsubscribe" : "subscribe"}`;
-      await axios({
-        method,
-        url,
-        data: { entry_id: entry.id, entry_type: entry.entryType },
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios({ method, url, data: { entry_id: entry.id, entry_type: entry.entryType }, headers: { Authorization: `Bearer ${token}` } });
       setSubscribedEntries(prev => ({ ...prev, [entry.id]: !isSub }));
       message.success(isSub ? "Відписано" : "Підписано");
-    } catch (err) {
+    } catch {
       message.error("Не вдалося змінити підписку.");
     }
   };
@@ -183,35 +180,17 @@ const BlogPage = () => {
   const handleCommentSubmit = async (entry) => {
     const comment = newComment[entry.id]?.trim();
     if (!comment) return;
-
     try {
       const token = getAuthToken();
       await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
         entry_type: entry.entryType,
         comment
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      }, { headers: { Authorization: `Bearer ${token}` } });
       setNewComment(prev => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
-    } catch (err) {
+    } catch {
       message.error("Не вдалося додати коментар.");
-    }
-  };
-
-  const shareEntry = (entry) => {
-    const url = `${window.location.origin}/blog#entry-${entry.entryType}-${entry.id}`;
-    setCurrentShareUrl(url);
-    setShareModalVisible(true);
-  };
-
-  const getTagColor = (type) => {
-    switch (type) {
-      case "blog": return "blue";
-      case "idea": return "green";
-      case "problem": return "gold";
-      default: return "default";
     }
   };
 
@@ -222,50 +201,53 @@ const BlogPage = () => {
     ? entries
     : entries.filter(e => e.entryType === filteredType);
 
+  const handleShare = (entry) => {
+    const url = `${window.location.origin}/blog?entryType=${entry.entryType}&id=${entry.id}`;
+    setShareModal({ visible: true, url });
+    navigator.clipboard.writeText(url).then(() => {
+      message.success("Посилання скопійовано в буфер");
+    });
+  };
+
   return (
-    <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
-      <div style={{ marginBottom: "20px" }}>
-        <Button type="default" href="/worker" style={{ backgroundColor: "#e6f7ff", borderColor: "#91d5ff" }}>
-          💡 Повернутись на головну 
-        </Button>
-      </div>
+    <Content style={{ padding: 20, maxWidth: 900, margin: "auto" }}>
+      <Button href="/worker" style={{ marginBottom: 20 }}>
+        Назад
+      </Button>
 
       {isLoading ? <Skeleton active /> : (
         <>
-          <div style={{ marginBottom: 20, textAlign: "center" }}>
-            <Space>
-              {["all", "blog", "idea", "problem"].map((type) => (
-                <Button
-                  key={type}
-                  type={filteredType === type ? "primary" : "default"}
-                  onClick={() => setFilteredType(type)}
-                >
-                  {type === "all" ? "Усі" : type.charAt(0).toUpperCase() + type.slice(1)}
-                </Button>
-              ))}
-            </Space>
-          </div>
+          <Space style={{ marginBottom: 20 }}>
+            {["all", "blog", "idea", "problem"].map((type) => (
+              <Button
+                key={type}
+                type={filteredType === type ? "primary" : "default"}
+                onClick={() => setFilteredType(type)}
+              >
+                {type === "all" ? "Усі" : type}
+              </Button>
+            ))}
+          </Space>
 
-          <Space direction="vertical" size="large" style={{ width: "100%" }}>
+          <Space direction="vertical" style={{ width: "100%" }}>
             {filteredEntries.map(entry => (
-              <Card key={entry.id} id={`entry-${entry.entryType}-${entry.id}`} hoverable style={{ borderRadius: 10 }}>
+              <Card key={entry.id} id={`entry-${entry.entryType}-${entry.id}`}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <Title level={4} style={{ margin: 0 }}>{entry.title}</Title>
+                  <Title level={4}>{entry.title}</Title>
                   <Button icon={<UserAddOutlined />} onClick={() => handleSubscribe(entry)}>
                     {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
                   </Button>
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
-                  <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
-                  <Text strong>Автор: {entry.authorname}</Text>
-                </div>
-
+                <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
+                <Text strong>Автор: {entry.authorname}</Text>
                 {entry.status && (
-                  <p style={{ marginTop: 8 }}><b>Статус:</b> {translateStatus(entry.status)}</p>
+                  <p style={{ marginTop: 8 }}>
+                    <b>Статус:</b> {translateStatus(entry.status)}
+                  </p>
                 )}
 
-                <Divider style={{ margin: "8px 0" }} />
+                <Divider />
                 <Text>{entry.description || "Без опису"}</Text>
 
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
@@ -273,52 +255,34 @@ const BlogPage = () => {
                     <Button type="text" onClick={() => toggleLike(entry)}>
                       {likesData[entry.id]?.userLiked ? <HeartFilled style={{ color: "red" }} /> : <HeartOutlined />}
                     </Button>
-                    <Text>{likesData[entry.id]?.likesCount || 0} лайк(ів)</Text>
+                    <Text>{likesData[entry.id]?.likesCount || 0}</Text>
                   </Space>
-                  <Button icon={<ShareAltOutlined />} onClick={() => shareEntry(entry)}>
+                  <Button icon={<ShareAltOutlined />} onClick={() => handleShare(entry)}>
                     Поділитися
                   </Button>
                 </div>
 
                 <Divider />
-                <div>
-                  <Title level={5}>Коментарі:</Title>
-                  <Space direction="vertical" style={{ width: "100%" }}>
-                    {commentsData[entry.id]?.length ? (
-                      commentsData[entry.id].map(comment => {
-                        const fullName = `${comment.author_first_name || ""} ${comment.author_last_name || ""}`.trim();
-                        const displayName = fullName ? `${fullName}.` : (comment.author_email || "Невідомий.");
-                        return (
-                          <Card key={comment.id} size="small" style={{ backgroundColor: "#fafafa", border: "1px solid #eee", borderRadius: "6px" }}>
-                            <div style={{ display: "flex", justifyContent: "space-between" }}>
-                              <Text strong>{displayName}</Text>
-                              <Text type="secondary" style={{ fontSize: 12 }}>
-                                {comment.createdAt ? new Date(comment.createdAt).toLocaleString("uk-UA") : "Невідома дата"}
-                              </Text>
-                            </div>
-                            <Text>{comment.text}</Text>
-                          </Card>
-                        );
-                      })
-                    ) : (
-                      <Text type="secondary">Коментарів ще немає.</Text>
-                    )}
-                  </Space>
-
-                  <div style={{ marginTop: "12px" }}>
-                    <Text strong>Додати коментар:</Text>
-                    <TextArea
-                      rows={2}
-                      value={newComment[entry.id] || ""}
-                      onChange={(e) => setNewComment({ ...newComment, [entry.id]: e.target.value })}
-                      placeholder="Напишіть коментар..."
-                      style={{ marginTop: 8, marginBottom: 8 }}
-                    />
-                    <Button type="primary" icon={<SendOutlined />} onClick={() => handleCommentSubmit(entry)}>
-                      Відправити
-                    </Button>
-                  </div>
-                </div>
+                <Title level={5}>Коментарі:</Title>
+                {(commentsData[entry.id] || []).map(comment => (
+                  <Card key={comment.id} size="small" style={{ marginBottom: 8 }}>
+                    <Text strong>{`${comment.author_first_name || ""} ${comment.author_last_name || ""}`}</Text>
+                    <p>{comment.text}</p>
+                  </Card>
+                ))}
+                <TextArea
+                  value={newComment[entry.id] || ""}
+                  onChange={(e) => setNewComment({ ...newComment, [entry.id]: e.target.value })}
+                  placeholder="Ваш коментар..."
+                />
+                <Button
+                  icon={<SendOutlined />}
+                  type="primary"
+                  style={{ marginTop: 8 }}
+                  onClick={() => handleCommentSubmit(entry)}
+                >
+                  Надіслати
+                </Button>
               </Card>
             ))}
           </Space>
@@ -326,25 +290,28 @@ const BlogPage = () => {
       )}
 
       <Modal
-        open={shareModalVisible}
-        onCancel={() => setShareModalVisible(false)}
+        title="Поділитися постом"
+        open={shareModal.visible}
+        onCancel={() => setShareModal({ visible: false, url: "" })}
         footer={null}
-        title="Поділитися записом"
       >
-        <Space direction="vertical" style={{ width: "100%" }}>
-          <Button href={`https://t.me/share/url?url=${encodeURIComponent(currentShareUrl)}`} target="_blank" block>
+        <p><b>Посилання:</b> {shareModal.url}</p>
+        <Space wrap style={{ marginTop: 10 }}>
+          <Button icon={<CopyOutlined />} onClick={() => {
+            navigator.clipboard.writeText(shareModal.url);
+            message.success("Скопійовано!");
+          }}>
+            Копіювати
+          </Button>
+          <Button href={`https://t.me/share/url?url=${encodeURIComponent(shareModal.url)}`} target="_blank">
             Telegram
           </Button>
-          <Button href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentShareUrl)}`} target="_blank" block>
+          <Button href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareModal.url)}`} target="_blank">
             Facebook
           </Button>
-          <Button href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(currentShareUrl)}`} target="_blank" block>
-            Twitter (X)
+          <Button href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareModal.url)}`} target="_blank">
+            Twitter
           </Button>
-          <Button href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentShareUrl)}`} target="_blank" block>
-            LinkedIn
-          </Button>
-          <Input value={currentShareUrl} readOnly style={{ marginTop: 10 }} />
         </Space>
       </Modal>
     </Content>
