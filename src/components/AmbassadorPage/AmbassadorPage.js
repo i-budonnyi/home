@@ -243,7 +243,7 @@ const AmbassadorPage = () => {
                   onChange={(e) => setNewComment(e.target.value)}
                   rows={3}
                   placeholder="Додайте коментар..."
-                  style={{ marginTop: 10 }}
+                  style={{ marginTop: 12 }}
                 />
                 <Button
                   type="primary"
