@@ -26,7 +26,7 @@ const AmbassadorProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [selectedIdeas, setSelectedIdeas] = useState(null);
+  const [selectedIdeas, setSelectedIdeas] = useState([]);
   const [loadingSelectedIdeas, setLoadingSelectedIdeas] = useState(false);
   const [comments, setComments] = useState({});
   const [newComment, setNewComment] = useState("");
@@ -65,14 +65,11 @@ const AmbassadorProfile = () => {
       const response = await axios.get(`${AMBASSADOR_API}/${ambassador.user_id}/ideas`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.status === 200 && Array.isArray(response.data)) {
-        setSelectedIdeas(response.data);
-      } else {
-        setSelectedIdeas([]);
-      }
+      setSelectedIdeas(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
+      console.error("❌ Помилка при отриманні ідей:", err);
       setSelectedIdeas([]);
-      message.error(err.message || "❌ Сталася помилка при отриманні ідей");
+      message.error("❌ Сталася помилка при отриманні ідей");
     } finally {
       setLoadingSelectedIdeas(false);
     }
@@ -85,20 +82,16 @@ const AmbassadorProfile = () => {
         headers: { Authorization: `Bearer ${token}` },
         params: { idea_id: ideaId },
       });
-      if (response.status === 200) {
-        setComments((prev) => ({ ...prev, [ideaId]: response.data }));
-      } else {
-        message.error("❌ Не вдалося завантажити коментарі.");
-      }
+      setComments((prev) => ({ ...prev, [ideaId]: response.data }));
     } catch (error) {
+      console.error("❌ Сталася помилка при отриманні коментарів:", error);
       message.error("❌ Сталася помилка при отриманні коментарів.");
     }
   };
 
   const handleAddComment = async (ideaId) => {
     if (!newComment.trim()) {
-      message.error("❌ Коментар не може бути порожнім.");
-      return;
+      return message.error("❌ Коментар не може бути порожнім.");
     }
     try {
       const token = getAuthToken();
@@ -111,6 +104,7 @@ const AmbassadorProfile = () => {
       setNewComment("");
       fetchComments(ideaId);
     } catch (error) {
+      console.error("❌ Помилка додавання коментаря:", error);
       message.error("❌ Сталася помилка при додаванні коментаря.");
     }
   };
@@ -119,7 +113,7 @@ const AmbassadorProfile = () => {
     try {
       setUpdatingStatus(ideaId);
       const token = getAuthToken();
-      await axios.patch(
+      const response = await axios.patch(
         API_UPDATE_STATUS,
         { idea_id: ideaId, new_status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -127,7 +121,10 @@ const AmbassadorProfile = () => {
       message.success("✅ Статус оновлено.");
       fetchSelectedIdeas();
     } catch (error) {
-      message.error("❌ Помилка при оновленні статусу.");
+      console.error("❌ Сталася помилка при оновленні статусу:", error.response || error);
+      const errMsg =
+        error?.response?.data?.message || "❌ Помилка при оновленні статусу.";
+      message.error(errMsg);
     } finally {
       setUpdatingStatus(null);
     }
@@ -140,7 +137,7 @@ const AmbassadorProfile = () => {
 
   const handleShowDetails = () => {
     setShowDetails((prev) => !prev);
-    if (!loadingSelectedIdeas && (!selectedIdeas || selectedIdeas.length === 0)) {
+    if (!loadingSelectedIdeas && selectedIdeas.length === 0) {
       fetchSelectedIdeas();
     }
   };
@@ -195,7 +192,7 @@ const AmbassadorProfile = () => {
                     <p><strong>Опис:</strong> {idea.description}</p>
                     <p><strong>Статус:</strong> {idea.status}</p>
                     <Select
-                      defaultValue={idea.status}
+                      value={idea.status}
                       style={{ width: 160 }}
                       onChange={(value) => handleStatusChange(idea.id, value)}
                       loading={updatingStatus === idea.id}
