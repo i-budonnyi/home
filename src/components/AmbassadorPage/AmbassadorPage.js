@@ -8,11 +8,9 @@ import {
   Button,
   List,
   Input,
-  Select,
 } from "antd";
 
 const { Title } = Typography;
-const { Option } = Select;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const AMBASSADOR_API = `${API_BASE}/ambassadorRoutes`;
@@ -51,7 +49,7 @@ const AmbassadorPage = () => {
     }
   }, []);
 
-  const fetchIdeas = async () => {
+  const fetchIdeas = useCallback(async () => {
     if (!ambassador?.user_id) return;
     try {
       setLoadingIdeas(true);
@@ -67,7 +65,7 @@ const AmbassadorPage = () => {
     } finally {
       setLoadingIdeas(false);
     }
-  };
+  }, [ambassador]);
 
   const fetchComments = async (ideaId) => {
     try {
@@ -135,7 +133,7 @@ const AmbassadorPage = () => {
 
   useEffect(() => {
     if (ambassador) fetchIdeas();
-  }, [ambassador]);
+  }, [ambassador, fetchIdeas]);
 
   if (loading) {
     return (
