@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Layout, Card, Space, Typography, Skeleton, Button,
-  Tag, Input, Divider, message
+  Tag, Input, Divider, message, Modal
 } from "antd";
 import {
   HeartOutlined, HeartFilled,
@@ -38,6 +38,8 @@ const BlogPage = () => {
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
   const [filteredType, setFilteredType] = useState("all");
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [currentShareUrl, setCurrentShareUrl] = useState("");
 
   const getAuthToken = () => localStorage.getItem("token");
 
@@ -133,20 +135,16 @@ const BlogPage = () => {
   useEffect(() => {
     fetchAllEntries();
     fetchSubscriptions();
-  }, [fetchAllEntries, fetchSubscriptions]);
 
-  // Прокрутка до конкретного запису за hash
-  useEffect(() => {
+    // Scroll to entry if link has anchor
     const hash = window.location.hash;
     if (hash.startsWith("#entry-")) {
-      const element = document.getElementById(hash.slice(1));
+      const element = document.getElementById(hash.substring(1));
       if (element) {
-        setTimeout(() => {
-          element.scrollIntoView({ behavior: "smooth", block: "start" });
-        }, 300);
+        element.scrollIntoView({ behavior: "smooth" });
       }
     }
-  }, [entries]);
+  }, [fetchAllEntries, fetchSubscriptions]);
 
   const toggleLike = async (entry) => {
     try {
@@ -188,32 +186,24 @@ const BlogPage = () => {
 
     try {
       const token = getAuthToken();
-      const res = await axios.post(`${API_COMMENT_URL}/add`, {
+      await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
         entry_type: entry.entryType,
         comment
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-
-      if (!res.data || !res.data.success) {
-        throw new Error("Сервер не підтвердив додавання");
-      }
-
       setNewComment(prev => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
-      message.success("Коментар додано");
     } catch (err) {
-      console.error("🚫 Коментар не додано:", err.message);
       message.error("Не вдалося додати коментар.");
     }
   };
 
   const shareEntry = (entry) => {
-    const shareUrl = `${window.location.origin}/blog#entry-${entry.entryType}-${entry.id}`;
-    navigator.clipboard.writeText(shareUrl);
-    window.open(shareUrl, "_blank");
-    message.success("Посилання скопійовано і відкрито у новій вкладці");
+    const url = `${window.location.origin}/blog#entry-${entry.entryType}-${entry.id}`;
+    setCurrentShareUrl(url);
+    setShareModalVisible(true);
   };
 
   const getTagColor = (type) => {
@@ -258,7 +248,7 @@ const BlogPage = () => {
 
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
             {filteredEntries.map(entry => (
-              <Card key={entry.id} hoverable style={{ borderRadius: 10 }} id={`entry-${entry.entryType}-${entry.id}`}>
+              <Card key={entry.id} id={`entry-${entry.entryType}-${entry.id}`} hoverable style={{ borderRadius: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <Title level={4} style={{ margin: 0 }}>{entry.title}</Title>
                   <Button icon={<UserAddOutlined />} onClick={() => handleSubscribe(entry)}>
@@ -272,9 +262,7 @@ const BlogPage = () => {
                 </div>
 
                 {entry.status && (
-                  <p style={{ marginTop: 8 }}>
-                    <b>Статус:</b> {translateStatus(entry.status)}
-                  </p>
+                  <p style={{ marginTop: 8 }}><b>Статус:</b> {translateStatus(entry.status)}</p>
                 )}
 
                 <Divider style={{ margin: "8px 0" }} />
@@ -297,7 +285,7 @@ const BlogPage = () => {
                   <Title level={5}>Коментарі:</Title>
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {commentsData[entry.id]?.length ? (
-                      commentsData[entry.id].map((comment) => {
+                      commentsData[entry.id].map(comment => {
                         const fullName = `${comment.author_first_name || ""} ${comment.author_last_name || ""}`.trim();
                         const displayName = fullName ? `${fullName}.` : (comment.author_email || "Невідомий.");
                         return (
@@ -326,11 +314,7 @@ const BlogPage = () => {
                       placeholder="Напишіть коментар..."
                       style={{ marginTop: 8, marginBottom: 8 }}
                     />
-                    <Button
-                      type="primary"
-                      icon={<SendOutlined />}
-                      onClick={() => handleCommentSubmit(entry)}
-                    >
+                    <Button type="primary" icon={<SendOutlined />} onClick={() => handleCommentSubmit(entry)}>
                       Відправити
                     </Button>
                   </div>
@@ -340,6 +324,29 @@ const BlogPage = () => {
           </Space>
         </>
       )}
+
+      <Modal
+        open={shareModalVisible}
+        onCancel={() => setShareModalVisible(false)}
+        footer={null}
+        title="Поділитися записом"
+      >
+        <Space direction="vertical" style={{ width: "100%" }}>
+          <Button href={`https://t.me/share/url?url=${encodeURIComponent(currentShareUrl)}`} target="_blank" block>
+            Telegram
+          </Button>
+          <Button href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentShareUrl)}`} target="_blank" block>
+            Facebook
+          </Button>
+          <Button href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(currentShareUrl)}`} target="_blank" block>
+            Twitter (X)
+          </Button>
+          <Button href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentShareUrl)}`} target="_blank" block>
+            LinkedIn
+          </Button>
+          <Input value={currentShareUrl} readOnly style={{ marginTop: 10 }} />
+        </Space>
+      </Modal>
     </Content>
   );
 };
