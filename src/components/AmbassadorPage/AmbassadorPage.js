@@ -21,7 +21,7 @@ const API_PROFILE = `${AMBASSADOR_API}/profile`;
 const API_FEEDBACK = `${API_BASE}/feedbackRoutes`;
 const API_UPDATE_STATUS = `${AMBASSADOR_API}/update-status`;
 
-const AmbassadorProfile = () => {
+const AmbassadorPage = () => {
   const [ambassador, setAmbassador] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,11 +41,11 @@ const AmbassadorProfile = () => {
       setError(null);
       const token = getAuthToken();
       if (!token) throw new Error("❌ Необхідно авторизуватися.");
-      const response = await axios.get(API_PROFILE, {
+      const { data, status } = await axios.get(API_PROFILE, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (response.status === 200 && response.data?.id) {
-        setAmbassador(response.data);
+      if (status === 200 && data?.id) {
+        setAmbassador(data);
       } else {
         throw new Error("❌ Амбасадора не знайдено або відсутній ID.");
       }
@@ -62,10 +62,10 @@ const AmbassadorProfile = () => {
     try {
       setLoadingSelectedIdeas(true);
       const token = getAuthToken();
-      const response = await axios.get(`${AMBASSADOR_API}/${ambassador.user_id}/ideas`, {
+      const { data } = await axios.get(`${AMBASSADOR_API}/${ambassador.user_id}/ideas`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setSelectedIdeas(Array.isArray(response.data) ? response.data : []);
+      setSelectedIdeas(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("❌ Помилка при отриманні ідей:", err);
       setSelectedIdeas([]);
@@ -78,11 +78,11 @@ const AmbassadorProfile = () => {
   const fetchComments = async (ideaId) => {
     try {
       const token = getAuthToken();
-      const response = await axios.get(`${API_FEEDBACK}/list`, {
+      const { data } = await axios.get(`${API_FEEDBACK}/list`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { idea_id: ideaId },
       });
-      setComments((prev) => ({ ...prev, [ideaId]: response.data }));
+      setComments((prev) => ({ ...prev, [ideaId]: data }));
     } catch (error) {
       console.error("❌ Сталася помилка при отриманні коментарів:", error);
       message.error("❌ Сталася помилка при отриманні коментарів.");
@@ -113,7 +113,7 @@ const AmbassadorProfile = () => {
     try {
       setUpdatingStatus(ideaId);
       const token = getAuthToken();
-      const response = await axios.patch(
+      await axios.patch(
         API_UPDATE_STATUS,
         { idea_id: ideaId, new_status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -254,4 +254,4 @@ const AmbassadorProfile = () => {
   );
 };
 
-export default AmbassadorProfile;
+export default AmbassadorPage;
