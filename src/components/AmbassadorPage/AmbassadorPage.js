@@ -247,7 +247,7 @@ const AmbassadorPage = () => {
                 />
                 <Button
                   type="primary"
-                  style={{ marginTop: 10 }}
+                  style={{ marginTop: 12 }}
                   onClick={() => handleAddComment(idea.id)}
                 >
                   Додати коментар
