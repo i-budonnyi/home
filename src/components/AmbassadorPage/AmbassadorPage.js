@@ -215,7 +215,7 @@ const AmbassadorPage = () => {
               disabled={idea.status === "нове"}
               style={{ marginBottom: 12 }}
             >
-              Встановити статус "нове"
+              Встановити статус "до_секретаря"
             </Button>
 
             <Button onClick={() => {
