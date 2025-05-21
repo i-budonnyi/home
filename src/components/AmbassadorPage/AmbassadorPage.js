@@ -91,32 +91,47 @@ const AmbassadorPage = () => {
   };
 
   const handleStatusChange = async (ideaId) => {
+    console.log("🔄 Зміна статусу — ID ідеї:", ideaId);
     try {
       setUpdatingStatus(ideaId);
       const token = getToken();
+      const body = {
+        idea_id: ideaId,
+        new_status: "до_секретаря",
+      };
+      console.log("📤 Запит на API:", API_UPDATE_STATUS);
+      console.log("📦 Тіло запиту:", body);
+
       const res = await fetch(API_UPDATE_STATUS, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ idea_id: ideaId, new_status: "до_секретаря" }),
+        body: JSON.stringify(body),
       });
 
+      console.log("📡 HTTP status:", res.status);
+
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message);
+        const errorText = await res.text();
+        console.error("❌ Текст помилки:", errorText);
+        throw new Error(`HTTP ${res.status} — ${errorText}`);
       }
+
+      const data = await res.json();
+      console.log("✅ Успішна відповідь:", data);
 
       message.success("✅ Статус оновлено");
 
-      // локальне оновлення status
+      // локальне оновлення
       setIdeas((prev) =>
         prev.map((idea) =>
           idea.id === ideaId ? { ...idea, status: "до_секретаря" } : idea
         )
       );
     } catch (err) {
+      console.error("🚨 Помилка при оновленні статусу:", err);
       message.error("❌ Помилка оновлення статусу: " + err.message);
     } finally {
       setUpdatingStatus(null);
