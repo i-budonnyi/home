@@ -232,7 +232,7 @@ const AmbassadorPage = () => {
                   dataSource={comments[idea.id] || []}
                   renderItem={(item) => (
                     <List.Item>
-                      <Card style={{ width: "100%" }}>
+                      <Card style={{ width: "90%" }}>
                         <b>{item.sender_first_name} {item.sender_last_name}</b>
                         <p>{item.text}</p>
                       </Card>
