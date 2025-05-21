@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Layout, Card, Space, Typography, Skeleton, Button,
-  Tag, Input, Divider, message, Modal
+  Tag, Input, Divider, message
 } from "antd";
 import {
   HeartOutlined, HeartFilled,
@@ -38,12 +38,8 @@ const BlogPage = () => {
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
   const [filteredType, setFilteredType] = useState("all");
-  const [shareLink, setShareLink] = useState(null);
 
   const getAuthToken = () => localStorage.getItem("token");
-
-  const translateStatus = (status) =>
-    STATUS_TRANSLATION[status] || decodeURIComponent(status || "").replace(/_/g, " ");
 
   const fetchLikes = useCallback(async (entry) => {
     try {
@@ -84,19 +80,19 @@ const BlogPage = () => {
         axios.get(`${API_PROBLEMS_URL}`, { headers })
       ]);
 
-      const blogs = blogsRes.data?.blogs?.map((b) => ({
+      const blogs = blogsRes.data?.blogs?.map(b => ({
         ...b,
         entryType: "blog",
         authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author_email || "Невідомий"
       })) || [];
 
-      const ideas = blogsRes.data?.ideas?.map((i) => ({
+      const ideas = blogsRes.data?.ideas?.map(i => ({
         ...i,
         entryType: "idea",
         authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author_email || "Невідомий"
       })) || [];
 
-      const problems = problemsRes.data?.map((p) => ({
+      const problems = problemsRes.data?.map(p => ({
         ...p,
         entryType: "problem",
         authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author_email || "Невідомий"
@@ -176,6 +172,7 @@ const BlogPage = () => {
   const handleCommentSubmit = async (entry) => {
     const comment = newComment[entry.id]?.trim();
     if (!comment) return;
+
     try {
       const token = getAuthToken();
       await axios.post(`${API_COMMENT_URL}/add`, {
@@ -192,9 +189,11 @@ const BlogPage = () => {
     }
   };
 
-  const handleShare = (entry) => {
-    const url = `${window.location.origin}/blog?entry_id=${entry.id}&type=${entry.entryType}`;
-    setShareLink(url);
+  const shareEntry = (entry) => {
+    const shareUrl = `${window.location.origin}/blog#entry-${entry.entryType}-${entry.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    window.open(shareUrl, "_blank");
+    message.success("Посилання скопійовано в буфер і відкрито у новій вкладці");
   };
 
   const getTagColor = (type) => {
@@ -205,6 +204,9 @@ const BlogPage = () => {
       default: return "default";
     }
   };
+
+  const translateStatus = (status) =>
+    STATUS_TRANSLATION[status] || decodeURIComponent(status || "").replace(/_/g, " ");
 
   const filteredEntries = filteredType === "all"
     ? entries
@@ -236,19 +238,12 @@ const BlogPage = () => {
 
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
             {filteredEntries.map(entry => (
-              <Card key={entry.id} hoverable style={{ borderRadius: 10 }}>
+              <Card key={entry.id} hoverable style={{ borderRadius: 10 }} id={`entry-${entry.entryType}-${entry.id}`}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <Title level={4} style={{ margin: 0 }}>{entry.title}</Title>
-                  <Space>
-                    <Button icon={<ShareAltOutlined />} onClick={() => handleShare(entry)} />
-                    <Button
-                      type="primary"
-                      icon={<UserAddOutlined />}
-                      onClick={() => handleSubscribe(entry)}
-                    >
-                      {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
-                    </Button>
-                  </Space>
+                  <Button icon={<UserAddOutlined />} onClick={() => handleSubscribe(entry)}>
+                    {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
+                  </Button>
                 </div>
 
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
@@ -265,13 +260,16 @@ const BlogPage = () => {
                 <Divider style={{ margin: "8px 0" }} />
                 <Text>{entry.description || "Без опису"}</Text>
 
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
                   <Space>
                     <Button type="text" onClick={() => toggleLike(entry)}>
                       {likesData[entry.id]?.userLiked ? <HeartFilled style={{ color: "red" }} /> : <HeartOutlined />}
                     </Button>
                     <Text>{likesData[entry.id]?.likesCount || 0} лайк(ів)</Text>
                   </Space>
+                  <Button icon={<ShareAltOutlined />} onClick={() => shareEntry(entry)}>
+                    Поділитися
+                  </Button>
                 </div>
 
                 <Divider />
@@ -322,15 +320,6 @@ const BlogPage = () => {
           </Space>
         </>
       )}
-
-      <Modal
-        title="Посилання на запис"
-        open={!!shareLink}
-        onCancel={() => setShareLink(null)}
-        footer={null}
-      >
-        <Input.TextArea value={shareLink} readOnly rows={2} />
-      </Modal>
     </Content>
   );
 };
