@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback } from "react";
-import axios from "axios";
 import {
   Layout,
   Card,
@@ -41,16 +40,23 @@ const AmbassadorPage = () => {
       setError(null);
       const token = getAuthToken();
       if (!token) throw new Error("❌ Необхідно авторизуватися.");
-      const { data, status } = await axios.get(API_PROFILE, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await fetch(API_PROFILE, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-      if (status === 200 && data?.id) {
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.message || "❌ Сталася помилка при отриманні амбасадора.");
+      }
+      const data = await response.json();
+      if (data?.id) {
         setAmbassador(data);
       } else {
         throw new Error("❌ Амбасадора не знайдено або відсутній ID.");
       }
     } catch (err) {
-      message.error(err.message || "❌ Сталася помилка при отриманні амбасадора.");
+      message.error(err.message);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -62,9 +68,13 @@ const AmbassadorPage = () => {
     try {
       setLoadingSelectedIdeas(true);
       const token = getAuthToken();
-      const { data } = await axios.get(`${AMBASSADOR_API}/${ambassador.user_id}/ideas`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const response = await fetch(`${AMBASSADOR_API}/${ambassador.user_id}/ideas`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
+      if (!response.ok) throw new Error("Не вдалося отримати ідеї");
+      const data = await response.json();
       setSelectedIdeas(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("❌ Помилка при отриманні ідей:", err);
@@ -78,10 +88,13 @@ const AmbassadorPage = () => {
   const fetchComments = async (ideaId) => {
     try {
       const token = getAuthToken();
-      const { data } = await axios.get(`${API_FEEDBACK}/list`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { idea_id: ideaId },
+      const response = await fetch(`${API_FEEDBACK}/list?idea_id=${ideaId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
+      if (!response.ok) throw new Error("Не вдалося завантажити коментарі");
+      const data = await response.json();
       setComments((prev) => ({ ...prev, [ideaId]: data }));
     } catch (error) {
       console.error("❌ Сталася помилка при отриманні коментарів:", error);
@@ -95,11 +108,15 @@ const AmbassadorPage = () => {
     }
     try {
       const token = getAuthToken();
-      await axios.post(
-        `${API_FEEDBACK}/add`,
-        { idea_id: ideaId, text: newComment },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await fetch(`${API_FEEDBACK}/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ idea_id: ideaId, text: newComment }),
+      });
+      if (!response.ok) throw new Error("Не вдалося додати коментар");
       message.success("✅ Коментар успішно додано.");
       setNewComment("");
       fetchComments(ideaId);
@@ -116,21 +133,31 @@ const AmbassadorPage = () => {
     try {
       setUpdatingStatus(ideaId);
       const token = getAuthToken();
-      await axios.patch(
-        API_UPDATE_STATUS,
-        { idea_id: ideaId, new_status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await fetch(API_UPDATE_STATUS, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          idea_id: ideaId,
+          new_status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Помилка при оновленні статусу");
+      }
+
       message.success("✅ Статус оновлено.");
       fetchSelectedIdeas();
     } catch (error) {
       console.error("❌ Сталася помилка при оновленні статусу:", error);
-      if (error.code === "ERR_NETWORK") {
+      if (error.message.includes("fetch") || error.message.includes("Network")) {
         message.error("❌ Мережева помилка. Спробуйте пізніше.");
       } else {
-        const errMsg =
-          error?.response?.data?.message || "❌ Помилка при оновленні статусу.";
-        message.error(errMsg);
+        message.error(`❌ ${error.message}`);
       }
     } finally {
       setUpdatingStatus(null);
