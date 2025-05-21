@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Layout, Card, Space, Typography, Skeleton, Button,
-  Tag, Input, Divider, message
+  Tag, Input, Divider, message, Modal
 } from "antd";
 import {
   HeartOutlined, HeartFilled,
-  UserAddOutlined, SendOutlined
+  UserAddOutlined, SendOutlined,
+  ShareAltOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 
@@ -37,8 +38,12 @@ const BlogPage = () => {
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
   const [filteredType, setFilteredType] = useState("all");
+  const [shareLink, setShareLink] = useState(null);
 
   const getAuthToken = () => localStorage.getItem("token");
+
+  const translateStatus = (status) =>
+    STATUS_TRANSLATION[status] || decodeURIComponent(status || "").replace(/_/g, " ");
 
   const fetchLikes = useCallback(async (entry) => {
     try {
@@ -171,7 +176,6 @@ const BlogPage = () => {
   const handleCommentSubmit = async (entry) => {
     const comment = newComment[entry.id]?.trim();
     if (!comment) return;
-
     try {
       const token = getAuthToken();
       await axios.post(`${API_COMMENT_URL}/add`, {
@@ -188,6 +192,11 @@ const BlogPage = () => {
     }
   };
 
+  const handleShare = (entry) => {
+    const url = `${window.location.origin}/blog?entry_id=${entry.id}&type=${entry.entryType}`;
+    setShareLink(url);
+  };
+
   const getTagColor = (type) => {
     switch (type) {
       case "blog": return "blue";
@@ -196,9 +205,6 @@ const BlogPage = () => {
       default: return "default";
     }
   };
-
-  const translateStatus = (status) =>
-    STATUS_TRANSLATION[status] || decodeURIComponent(status || "").replace(/_/g, " ");
 
   const filteredEntries = filteredType === "all"
     ? entries
@@ -233,13 +239,16 @@ const BlogPage = () => {
               <Card key={entry.id} hoverable style={{ borderRadius: 10 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <Title level={4} style={{ margin: 0 }}>{entry.title}</Title>
-                  <Button
-                    type="primary"
-                    icon={<UserAddOutlined />}
-                    onClick={() => handleSubscribe(entry)}
-                  >
-                    {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
-                  </Button>
+                  <Space>
+                    <Button icon={<ShareAltOutlined />} onClick={() => handleShare(entry)} />
+                    <Button
+                      type="primary"
+                      icon={<UserAddOutlined />}
+                      onClick={() => handleSubscribe(entry)}
+                    >
+                      {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
+                    </Button>
+                  </Space>
                 </div>
 
                 <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
@@ -313,6 +322,15 @@ const BlogPage = () => {
           </Space>
         </>
       )}
+
+      <Modal
+        title="Посилання на запис"
+        open={!!shareLink}
+        onCancel={() => setShareLink(null)}
+        footer={null}
+      >
+        <Input.TextArea value={shareLink} readOnly rows={2} />
+      </Modal>
     </Content>
   );
 };
