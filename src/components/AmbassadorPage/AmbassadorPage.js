@@ -18,6 +18,15 @@ const API_PROFILE = `${AMBASSADOR_API}/profile`;
 const API_FEEDBACK = `${API_BASE}/feedbackRoutes`;
 const API_UPDATE_STATUS = `${AMBASSADOR_API}/update-status`;
 
+const STATUS_TRANSLATION = {
+  "до_секретаря": "Амбасадор рекомендує секретарю",
+  "нове": "Нове",
+  "очікує": "Очікує",
+  "відхилено": "Відхилено",
+  "відхилено_з_переглядом": "Відхилено з переглядом",
+  "відхилено_на_доопрацювання": "Відхилено на доопрацювання",
+};
+
 const AmbassadorPage = () => {
   const [ambassador, setAmbassador] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -93,14 +102,22 @@ const AmbassadorPage = () => {
         },
         body: JSON.stringify({ idea_id: ideaId, new_status: "до_секретаря" }),
       });
+
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.message);
       }
+
       message.success("✅ Статус оновлено");
-      fetchIdeas();
+
+      // локальне оновлення status
+      setIdeas((prev) =>
+        prev.map((idea) =>
+          idea.id === ideaId ? { ...idea, status: "до_секретаря" } : idea
+        )
+      );
     } catch (err) {
-      message.error(err.message);
+      message.error("❌ Помилка оновлення статусу: " + err.message);
     } finally {
       setUpdatingStatus(null);
     }
@@ -126,6 +143,9 @@ const AmbassadorPage = () => {
       message.error(err.message);
     }
   };
+
+  const translateStatus = (status) =>
+    STATUS_TRANSLATION[status] || decodeURIComponent(status || "").replace(/_/g, " ");
 
   useEffect(() => {
     fetchAmbassador();
@@ -172,7 +192,7 @@ const AmbassadorPage = () => {
             <p><b>Опис:</b> {idea.description}</p>
             <p><b>Автор:</b> {[idea.sender_first_name, idea.sender_last_name].filter(Boolean).join(" ")}</p>
             <p><b>Email:</b> {idea.sender_email}</p>
-            <p><b>Статус:</b> {idea.status === "до_секретаря" ? "Амбасадор рекомендує секретарю" : idea.status}</p>
+            <p><b>Статус:</b> {translateStatus(idea.status)}</p>
 
             <Button
               type="primary"
