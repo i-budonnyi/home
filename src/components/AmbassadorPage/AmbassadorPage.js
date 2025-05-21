@@ -97,7 +97,7 @@ const AmbassadorPage = () => {
       const token = getToken();
       const body = {
         idea_id: ideaId,
-        new_status: "нове", // ← ТУТ тимчасовий статус
+        new_status: "до_секретаря", // ← ТУТ тимчасовий статус
       };
       console.log("📤 Запит на API:", API_UPDATE_STATUS);
       console.log("📦 Тіло запиту:", body);
