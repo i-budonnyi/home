@@ -8,10 +8,12 @@ import {
   StarOutlined, SunOutlined, MoonOutlined, PhoneOutlined, MailOutlined
 } from "@ant-design/icons";
 import axios from "axios";
+import io from "socket.io-client"; // ✅ додай бібліотеку
 
 const { Content, Sider, Header } = Layout;
 const { Title, Text } = Typography;
 const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
+const SOCKET_URL = "https://backend-avtologistika.onrender.com"; // без /api
 
 const WorkerPage = () => {
   const [userData, setUserData] = useState(null);
@@ -73,11 +75,20 @@ const WorkerPage = () => {
   }, [token]);
 
   useEffect(() => {
-    if (userData) {
-      fetchNotifications();
-      const interval = setInterval(fetchNotifications, 5000);
-      return () => clearInterval(interval);
-    }
+    if (!userData) return;
+
+    fetchNotifications();
+
+    // ✅ WebSocket підключення
+    const socket = io(SOCKET_URL);
+    socket.on(`notification_${userData.id}`, (data) => {
+      console.log("📡 Нове сповіщення по сокету:", data);
+      setNotifications(prev => [data, ...prev]); // додаємо нове в початок списку
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [userData, fetchNotifications]);
 
   const markAllAsRead = async () => {
