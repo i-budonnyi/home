@@ -1,11 +1,14 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { Layout, List, Card, Typography, Skeleton, Alert, Tag } from "antd";
+import { Layout, List, Card, Typography, Skeleton, Alert, Tag, message } from "antd";
+import { io } from "socket.io-client";
 
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 
 const API_SUBSCRIPTIONS_URL = "https://backend-avtologistika.onrender.com/api/subscriptionRoutes/user-subscriptions";
+const SOCKET_URL = "https://backend-avtologistika.onrender.com"; // без /api
+let socket;
 
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -38,6 +41,30 @@ const Subscriptions = () => {
 
   useEffect(() => {
     fetchUserSubscriptions();
+
+    // 🔌 Підключення WebSocket
+    socket = io(SOCKET_URL, {
+      transports: ["websocket"],
+      auth: { token: getAuthToken() }
+    });
+
+    socket.on("connect", () => {
+      console.log("🧠 WebSocket підключено:", socket.id);
+    });
+
+    socket.on("subscription_update", (data) => {
+      console.log("📬 Отримано оновлення підписки:", data);
+      message.info("🔔 Змінилась підписка на ідею");
+      fetchUserSubscriptions(); // перезавантажити список
+    });
+
+    socket.on("disconnect", () => {
+      console.warn("📴 Вебсокет відключено");
+    });
+
+    return () => {
+      if (socket) socket.disconnect();
+    };
   }, [fetchUserSubscriptions]);
 
   const getStatusColor = (status) => {
@@ -45,6 +72,7 @@ const Subscriptions = () => {
       case "pending": return "orange";
       case "approved": return "green";
       case "rejected": return "red";
+      case "до_секретаря": return "purple";
       default: return "blue";
     }
   };

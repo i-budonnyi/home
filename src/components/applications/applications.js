@@ -2,13 +2,16 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Layout, Form, Input, Button, message, Typography, Alert, Select } from "antd";
 import { useNavigate } from "react-router-dom";
+import io from "socket.io-client"; // 📡 WebSocket
 
 const { Title } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
-// ✅ Актуальний шлях до бекенду
 const API_APPLICATION_URL = "https://backend-avtologistika.onrender.com/api/applicationRoutes";
+const SOCKET_URL = "https://backend-avtologistika.onrender.com"; // 🌐 WebSocket URL
+
+const socket = io(SOCKET_URL); // 🔌 Підключення
 
 const Applications = () => {
   const navigate = useNavigate();
@@ -23,7 +26,6 @@ const Applications = () => {
 
   const getAuthToken = () => {
     const token = localStorage.getItem("token");
-    console.log("🔑 Отриманий токен з локального сховища:", token);
     return token;
   };
 
@@ -31,7 +33,6 @@ const Applications = () => {
     const savedIdea = localStorage.getItem("selectedIdea");
     if (savedIdea) {
       const parsedIdea = JSON.parse(savedIdea);
-      console.log("📌 Отримано ідею з локального сховища:", parsedIdea);
       setIdea(parsedIdea);
       setApplication((prevApp) => ({
         ...prevApp,
@@ -58,7 +59,6 @@ const Applications = () => {
         return;
       }
 
-      console.log("📡 Відправка заявки...");
       const submitResponse = await axios.post(
         API_APPLICATION_URL,
         { user_id, title, content, idea_id, type },
@@ -72,6 +72,15 @@ const Applications = () => {
 
       if (submitResponse.status === 201 || submitResponse.status === 200) {
         message.success("✅ Заявку успішно створено!");
+
+        // 📡 Відправляємо WebSocket-подію
+        socket.emit("application_created", {
+          title,
+          type,
+          idea_id,
+          user_id,
+        });
+
         navigate("/applications");
       } else {
         message.error("❌ Не вдалося створити заявку.");

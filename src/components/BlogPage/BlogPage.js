@@ -1,350 +1,209 @@
-import React, { useEffect, useState, useCallback } from "react";
-import {
-  Layout, Card, Space, Typography, Skeleton, Button,
-  Tag, Input, Divider, message, Modal
-} from "antd";
-import {
-  HeartOutlined, HeartFilled,
-  UserAddOutlined, SendOutlined,
-  ShareAltOutlined,
-  CopyOutlined
-} from "@ant-design/icons";
-import axios from "axios";
+const { QueryTypes } = require("sequelize");
+const sequelize = require("../config/database");
+const jwt = require("jsonwebtoken");
+const { io } = require("../index"); // 📡 WebSocket
 
-const { Content } = Layout;
-const { Title, Text } = Typography;
-const { TextArea } = Input;
+// 🔧 Створення заявки з перевіркою дубля та зміною статусу ідеї
+const createApplication = async (req, res) => {
+  try {
+    const { user_id, title, content, idea_id, type } = req.body;
 
-const API_BASE = "https://backend-avtologistika.onrender.com/api";
-const API_BLOG_URL = `${API_BASE}/blogRoutes`;
-const API_PROBLEMS_URL = `${API_BASE}/problems`;
-const API_LIKE_URL = `${API_BASE}/likeRoutes`;
-const API_COMMENT_URL = `${API_BASE}/commentRoutes`;
-const API_SUBSCRIBE_URL = `${API_BASE}/subscriptionRoutes`;
+    if (!user_id || !title || !content || !idea_id || !type) {
+      return res.status(400).json({ message: "Не всі необхідні дані заповнені!" });
+    }
 
-const STATUS_TRANSLATION = {
-  "до_секретаря": "Амбасадор рекомендує секретарю",
-  "нове": "Нове",
-  "очікує": "Очікує",
-  "відхилено": "Відхилено",
-  "відхилено_з_переглядом": "Відхилено з переглядом",
-  "відхилено_на_доопрацювання": "Відхилено на доопрацювання"
-};
+    const allowedTypes = ["idea", "problem"];
+    if (!allowedTypes.includes(type)) {
+      return res.status(400).json({ message: "Неправильний тип заявки!" });
+    }
 
-const getTagColor = (type) => {
-  switch (type) {
-    case "blog": return "blue";
-    case "idea": return "green";
-    case "problem": return "red";
-    default: return "default";
+    const existing = await sequelize.query(
+      `SELECT id FROM applications WHERE user_id = :user_id AND idea_id = :idea_id`,
+      {
+        replacements: { user_id, idea_id },
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    if (existing.length > 0) {
+      return res.status(409).json({ message: "Заявку вже створено для цієї ідеї." });
+    }
+
+    const [newApplication] = await sequelize.query(
+      `INSERT INTO applications (user_id, title, content, idea_id, type, status, created_at, updated_at)
+       VALUES (:user_id, :title, :content, :idea_id, :type, 'draft', NOW(), NOW()) RETURNING *`,
+      {
+        replacements: { user_id, title, content, idea_id, type },
+        type: QueryTypes.INSERT,
+      }
+    );
+
+    await sequelize.query(
+      `UPDATE ideas SET status = 'applied', updated_at = NOW() WHERE id = :idea_id`,
+      {
+        replacements: { idea_id },
+        type: QueryTypes.UPDATE,
+      }
+    );
+
+    // 📡 WebSocket — повідомляємо про нову заявку
+    io.emit("application_created", {
+      idea_id,
+      user_id,
+      title,
+      type,
+    });
+
+    res.status(201).json(newApplication);
+  } catch (error) {
+    console.error("❌ Помилка створення заявки:", error);
+    res.status(500).json({ message: "Внутрішня помилка сервера" });
   }
 };
 
-const BlogPage = () => {
-  const [entries, setEntries] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [likesData, setLikesData] = useState({});
-  const [subscribedEntries, setSubscribedEntries] = useState({});
-  const [commentsData, setCommentsData] = useState({});
-  const [newComment, setNewComment] = useState({});
-  const [filteredType, setFilteredType] = useState("all");
-  const [shareModal, setShareModal] = useState({ visible: false, url: "" });
-  const [selectedEntry, setSelectedEntry] = useState(null);
-
-  const getAuthToken = () => localStorage.getItem("token");
-
-  const fetchLikes = useCallback(async (entry) => {
-    try {
-      const res = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
-      setLikesData(prev => ({
-        ...prev,
-        [entry.id]: {
-          likesCount: res.data.likesCount || 0,
-          userLiked: res.data.likedBy?.some(u => u.user_id === res.data.currentUserId),
-        }
-      }));
-    } catch (err) {
-      console.error("❌ Лайки:", err.message);
-    }
-  }, []);
-
-  const fetchComments = useCallback(async (entry) => {
-    try {
-      const token = getAuthToken();
-      const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setCommentsData(prev => ({
-        ...prev,
-        [entry.id]: res.data.comments || []
-      }));
-    } catch (err) {
-      console.error("❌ Коментарі:", err.message);
-    }
-  }, []);
-
-  const fetchAllEntries = useCallback(async () => {
-    try {
-      const token = getAuthToken();
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const [blogsRes, problemsRes] = await Promise.all([
-        axios.get(`${API_BLOG_URL}/entries`, { headers }),
-        axios.get(`${API_PROBLEMS_URL}`, { headers })
-      ]);
-
-      const blogs = blogsRes.data?.blogs?.map(b => ({
-        ...b, entryType: "blog",
-        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author_email || "Невідомий"
-      })) || [];
-
-      const ideas = blogsRes.data?.ideas?.map(i => ({
-        ...i, entryType: "idea",
-        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author_email || "Невідомий"
-      })) || [];
-
-      const problems = problemsRes.data?.map(p => ({
-        ...p, entryType: "problem",
-        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author_email || "Невідомий"
-      })) || [];
-
-      const all = [...blogs, ...ideas, ...problems].sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-
-      setEntries(all);
-
-      all.forEach(entry => {
-        fetchLikes(entry);
-        fetchComments(entry);
-      });
-    } catch (err) {
-      console.error("❌ Дані:", err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [fetchLikes, fetchComments]);
-
-  const fetchSubscriptions = useCallback(async () => {
-    try {
-      const token = getAuthToken();
-      const res = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const map = res.data.subscriptions.reduce((acc, sub) => {
-        acc[sub.blog_id || sub.idea_id || sub.problem_id] = true;
-        return acc;
-      }, {});
-      setSubscribedEntries(map);
-    } catch (err) {
-      console.error("❌ Підписки:", err.message);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchAllEntries();
-    fetchSubscriptions();
-  }, [fetchAllEntries, fetchSubscriptions]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const type = params.get("entryType");
-    const id = params.get("id");
-    if (type && id) {
-      setFilteredType(type);
-      setTimeout(() => {
-        const el = document.getElementById(`entry-${type}-${id}`);
-        if (el) el.scrollIntoView({ behavior: "smooth" });
-      }, 500);
-    }
-  }, [entries]);
-
-  const toggleLike = async (entry) => {
-    try {
-      const token = getAuthToken();
-      await axios.post(`${API_LIKE_URL}/toggle-like`, {
-        entry_id: entry.id,
-        entry_type: entry.entryType
-      }, { headers: { Authorization: `Bearer ${token}` } });
-      fetchLikes(entry);
-    } catch {
-      message.error("Не вдалося змінити лайк.");
-    }
-  };
-
-  const handleSubscribe = async (entry) => {
-    try {
-      const token = getAuthToken();
-      const isSub = subscribedEntries[entry.id];
-      const method = isSub ? "delete" : "post";
-      const url = `${API_SUBSCRIBE_URL}/${isSub ? "unsubscribe" : "subscribe"}`;
-      await axios({ method, url, data: { entry_id: entry.id, entry_type: entry.entryType }, headers: { Authorization: `Bearer ${token}` } });
-      setSubscribedEntries(prev => ({ ...prev, [entry.id]: !isSub }));
-      message.success(isSub ? "Відписано" : "Підписано");
-    } catch {
-      message.error("Не вдалося змінити підписку.");
-    }
-  };
-
-  const handleCommentSubmit = async (entry) => {
-    const comment = newComment[entry.id]?.trim();
-    if (!comment) return;
-    try {
-      const token = getAuthToken();
-      await axios.post(`${API_COMMENT_URL}/add`, {
-        entry_id: entry.id,
-        entry_type: entry.entryType,
-        comment
-      }, { headers: { Authorization: `Bearer ${token}` } });
-      setNewComment(prev => ({ ...prev, [entry.id]: "" }));
-      fetchComments(entry);
-    } catch {
-      message.error("Не вдалося додати коментар.");
-    }
-  };
-
-  const translateStatus = (status) =>
-    STATUS_TRANSLATION[status] || decodeURIComponent(status || "").replace(/_/g, " ");
-
-  const filteredEntries = filteredType === "all"
-    ? entries
-    : entries.filter(e => e.entryType === filteredType);
-
-  const handleShare = (entry) => {
-    const url = `${window.location.origin}/blog?entryType=${entry.entryType}&id=${entry.id}`;
-    setShareModal({ visible: true, url });
-    navigator.clipboard.writeText(url).then(() => {
-      message.success("Посилання скопійовано в буфер");
-    });
-  };
-
-  return (
-    <Content style={{ padding: 20, maxWidth: 900, margin: "80px auto 0" }}>
-      <Button href="/worker" style={{ marginBottom: 20 }}>
-        Назад
-      </Button>
-
-      {isLoading ? <Skeleton active /> : (
-        <>
-          <Space style={{ marginBottom: 20 }}>
-            {["all", "blog", "idea", "problem"].map((type) => (
-              <Button
-                key={type}
-                type={filteredType === type ? "primary" : "default"}
-                onClick={() => setFilteredType(type)}
-              >
-                {type === "all" ? "Усі" : type}
-              </Button>
-            ))}
-          </Space>
-
-          <Space direction="vertical" style={{ width: "100%" }}>
-            {filteredEntries.map(entry => (
-              <Card key={entry.id} id={`entry-${entry.entryType}-${entry.id}`}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <Title
-                    level={4}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => setSelectedEntry(entry)}
-                  >
-                    {entry.title}
-                  </Title>
-                  <Button icon={<UserAddOutlined />} onClick={() => handleSubscribe(entry)}>
-                    {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
-                  </Button>
-                </div>
-
-                <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
-                <Text strong>Автор: {entry.authorname}</Text>
-                {entry.status && (
-                  <p style={{ marginTop: 8 }}>
-                    <b>Статус:</b> {translateStatus(entry.status)}
-                  </p>
-                )}
-
-                <Divider />
-                <Text>{entry.description || "Без опису"}</Text>
-
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
-                  <Space>
-                    <Button type="text" onClick={() => toggleLike(entry)}>
-                      {likesData[entry.id]?.userLiked ? <HeartFilled style={{ color: "red" }} /> : <HeartOutlined />}
-                    </Button>
-                    <Text>{likesData[entry.id]?.likesCount || 0}</Text>
-                  </Space>
-                  <Button icon={<ShareAltOutlined />} onClick={() => handleShare(entry)}>
-                    Поділитися
-                  </Button>
-                </div>
-
-                <Divider />
-                <Title level={5}>Коментарі:</Title>
-                {(commentsData[entry.id] || []).map(comment => (
-                  <Card key={comment.id} size="small" style={{ marginBottom: 8 }}>
-                    <Text strong>{`${comment.author_first_name || ""} ${comment.author_last_name || ""}`}</Text>
-                    <p>{comment.text}</p>
-                  </Card>
-                ))}
-                <TextArea
-                  value={newComment[entry.id] || ""}
-                  onChange={(e) => setNewComment({ ...newComment, [entry.id]: e.target.value })}
-                  placeholder="Ваш коментар..."
-                />
-                <Button
-                  icon={<SendOutlined />}
-                  type="primary"
-                  style={{ marginTop: 8 }}
-                  onClick={() => handleCommentSubmit(entry)}
-                >
-                  Надіслати
-                </Button>
-              </Card>
-            ))}
-          </Space>
-        </>
-      )}
-
-      <Modal
-        title="Поділитися постом"
-        open={shareModal.visible}
-        onCancel={() => setShareModal({ visible: false, url: "" })}
-        footer={null}
-      >
-        <p><b>Посилання:</b> {shareModal.url}</p>
-        <Space wrap style={{ marginTop: 10 }}>
-          <Button icon={<CopyOutlined />} onClick={() => {
-            navigator.clipboard.writeText(shareModal.url);
-            message.success("Скопійовано!");
-          }}>
-            Копіювати
-          </Button>
-          <Button href={`https://t.me/share/url?url=${encodeURIComponent(shareModal.url)}`} target="_blank">
-            Telegram
-          </Button>
-          <Button href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareModal.url)}`} target="_blank">
-            Facebook
-          </Button>
-          <Button href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareModal.url)}`} target="_blank">
-            Twitter
-          </Button>
-        </Space>
-      </Modal>
-
-      <Modal
-        title={selectedEntry?.title}
-        open={!!selectedEntry}
-        onCancel={() => setSelectedEntry(null)}
-        footer={null}
-      >
-        <Tag color={getTagColor(selectedEntry?.entryType)}>{selectedEntry?.entryType?.toUpperCase()}</Tag>
-        <p><b>Автор:</b> {selectedEntry?.authorname}</p>
-        {selectedEntry?.status && (
-          <p><b>Статус:</b> {translateStatus(selectedEntry.status)}</p>
-        )}
-        <Divider />
-        <p>{selectedEntry?.description || "Без опису"}</p>
-      </Modal>
-    </Content>
-  );
+// 📥 Отримання всіх заявок із повною інформацією про автора
+const getAllApplications = async (req, res) => {
+  try {
+    const applications = await sequelize.query(
+      `SELECT a.*, u.first_name, u.last_name 
+       FROM applications a
+       LEFT JOIN users u ON a.user_id = u.id
+       ORDER BY a.created_at DESC`,
+      {
+        type: QueryTypes.SELECT,
+      }
+    );
+    res.json(applications);
+  } catch (error) {
+    console.error("❌ Помилка отримання заявок:", error);
+    res.status(500).json({ message: "Не вдалося отримати заявки" });
+  }
 };
 
-export default BlogPage;
+// 📄 Отримання заявки за ID
+const getApplicationById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const application = await sequelize.query(
+      `SELECT a.*, u.first_name, u.last_name 
+       FROM applications a
+       LEFT JOIN users u ON a.user_id = u.id
+       WHERE a.id = :id`,
+      {
+        replacements: { id },
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    if (!application.length) {
+      return res.status(404).json({ message: "Заявка не знайдена" });
+    }
+
+    res.json(application[0]);
+  } catch (error) {
+    console.error("❌ Помилка отримання заявки:", error);
+    res.status(500).json({ message: "Не вдалося отримати заявку" });
+  }
+};
+
+// ✏️ Оновлення заявки
+const updateApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, status } = req.body;
+
+    const [updated] = await sequelize.query(
+      `UPDATE applications 
+       SET title = :title, content = :content, status = :status, updated_at = NOW()
+       WHERE id = :id RETURNING *`,
+      {
+        replacements: { title, content, status, id },
+        type: QueryTypes.UPDATE,
+      }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Заявка не знайдена" });
+    }
+
+    res.json({ message: "Заявку оновлено успішно" });
+  } catch (error) {
+    console.error("❌ Помилка оновлення заявки:", error);
+    res.status(500).json({ message: "Не вдалося оновити заявку" });
+  }
+};
+
+// ❌ Видалення заявки
+const deleteApplication = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deleted = await sequelize.query(
+      `DELETE FROM applications WHERE id = :id RETURNING *`,
+      {
+        replacements: { id },
+        type: QueryTypes.DELETE,
+      }
+    );
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Заявка не знайдена" });
+    }
+
+    res.json({ message: "Заявку успішно видалено" });
+  } catch (error) {
+    console.error("❌ Помилка видалення заявки:", error);
+    res.status(500).json({ message: "Не вдалося видалити заявку" });
+  }
+};
+
+// 🧠 Оновлення заявки рішенням журі
+const updateApplicationByJury = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { jury_comment, decision_type, postpone, review_comment } = req.body;
+
+    if (!jury_comment || !decision_type) {
+      return res.status(400).json({ message: "Коментар журі та тип рішення обов’язкові" });
+    }
+
+    let postponedDate = null;
+    if (postpone) {
+      postponedDate = new Date();
+      postponedDate.setMonth(postponedDate.getMonth() + 7);
+    }
+
+    const [updated] = await sequelize.query(
+      `UPDATE applications 
+       SET jury_comment = :jury_comment, decision_type = :decision_type, review_comment = :review_comment, 
+           updated_at = NOW(), status = CASE 
+             WHEN :postponedDate IS NOT NULL THEN 'postponed' 
+             ELSE 'reviewed' 
+           END, locked_by = NULL 
+       WHERE id = :id RETURNING *`,
+      {
+        replacements: { jury_comment, decision_type, review_comment, postponedDate, id },
+        type: QueryTypes.UPDATE,
+      }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Заявка не знайдена" });
+    }
+
+    res.json({ message: "Рішення журі збережено успішно" });
+  } catch (error) {
+    console.error("❌ Помилка оновлення заявки журі:", error);
+    res.status(500).json({ message: "Не вдалося оновити заявку" });
+  }
+};
+
+module.exports = {
+  createApplication,
+  getAllApplications,
+  getApplicationById,
+  updateApplication,
+  deleteApplication,
+  updateApplicationByJury,
+};

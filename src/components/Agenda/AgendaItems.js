@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { useSocketEvent } from "./useSocket"; // ⬅️ додаємо
 
-// 🔧 Базовий API — онови на свій бекенд, якщо треба
 const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
 
 const AgendaItems = ({ agendaId }) => {
@@ -26,7 +26,7 @@ const AgendaItems = ({ agendaId }) => {
     try {
       await axios.put(`${API_BASE_URL}/agenda/items/${itemId}`, { status });
       alert("✅ Статус успішно оновлено.");
-      fetchItems(); // 🔁 Оновити список після зміни
+      // ❌ тут уже не треба вручну оновлювати — це зробить WebSocket
     } catch (err) {
       console.error("❌ Error updating status:", err.message);
       alert("❌ Помилка оновлення статусу.");
@@ -38,6 +38,13 @@ const AgendaItems = ({ agendaId }) => {
       fetchItems();
     }
   }, [agendaId]);
+
+  // 📡 Слухаємо WebSocket подію, і при отриманні — оновлюємо список
+  useSocketEvent("agenda_items_updated", (payload) => {
+    if (payload.agenda_id === agendaId) {
+      fetchItems();
+    }
+  });
 
   if (loading) return <p>Завантаження...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;

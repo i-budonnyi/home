@@ -13,6 +13,7 @@ import {
   Typography,
   Skeleton,
 } from "antd";
+import { socket } from "../socket"; // ⬅️ Імпорт WebSocket-клієнта
 
 const { Title } = Typography;
 
@@ -76,6 +77,24 @@ const JurySecretaryProfile = () => {
     fetchSecretaryData();
     fetchApplications();
   }, [fetchSecretaryData, fetchApplications]);
+
+  useEffect(() => {
+    // 🔔 Слухати WebSocket-події
+    socket.on("application_scheduled", () => {
+      console.log("📡 Отримано подію: application_scheduled");
+      fetchApplications();
+    });
+
+    socket.on("application_returned", () => {
+      console.log("📡 Отримано подію: application_returned");
+      fetchApplications();
+    });
+
+    return () => {
+      socket.off("application_scheduled");
+      socket.off("application_returned");
+    };
+  }, [fetchApplications]);
 
   const openAgendaModal = (application) => {
     setSelectedApplication(application);

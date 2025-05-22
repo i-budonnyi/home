@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useSocketEvent } from './useSocket'; // ⬅️ Додаємо хук
 
-// 🔧 Заміни на свій API-ендпоінт, якщо потрібно
 const API_URL = 'https://backend-avtologistika.onrender.com/api/agenda';
 
 const CreateAgenda = () => {
@@ -9,6 +9,11 @@ const CreateAgenda = () => {
   const [description, setDescription] = useState('');
   const [meetingDate, setMeetingDate] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // 📡 Слухаємо подію agenda_updated
+  useSocketEvent('agenda_updated', (newAgenda) => {
+    alert(`📢 Новий порядок денний: "${newAgenda.title}" на ${newAgenda.meeting_date}`);
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,7 +29,7 @@ const CreateAgenda = () => {
         title,
         description,
         meeting_date: meetingDate,
-        created_by: 1, // 🔧 При потребі заміни на дані з токена
+        created_by: 1, // 🔧 Замінити на ID з токена
       });
       alert('✅ Порядок денний успішно створено.');
       setTitle('');
