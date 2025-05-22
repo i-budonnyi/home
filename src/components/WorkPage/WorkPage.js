@@ -1,19 +1,20 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Layout, Menu, Typography, Button, ConfigProvider, theme, List, Card, Divider, Badge
+  Layout, Menu, Typography, Button, ConfigProvider, theme,
+  List, Card, Divider, Badge
 } from "antd";
 import {
   MessageOutlined, BulbOutlined, FileTextOutlined, ProjectOutlined,
   StarOutlined, SunOutlined, MoonOutlined, PhoneOutlined, MailOutlined
 } from "@ant-design/icons";
 import axios from "axios";
-import io from "socket.io-client"; // ✅ додай бібліотеку
+import io from "socket.io-client";
 
 const { Content, Sider, Header } = Layout;
 const { Title, Text } = Typography;
 const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
-const SOCKET_URL = "https://backend-avtologistika.onrender.com"; // без /api
+const SOCKET_URL = "https://backend-avtologistika.onrender.com";
 
 const WorkerPage = () => {
   const [userData, setUserData] = useState(null);
@@ -61,10 +62,11 @@ const WorkerPage = () => {
   }, [navigate, token]);
 
   const fetchNotifications = useCallback(async () => {
+    if (!userData?.id) return;
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE_URL}/notification`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await axios.get(`${API_BASE_URL}/notification/${userData.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(res.data || []);
     } catch (err) {
@@ -72,18 +74,17 @@ const WorkerPage = () => {
     } finally {
       setLoadingNotifications(false);
     }
-  }, [token]);
+  }, [token, userData?.id]);
 
   useEffect(() => {
     if (!userData) return;
 
     fetchNotifications();
 
-    // ✅ WebSocket підключення
     const socket = io(SOCKET_URL);
     socket.on(`notification_${userData.id}`, (data) => {
       console.log("📡 Нове сповіщення по сокету:", data);
-      setNotifications(prev => [data, ...prev]); // додаємо нове в початок списку
+      setNotifications(prev => [data, ...prev]);
     });
 
     return () => {
