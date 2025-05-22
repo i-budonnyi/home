@@ -13,7 +13,7 @@ import {
   Typography,
   Skeleton,
 } from "antd";
-import { socket } from "../socket"; // ⬅️ Імпорт WebSocket-клієнта
+import { socket } from "../useSocket"; // ✅ Імпорт з useSocket.js
 
 const { Title } = Typography;
 
@@ -79,7 +79,6 @@ const JurySecretaryProfile = () => {
   }, [fetchSecretaryData, fetchApplications]);
 
   useEffect(() => {
-    // 🔔 Слухати WebSocket-події
     socket.on("application_scheduled", () => {
       console.log("📡 Отримано подію: application_scheduled");
       fetchApplications();
