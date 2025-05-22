@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+﻿import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
 
@@ -37,6 +37,12 @@ const LoginPage = () => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
+
+      // 🔥 ДОДАНО: якщо Панасенко — ведемо одразу на адмін-сторінку
+      if (data.user?.email === "panasenko@avtologistika.com") {
+        navigate("/admin-dashboard");
+        return;
+      }
 
       const redirects = {
         user: "/worker", // 🔁 user перенаправляється на worker

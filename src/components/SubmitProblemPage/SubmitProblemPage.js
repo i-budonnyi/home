@@ -11,7 +11,7 @@ import {
 import { ArrowLeftOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
-const { Header, Content } = Layout;
+const { Content } = Layout;
 const { Title } = Typography;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
@@ -93,11 +93,11 @@ const SubmitProblemPage = () => {
 
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f9" }}>
-      <Header style={{ background: "#003366", textAlign: "center", padding: "16px 0" }}>
-        <Title level={3} style={{ color: "#fff", margin: 0 }}>Подати проблему</Title>
-      </Header>
-
       <Content style={{ padding: "40px 20px", position: "relative" }}>
+        <div style={{ textAlign: "center", background: "#fff", padding: "24px 0", borderRadius: "8px", marginBottom: "30px" }}>
+          <Title level={3} style={{ margin: 0, color: "#000" }}>Подати ідею</Title>
+        </div>
+
         <div style={{ position: "absolute", left: "20px", top: "40px" }}>
           <Button
             type="link"
