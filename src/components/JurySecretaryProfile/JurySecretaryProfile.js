@@ -13,7 +13,7 @@ import {
   Typography,
   Skeleton,
 } from "antd";
-import { socket } from "../useSocket.js"; // ✅ Обов’язково з .js у Netlify
+import { socket } from "../../useSocket"; // ✅ Обов’язково з .js у Netlify
 
 const { Title } = Typography;
 
