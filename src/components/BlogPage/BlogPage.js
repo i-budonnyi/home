@@ -31,17 +31,12 @@ const STATUS_TRANSLATION = {
   "відхилено_на_доопрацювання": "Відхилено на доопрацювання"
 };
 
-// ✅ Виправлення помилки: додано функцію getTagColor
 const getTagColor = (type) => {
   switch (type) {
-    case "blog":
-      return "blue";
-    case "idea":
-      return "green";
-    case "problem":
-      return "red";
-    default:
-      return "default";
+    case "blog": return "blue";
+    case "idea": return "green";
+    case "problem": return "red";
+    default: return "default";
   }
 };
 
@@ -54,6 +49,7 @@ const BlogPage = () => {
   const [newComment, setNewComment] = useState({});
   const [filteredType, setFilteredType] = useState("all");
   const [shareModal, setShareModal] = useState({ visible: false, url: "" });
+  const [selectedEntry, setSelectedEntry] = useState(null);
 
   const getAuthToken = () => localStorage.getItem("token");
 
@@ -168,9 +164,7 @@ const BlogPage = () => {
       await axios.post(`${API_LIKE_URL}/toggle-like`, {
         entry_id: entry.id,
         entry_type: entry.entryType
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      }, { headers: { Authorization: `Bearer ${token}` } });
       fetchLikes(entry);
     } catch {
       message.error("Не вдалося змінити лайк.");
@@ -224,7 +218,7 @@ const BlogPage = () => {
   };
 
   return (
-    <Content style={{ padding: 20, maxWidth: 900, margin: "auto" }}>
+    <Content style={{ padding: 20, maxWidth: 900, margin: "80px auto 0" }}>
       <Button href="/worker" style={{ marginBottom: 20 }}>
         Назад
       </Button>
@@ -247,7 +241,13 @@ const BlogPage = () => {
             {filteredEntries.map(entry => (
               <Card key={entry.id} id={`entry-${entry.entryType}-${entry.id}`}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <Title level={4}>{entry.title}</Title>
+                  <Title
+                    level={4}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => setSelectedEntry(entry)}
+                  >
+                    {entry.title}
+                  </Title>
                   <Button icon={<UserAddOutlined />} onClick={() => handleSubscribe(entry)}>
                     {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
                   </Button>
@@ -327,6 +327,21 @@ const BlogPage = () => {
             Twitter
           </Button>
         </Space>
+      </Modal>
+
+      <Modal
+        title={selectedEntry?.title}
+        open={!!selectedEntry}
+        onCancel={() => setSelectedEntry(null)}
+        footer={null}
+      >
+        <Tag color={getTagColor(selectedEntry?.entryType)}>{selectedEntry?.entryType?.toUpperCase()}</Tag>
+        <p><b>Автор:</b> {selectedEntry?.authorname}</p>
+        {selectedEntry?.status && (
+          <p><b>Статус:</b> {translateStatus(selectedEntry.status)}</p>
+        )}
+        <Divider />
+        <p>{selectedEntry?.description || "Без опису"}</p>
       </Modal>
     </Content>
   );
