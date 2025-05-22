@@ -9,7 +9,7 @@ import {
   List,
   Input,
 } from "antd";
-import { useSocketEvent } from "../../hooks/useSocket"; // 📡 змінити, якщо твій шлях інший
+import { useSocketEvent } from "../../useSocket"; // 📡 змінити, якщо твій шлях інший
 
 const { Title } = Typography;
 
