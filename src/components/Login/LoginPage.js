@@ -40,7 +40,7 @@ const LoginPage = () => {
 
       // 🔥 ДОДАНО: якщо Панасенко — ведемо одразу на адмін-сторінку
       if (data.user?.email === "panasenko@avtologistika.com") {
-        navigate("/admin-dashboard");
+        navigate("/admin");
         return;
       }
 
