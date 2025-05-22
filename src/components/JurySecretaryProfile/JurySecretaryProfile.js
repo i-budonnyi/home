@@ -191,7 +191,7 @@ const JurySecretaryProfile = () => {
           <Form.Item name="meeting_date" label="Дата засідання" rules={[{ required: true }]}>
             <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" />
           </Form.Item>
-          <Form.Item name="description" label="Опис засідання" rules={[{ required: true }]}>
+          <Form.Item name="description" label="Опис засідання+" rules={[{ required: true }]}>
             <Input.TextArea rows={3} />
           </Form.Item>
         </Form>
