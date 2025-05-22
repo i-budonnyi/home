@@ -31,6 +31,20 @@ const STATUS_TRANSLATION = {
   "відхилено_на_доопрацювання": "Відхилено на доопрацювання"
 };
 
+// ✅ Виправлення помилки: додано функцію getTagColor
+const getTagColor = (type) => {
+  switch (type) {
+    case "blog":
+      return "blue";
+    case "idea":
+      return "green";
+    case "problem":
+      return "red";
+    default:
+      return "default";
+  }
+};
+
 const BlogPage = () => {
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
