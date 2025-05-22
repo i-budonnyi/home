@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { Layout, Card, Typography, Spin, Descriptions, message } from "antd";
 
@@ -14,7 +14,7 @@ const AdminDashboard = () => {
     Authorization: `Bearer ${localStorage.getItem("token")}`,
   });
 
-  const fetchDumpData = async () => {
+  const fetchDumpData = useCallback(async () => {
     try {
       const response = await axios.get(`${API_BASE}/dump`, {
         headers: getTokenHeader(),
@@ -27,11 +27,11 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchDumpData();
-  }, []);
+  }, [fetchDumpData]);
 
   if (loading) {
     return (
