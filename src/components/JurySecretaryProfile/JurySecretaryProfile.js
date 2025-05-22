@@ -13,7 +13,7 @@ import {
   Typography,
   Skeleton,
 } from "antd";
-import { socket } from "../useSocket"; // ✅ Імпорт з useSocket.js
+import { socket } from "../useSocket.js"; // ✅ Обов’язково з .js у Netlify
 
 const { Title } = Typography;
 
@@ -191,7 +191,7 @@ const JurySecretaryProfile = () => {
           <Form.Item name="meeting_date" label="Дата засідання" rules={[{ required: true }]}>
             <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" />
           </Form.Item>
-          <Form.Item name="description" label="Опис засідання+" rules={[{ required: true }]}>
+          <Form.Item name="description" label="Опис засідання" rules={[{ required: true }]}>
             <Input.TextArea rows={3} />
           </Form.Item>
         </Form>
