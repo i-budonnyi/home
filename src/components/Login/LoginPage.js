@@ -19,9 +19,7 @@ const LoginPage = () => {
     try {
       const response = await fetch(API_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
@@ -34,27 +32,30 @@ const LoginPage = () => {
         throw new Error(data.message || "Помилка логіну");
       }
 
+      // Зберігаємо токен і користувача
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
 
-      // 🔥 ДОДАНО: якщо Панасенко — ведемо одразу на адмін-сторінку
+      // 🔐 Перевірка на конкретного адміністратора
       if (data.user?.email === "panasenko@avtologistika.com") {
         navigate("/admin");
         return;
       }
 
+      // Розподіл по ролях
       const redirects = {
-        user: "/worker", // 🔁 user перенаправляється на worker
+        user: "/worker",
         worker: "/worker",
         project_manager: "/pm-projects",
         ambassador: "/ambassadors",
         jury_secretary: "/jury-secretary",
         jury_member: "/jury",
+        admin: "/admin",
       };
 
       const role = data.user?.role;
-      const redirectPath = redirects[role] || "/worker"; // default fallback
+      const redirectPath = redirects[role] || "/worker";
       navigate(redirectPath);
     } catch (err) {
       console.error("[LOGIN ERROR]:", err);
