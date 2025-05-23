@@ -51,7 +51,12 @@ const WorkerPage = () => {
         });
       } catch (err) {
         console.error("[FETCH_PROFILE] ❌", err);
-        setError(err.response?.data?.message || "Сталася помилка");
+        if (err.response?.status === 401) {
+          localStorage.removeItem("token");
+          navigate("/login");
+        } else {
+          setError(err.response?.data?.message || "Сталася помилка");
+        }
       } finally {
         setIsCheckingRole(false);
       }
