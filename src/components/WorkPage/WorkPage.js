@@ -32,7 +32,6 @@ const WorkerPage = () => {
     localStorage.setItem("theme", newTheme);
   };
 
-  // ✅ Авторизація
   useEffect(() => {
     if (!token) return navigate("/login");
 
@@ -61,12 +60,10 @@ const WorkerPage = () => {
     fetchUserProfile();
   }, [navigate, token]);
 
-  // ✅ Отримання сповіщень
   const fetchNotifications = useCallback(async () => {
-    if (!userData?.id) return;
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE_URL}/notification`, {
+      const res = await axios.get(`${API_BASE_URL}/notification/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(res.data || []);
@@ -75,9 +72,8 @@ const WorkerPage = () => {
     } finally {
       setLoadingNotifications(false);
     }
-  }, [token, userData?.id]);
+  }, [token]);
 
-  // ✅ WebSocket підписка
   useEffect(() => {
     if (!token) return;
 
