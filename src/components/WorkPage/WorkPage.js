@@ -41,7 +41,6 @@ const WorkerPage = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const user = res.data;
-
         setUserData({
           id: user.id,
           firstName: user.first_name || "",
@@ -77,15 +76,22 @@ const WorkerPage = () => {
   }, [token, userData?.id]);
 
   useEffect(() => {
-    if (!userData) return;
-
-    fetchNotifications();
-
     const socket = io(SOCKET_URL);
-    socket.on(`notification_${userData.id}`, (data) => {
-      console.log("📡 Нове сповіщення по сокету:", data);
+
+    // Глобальний канал (публічні сповіщення)
+    socket.on("notification_all", (data) => {
+      console.log("📡 Глобальне сповіщення:", data);
       setNotifications(prev => [data, ...prev]);
     });
+
+    // Персональний канал
+    if (userData?.id) {
+      fetchNotifications();
+      socket.on(`notification_${userData.id}`, (data) => {
+        console.log("📡 Особисте сповіщення:", data);
+        setNotifications(prev => [data, ...prev]);
+      });
+    }
 
     return () => {
       socket.disconnect();
@@ -163,15 +169,19 @@ const WorkerPage = () => {
                 background: themeMode.token.colorBgContainer,
                 boxShadow: isDarkMode ? "0 8px 24px rgba(0,0,0,0.5)" : "0 6px 18px rgba(0,0,0,0.1)"
               }} bordered={false}>
-                <Title level={4}>{userData.firstName} {userData.lastName}</Title>
-                <Text type="secondary">Роль: <Badge count={userData.role} style={{ backgroundColor: "#08966E" }} /></Text>
-                <Divider />
-                <Text><MailOutlined /> {userData.email}</Text><br />
-                <Text><PhoneOutlined /> {userData.phone}</Text><br />
-                <Button type="primary" style={{ marginTop: 16 }} onClick={() => navigate("/edit-profile")}>
-                  Редагувати профіль
-                </Button>
-                <Divider />
+                <Title level={4}>{userData?.firstName} {userData?.lastName}</Title>
+                {userData && (
+                  <>
+                    <Text type="secondary">Роль: <Badge count={userData.role} style={{ backgroundColor: "#08966E" }} /></Text>
+                    <Divider />
+                    <Text><MailOutlined /> {userData.email}</Text><br />
+                    <Text><PhoneOutlined /> {userData.phone}</Text><br />
+                    <Button type="primary" style={{ marginTop: 16 }} onClick={() => navigate("/edit-profile")}>
+                      Редагувати профіль
+                    </Button>
+                    <Divider />
+                  </>
+                )}
                 <Title level={5} style={{ marginTop: 24 }}>
                   Новини ({notifications.filter(n => !n.is_read).length})
                 </Title>
