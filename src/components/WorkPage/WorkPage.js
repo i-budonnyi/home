@@ -27,46 +27,35 @@ const WorkerPage = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
-  const toggleTheme = () => {
-    const newTheme = isDarkMode ? "light" : "dark";
-    setIsDarkMode(!isDarkMode);
-    localStorage.setItem("theme", newTheme);
-  };
-
-  useEffect(() => {
-    if (!token) return navigate("/login");
-
-    const fetchUserProfile = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const user = res.data;
-        setUserData({
-          id: user.id,
-          firstName: user.first_name || "",
-          lastName: user.last_name || "",
-          email: user.email || "",
-          phone: user.phone || "",
-          role: user.role?.toLowerCase() || "worker",
-        });
-      } catch (err) {
-        console.error("[FETCH_PROFILE] ❌", err);
-        if (err.response?.status === 401) {
-          localStorage.removeItem("token");
-          navigate("/login");
-        } else {
-          setError(err.response?.data?.message || "Сталася помилка");
-        }
-      } finally {
-        setIsCheckingRole(false);
+  const fetchUserProfile = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const user = res.data;
+      setUserData({
+        id: user.id,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role?.toLowerCase() || "worker",
+      });
+    } catch (err) {
+      console.error("[FETCH_PROFILE] ❌", err);
+      if (err.response?.status === 401) {
+        localStorage.removeItem("token");
+        navigate("/login");
+      } else {
+        setError(err.response?.data?.message || "Сталася помилка");
       }
-    };
-
-    fetchUserProfile();
+    } finally {
+      setIsCheckingRole(false);
+    }
   }, [navigate, token]);
 
   const fetchNotifications = useCallback(async () => {
+    if (!userData?.id) return;
     try {
       setLoadingNotifications(true);
       const res = await axios.get(`${API_BASE_URL}/notification/me`, {
@@ -78,29 +67,34 @@ const WorkerPage = () => {
     } finally {
       setLoadingNotifications(false);
     }
-  }, [token]);
+  }, [token, userData]);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      navigate("/login");
+    } else {
+      fetchUserProfile();
+    }
+  }, [fetchUserProfile, token, navigate]);
+
+  useEffect(() => {
+    if (!userData?.id || !token) return;
+
+    fetchNotifications();
 
     const socket = io(SOCKET_URL);
 
     socket.on("notification_all", (data) => {
-      console.log("📡 Глобальне сповіщення:", data);
+      console.log("📡 Global Notification:", data);
       setNotifications((prev) => [data, ...prev]);
     });
 
-    if (userData?.id) {
-      fetchNotifications();
-      socket.on(`notification_${userData.id}`, (data) => {
-        console.log("📡 Особисте сповіщення:", data);
-        setNotifications((prev) => [data, ...prev]);
-      });
-    }
+    socket.on(`notification_${userData.id}`, (data) => {
+      console.log("📡 User Notification:", data);
+      setNotifications((prev) => [data, ...prev]);
+    });
 
-    return () => {
-      socket.disconnect();
-    };
+    return () => socket.disconnect();
   }, [userData, token, fetchNotifications]);
 
   const markAllAsRead = async () => {
@@ -117,6 +111,12 @@ const WorkerPage = () => {
     } catch (err) {
       console.error("[MARK_ALL_AS_READ] ❌", err?.message || err);
     }
+  };
+
+  const toggleTheme = () => {
+    const newTheme = isDarkMode ? "light" : "dark";
+    setIsDarkMode(!isDarkMode);
+    localStorage.setItem("theme", newTheme);
   };
 
   const themeMode = {
@@ -149,13 +149,7 @@ const WorkerPage = () => {
             theme={isDarkMode ? "dark" : "light"}
             selectedKeys={[window.location.pathname]}
             onClick={({ key }) => navigate(key)}
-            style={{
-              background: "transparent",
-              fontSize: 16,
-              display: "flex",
-              flexDirection: "column",
-              gap: 16,
-            }}
+            style={{ background: "transparent", fontSize: 16 }}
             items={[
               { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
               { key: "/submit-problem", icon: <FileTextOutlined />, label: "Подати проблему" },
@@ -228,7 +222,6 @@ const sanitizeText = (text) => {
   if (!text || typeof text !== "string") return "";
   return text
     .normalize("NFKC")
-    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F6FF}]/gu, "")
     .replace(/[^\p{L}\p{N}\s.,!?"'():-]/gu, "")
     .trim();
 };
