@@ -30,7 +30,7 @@ const WorkerPage = () => {
   const fetchUserProfile = useCallback(async () => {
     console.log("▶️ [FETCH_PROFILE] Старт");
     try {
-      const res = await axios.get(`${API_BASE}/profile`, {
+      const res = await axios.get(`${API_BASE}/userRoutes/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const user = res.data;
