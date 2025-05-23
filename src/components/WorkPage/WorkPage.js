@@ -58,7 +58,7 @@ const WorkerPage = () => {
     if (!userData?.id) return;
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE_URL}/notification/me`, {
+      const res = await axios.get(`${API_BASE_URL}/notification/user/${userData.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(res.data || []);
