@@ -13,6 +13,7 @@ import io from "socket.io-client";
 
 const { Content, Sider, Header } = Layout;
 const { Title, Text } = Typography;
+
 const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
 const SOCKET_URL = "https://backend-avtologistika.onrender.com";
 
@@ -187,18 +188,14 @@ const WorkerPage = () => {
                 bordered={false}
               >
                 <Title level={4}>{userData?.firstName} {userData?.lastName}</Title>
-                {userData && (
-                  <>
-                    <Text type="secondary">Роль: <Badge count={userData.role} style={{ backgroundColor: "#08966E" }} /></Text>
-                    <Divider />
-                    <Text><MailOutlined /> {userData.email}</Text><br />
-                    <Text><PhoneOutlined /> {userData.phone}</Text><br />
-                    <Button type="primary" style={{ marginTop: 16 }} onClick={() => navigate("/edit-profile")}>
-                      Редагувати профіль
-                    </Button>
-                    <Divider />
-                  </>
-                )}
+                <Text type="secondary">Роль: <Badge count={userData?.role} style={{ backgroundColor: "#08966E" }} /></Text>
+                <Divider />
+                <Text><MailOutlined /> {userData?.email}</Text><br />
+                <Text><PhoneOutlined /> {userData?.phone}</Text><br />
+                <Button type="primary" style={{ marginTop: 16 }} onClick={() => navigate("/edit-profile")}>
+                  Редагувати профіль
+                </Button>
+                <Divider />
                 <Title level={5} style={{ marginTop: 24 }}>
                   Новини ({notifications.filter(n => !n.is_read).length})
                 </Title>
