@@ -14,23 +14,23 @@ import io from "socket.io-client";
 const { Content, Sider, Header } = Layout;
 const { Title, Text } = Typography;
 
-const API_BASE_URL = "https://backend-avtologistika.onrender.com/api";
+const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const SOCKET_URL = "https://backend-avtologistika.onrender.com";
 
 const WorkerPage = () => {
   const [userData, setUserData] = useState(null);
-  const [isCheckingRole, setIsCheckingRole] = useState(true);
-  const [error, setError] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [isCheckingRole, setIsCheckingRole] = useState(true);
+  const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
-  const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const navigate = useNavigate();
 
   const fetchUserProfile = useCallback(async () => {
     console.log("▶️ [FETCH_PROFILE] Старт");
     try {
-      const res = await axios.get(`${API_BASE_URL}/userRoutes/profile`, {
+      const res = await axios.get(`${API_BASE}/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const user = res.data;
@@ -58,14 +58,14 @@ const WorkerPage = () => {
 
   const fetchNotifications = useCallback(async () => {
     if (!userData?.id) {
-      console.warn("⚠️ [FETCH_NOTIFICATIONS] Немає userData або id");
+      console.warn("⚠️ [FETCH_NOTIFICATIONS] Відсутній user_id");
       return;
     }
 
     console.log("▶️ [FETCH_NOTIFICATIONS] Старт для user_id:", userData.id);
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE_URL}/notification/user/${userData.id}`, {
+      const res = await axios.get(`${API_BASE}/notification/user/${userData.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log("✅ [FETCH_NOTIFICATIONS] Отримано:", res.data);
@@ -78,7 +78,7 @@ const WorkerPage = () => {
   }, [token, userData]);
 
   useEffect(() => {
-    console.log("📌 [useEffect] Перевірка токена");
+    console.log("📌 [useEffect] Авторизація...");
     if (!token) {
       navigate("/login");
     } else {
@@ -87,10 +87,7 @@ const WorkerPage = () => {
   }, [fetchUserProfile, token, navigate]);
 
   useEffect(() => {
-    if (!userData?.id || !token) {
-      console.warn("⚠️ [useEffect] Не викликаю fetchNotifications: userData або token відсутній");
-      return;
-    }
+    if (!userData?.id || !token) return;
 
     fetchNotifications();
 
@@ -103,31 +100,31 @@ const WorkerPage = () => {
     });
 
     socket.on(`notification_${userData.id}`, (data) => {
-      console.log("📡 [SOCKET] Сповіщення для користувача:", data);
+      console.log("📡 [SOCKET] Особисте сповіщення:", data);
       setNotifications((prev) => [data, ...prev]);
     });
 
     return () => {
-      console.log("🛑 WebSocket відключено");
       socket.disconnect();
+      console.log("🛑 WebSocket відключено");
     };
   }, [userData, token, fetchNotifications]);
 
   const markAllAsRead = async () => {
-    console.log("🟡 [MARK_ALL_AS_READ] Спроба оновлення статусів");
+    console.log("📘 [MARK_ALL_AS_READ] Спроба");
     try {
-      const unread = notifications.filter((n) => !n.is_read);
+      const unread = notifications.filter(n => !n.is_read);
       await Promise.all(
-        unread.map((n) =>
-          axios.patch(`${API_BASE_URL}/notification/${n.id}/read`, {}, {
+        unread.map(n =>
+          axios.patch(`${API_BASE}/notification/${n.id}/read`, {}, {
             headers: { Authorization: `Bearer ${token}` },
           })
         )
       );
-      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      setNotifications((prev) => prev.map(n => ({ ...n, is_read: true })));
       console.log("✅ [MARK_ALL_AS_READ] Успішно");
     } catch (err) {
-      console.error("❌ [MARK_ALL_AS_READ] Помилка:", err?.message || err);
+      console.error("❌ [MARK_ALL_AS_READ] Помилка:", err);
     }
   };
 
