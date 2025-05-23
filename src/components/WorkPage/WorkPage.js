@@ -32,6 +32,7 @@ const WorkerPage = () => {
     localStorage.setItem("theme", newTheme);
   };
 
+  // ✅ Авторизація
   useEffect(() => {
     if (!token) return navigate("/login");
 
@@ -60,11 +61,12 @@ const WorkerPage = () => {
     fetchUserProfile();
   }, [navigate, token]);
 
+  // ✅ Отримання сповіщень
   const fetchNotifications = useCallback(async () => {
     if (!userData?.id) return;
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE_URL}/notification/${userData.id}`, {
+      const res = await axios.get(`${API_BASE_URL}/notification`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(res.data || []);
@@ -75,38 +77,41 @@ const WorkerPage = () => {
     }
   }, [token, userData?.id]);
 
+  // ✅ WebSocket підписка
   useEffect(() => {
+    if (!token) return;
+
     const socket = io(SOCKET_URL);
 
-    // Глобальний канал (публічні сповіщення)
     socket.on("notification_all", (data) => {
       console.log("📡 Глобальне сповіщення:", data);
-      setNotifications(prev => [data, ...prev]);
+      setNotifications((prev) => [data, ...prev]);
     });
 
-    // Персональний канал
     if (userData?.id) {
       fetchNotifications();
       socket.on(`notification_${userData.id}`, (data) => {
         console.log("📡 Особисте сповіщення:", data);
-        setNotifications(prev => [data, ...prev]);
+        setNotifications((prev) => [data, ...prev]);
       });
     }
 
     return () => {
       socket.disconnect();
     };
-  }, [userData, fetchNotifications]);
+  }, [userData, token, fetchNotifications]);
 
   const markAllAsRead = async () => {
     try {
-      const unread = notifications.filter(n => !n.is_read);
-      await Promise.all(unread.map(n =>
-        axios.patch(`${API_BASE_URL}/notification/${n.id}/read`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ));
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      const unread = notifications.filter((n) => !n.is_read);
+      await Promise.all(
+        unread.map((n) =>
+          axios.patch(`${API_BASE_URL}/notification/${n.id}/read`, {}, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        )
+      );
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     } catch (err) {
       console.error("[MARK_ALL_AS_READ] ❌", err?.message || err);
     }
@@ -142,7 +147,13 @@ const WorkerPage = () => {
             theme={isDarkMode ? "dark" : "light"}
             selectedKeys={[window.location.pathname]}
             onClick={({ key }) => navigate(key)}
-            style={{ background: "transparent", fontSize: 16, display: "flex", flexDirection: "column", gap: 16 }}
+            style={{
+              background: "transparent",
+              fontSize: 16,
+              display: "flex",
+              flexDirection: "column",
+              gap: 16,
+            }}
             items={[
               { key: "/submit-idea", icon: <BulbOutlined />, label: "Подати ідею" },
               { key: "/submit-problem", icon: <FileTextOutlined />, label: "Подати проблему" },
@@ -162,13 +173,18 @@ const WorkerPage = () => {
             ) : error ? (
               <Title level={3} type="danger">❌ {error}</Title>
             ) : (
-              <Card style={{
-                width: 880,
-                borderRadius: 20,
-                padding: 28,
-                background: themeMode.token.colorBgContainer,
-                boxShadow: isDarkMode ? "0 8px 24px rgba(0,0,0,0.5)" : "0 6px 18px rgba(0,0,0,0.1)"
-              }} bordered={false}>
+              <Card
+                style={{
+                  width: 880,
+                  borderRadius: 20,
+                  padding: 28,
+                  background: themeMode.token.colorBgContainer,
+                  boxShadow: isDarkMode
+                    ? "0 8px 24px rgba(0,0,0,0.5)"
+                    : "0 6px 18px rgba(0,0,0,0.1)",
+                }}
+                bordered={false}
+              >
                 <Title level={4}>{userData?.firstName} {userData?.lastName}</Title>
                 {userData && (
                   <>
