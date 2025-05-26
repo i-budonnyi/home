@@ -28,13 +28,13 @@ const WorkerPage = () => {
   const navigate = useNavigate();
 
   const fetchUserProfile = useCallback(async () => {
-    console.log("📥 [fetchUserProfile] Старт запиту...");
+    console.log("📥 [fetchUserProfile] Запит профілю...");
     try {
       const res = await axios.get(`${API_BASE}/userRoutes/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const user = res.data;
-      console.log("✅ [fetchUserProfile] Дані користувача:", user);
+      console.log("✅ [fetchUserProfile] Отримано:", user);
       setUserData({
         id: user.id,
         firstName: user.first_name,
@@ -53,51 +53,43 @@ const WorkerPage = () => {
       }
     } finally {
       setIsCheckingRole(false);
-      console.log("📤 [fetchUserProfile] Завершено");
     }
   }, [navigate, token]);
 
   const fetchNotifications = useCallback(async () => {
+    if (!token) return console.warn("⛔ [fetchNotifications] Токен відсутній");
     console.log("📥 [fetchNotifications] Старт...");
     try {
       setLoadingNotifications(true);
       const res = await axios.get(`${API_BASE}/notification/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("✅ [fetchNotifications] Отримано:", res.data);
+      console.log("✅ [fetchNotifications] Сповіщення:", res.data);
       setNotifications(res.data || []);
     } catch (err) {
       console.error("❌ [fetchNotifications] Помилка:", err?.response?.data || err.message);
     } finally {
       setLoadingNotifications(false);
-      console.log("📤 [fetchNotifications] Завершено");
     }
   }, [token]);
 
   useEffect(() => {
-    console.log("🟡 [useEffect] Токен:", token);
     if (!token) {
-      console.warn("⛔ Немає токена, редирект на /login");
+      console.warn("⛔ Токен відсутній — редирект на /login");
       navigate("/login");
     } else {
-      console.log("🔑 Токен знайдено, виклик fetchUserProfile");
       fetchUserProfile();
     }
-  }, [fetchUserProfile, token, navigate]);
+  }, [fetchUserProfile, navigate, token]);
 
   useEffect(() => {
     if (!userData?.id || !token) {
-      console.warn("⚠️ [useEffect WebSocket] userData або token відсутній");
+      console.warn("⚠️ [useEffect WebSocket] userData.id або token відсутній");
       return;
     }
 
-    console.log("🔌 [WebSocket] Підключення до:", SOCKET_URL);
-    fetchNotifications();
-
     const socket = io(SOCKET_URL);
+    console.log("🔌 [WebSocket] Підключення...");
 
     socket.on("connect", () => {
       console.log("🟢 [WebSocket] Підключено:", socket.id);
@@ -117,17 +109,18 @@ const WorkerPage = () => {
       console.warn("🔴 [WebSocket] Відключено");
     });
 
+    fetchNotifications();
+
     return () => {
-      console.log("🧹 [WebSocket] Від'єднання");
+      console.log("🧹 [WebSocket] Socket disconnect");
       socket.disconnect();
     };
-  }, [userData, token, fetchNotifications]);
+  }, [userData?.id, token, fetchNotifications]);
 
   const markAllAsRead = async () => {
-    console.log("📘 [markAllAsRead] Спроба відзначити всі як прочитані...");
+    console.log("📘 [markAllAsRead] Позначення всіх як прочитані...");
     try {
       const unread = notifications.filter(n => !n.is_read);
-      console.log("🔎 Непрочитані:", unread);
       await Promise.all(
         unread.map(n =>
           axios.patch(`${API_BASE}/notification/${n.id}/read`, {}, {
