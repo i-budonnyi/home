@@ -54,11 +54,9 @@ const WorkerPage = () => {
   }, [navigate, token]);
 
   const fetchNotifications = useCallback(async () => {
-    if (!userData?.id) return;
-
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE}/notification/user/${userData.id}`, {
+      const res = await axios.get(`${API_BASE}/notification/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -70,7 +68,7 @@ const WorkerPage = () => {
     } finally {
       setLoadingNotifications(false);
     }
-  }, [token, userData]);
+  }, [token]);
 
   useEffect(() => {
     if (!token) {
