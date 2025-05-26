@@ -1,3 +1,4 @@
+// Файл: WorkerPage.jsx
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -86,12 +87,10 @@ const WorkerPage = () => {
     });
 
     socket.on("notification_all", (data) => {
-      console.log("📡 [SOCKET] Загальне:", data);
       setNotifications(prev => [data, ...prev]);
     });
 
     socket.on(`notification_${userData.id}`, (data) => {
-      console.log(`📡 [SOCKET] Особисте для ${userData.id}:`, data);
       setNotifications(prev => [data, ...prev]);
     });
 
@@ -101,9 +100,7 @@ const WorkerPage = () => {
 
     fetchNotifications();
 
-    return () => {
-      socket.disconnect();
-    };
+    return () => socket.disconnect();
   }, [userData?.id, token, fetchNotifications]);
 
   const markAllAsRead = async () => {
@@ -144,7 +141,7 @@ const WorkerPage = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh" }}>
-        <Sider width={340} style={{ background: "transparent", padding: "32px 24px 24px 24px" }}>
+        <Sider width={340} style={{ background: "transparent", padding: "32px 24px 48px 24px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 32 }}>
             <Button
               type="text"
@@ -171,8 +168,8 @@ const WorkerPage = () => {
         </Sider>
 
         <Layout>
-          <Header style={{ background: "transparent", height: 0, padding: 0 }} />
-          <Content style={{ padding: "40px 40px 40px 0", background: themeMode.token.colorBgLayout }}>
+          <Header style={{ background: "transparent", height: 20, padding: 0 }} />
+          <Content style={{ padding: "40px", background: themeMode.token.colorBgLayout }}>
             {isCheckingRole ? (
               <Title level={3}>⏳ Завантаження...</Title>
             ) : error ? (
@@ -180,7 +177,8 @@ const WorkerPage = () => {
             ) : (
               <Card
                 style={{
-                  width: 880,
+                  maxWidth: 880,
+                  margin: "0 auto",
                   borderRadius: 20,
                   padding: 28,
                   background: themeMode.token.colorBgContainer,
