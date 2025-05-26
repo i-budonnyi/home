@@ -28,11 +28,13 @@ const WorkerPage = () => {
   const navigate = useNavigate();
 
   const fetchUserProfile = useCallback(async () => {
+    console.log("📥 [fetchUserProfile] Старт запиту...");
     try {
       const res = await axios.get(`${API_BASE}/userRoutes/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const user = res.data;
+      console.log("✅ [fetchUserProfile] Дані користувача:", user);
       setUserData({
         id: user.id,
         firstName: user.first_name,
@@ -42,6 +44,7 @@ const WorkerPage = () => {
         role: user.role?.toLowerCase() || "worker",
       });
     } catch (err) {
+      console.error("❌ [fetchUserProfile] Помилка:", err.response || err.message);
       if (err.response?.status === 401) {
         localStorage.removeItem("token");
         navigate("/login");
@@ -50,10 +53,12 @@ const WorkerPage = () => {
       }
     } finally {
       setIsCheckingRole(false);
+      console.log("📤 [fetchUserProfile] Завершено");
     }
   }, [navigate, token]);
 
   const fetchNotifications = useCallback(async () => {
+    console.log("📥 [fetchNotifications] Старт...");
     try {
       setLoadingNotifications(true);
       const res = await axios.get(`${API_BASE}/notification/me`, {
@@ -62,42 +67,67 @@ const WorkerPage = () => {
           "Content-Type": "application/json",
         },
       });
+      console.log("✅ [fetchNotifications] Отримано:", res.data);
       setNotifications(res.data || []);
     } catch (err) {
-      console.error("❌ [FETCH_NOTIFICATIONS] Помилка:", err?.response?.data || err.message);
+      console.error("❌ [fetchNotifications] Помилка:", err?.response?.data || err.message);
     } finally {
       setLoadingNotifications(false);
+      console.log("📤 [fetchNotifications] Завершено");
     }
   }, [token]);
 
   useEffect(() => {
+    console.log("🟡 [useEffect] Токен:", token);
     if (!token) {
+      console.warn("⛔ Немає токена, редирект на /login");
       navigate("/login");
     } else {
+      console.log("🔑 Токен знайдено, виклик fetchUserProfile");
       fetchUserProfile();
     }
   }, [fetchUserProfile, token, navigate]);
 
   useEffect(() => {
-    if (!userData?.id || !token) return;
+    if (!userData?.id || !token) {
+      console.warn("⚠️ [useEffect WebSocket] userData або token відсутній");
+      return;
+    }
 
+    console.log("🔌 [WebSocket] Підключення до:", SOCKET_URL);
     fetchNotifications();
 
     const socket = io(SOCKET_URL);
+
+    socket.on("connect", () => {
+      console.log("🟢 [WebSocket] Підключено:", socket.id);
+    });
+
     socket.on("notification_all", (data) => {
+      console.log("📡 [SOCKET] Загальне сповіщення:", data);
       setNotifications((prev) => [data, ...prev]);
     });
 
     socket.on(`notification_${userData.id}`, (data) => {
+      console.log(`📡 [SOCKET] Особисте сповіщення для ${userData.id}:`, data);
       setNotifications((prev) => [data, ...prev]);
     });
 
-    return () => socket.disconnect();
+    socket.on("disconnect", () => {
+      console.warn("🔴 [WebSocket] Відключено");
+    });
+
+    return () => {
+      console.log("🧹 [WebSocket] Від'єднання");
+      socket.disconnect();
+    };
   }, [userData, token, fetchNotifications]);
 
   const markAllAsRead = async () => {
+    console.log("📘 [markAllAsRead] Спроба відзначити всі як прочитані...");
     try {
       const unread = notifications.filter(n => !n.is_read);
+      console.log("🔎 Непрочитані:", unread);
       await Promise.all(
         unread.map(n =>
           axios.patch(`${API_BASE}/notification/${n.id}/read`, {}, {
@@ -106,8 +136,9 @@ const WorkerPage = () => {
         )
       );
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      console.log("✅ [markAllAsRead] Успішно");
     } catch (err) {
-      console.error("❌ [MARK_ALL_AS_READ] Помилка:", err);
+      console.error("❌ [markAllAsRead] Помилка:", err);
     }
   };
 
@@ -115,6 +146,7 @@ const WorkerPage = () => {
     const newTheme = isDarkMode ? "light" : "dark";
     setIsDarkMode(!isDarkMode);
     localStorage.setItem("theme", newTheme);
+    console.log(`🎨 Тема змінена на: ${newTheme}`);
   };
 
   const themeMode = {
