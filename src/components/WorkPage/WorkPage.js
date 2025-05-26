@@ -56,15 +56,18 @@ const WorkerPage = () => {
     }
   }, [navigate, token]);
 
-  const fetchNotifications = useCallback(async () => {
-    if (!token) return console.warn("⛔ [fetchNotifications] Токен відсутній");
-    console.log("📥 [fetchNotifications] Старт...");
+  const fetchNotifications = useCallback(async (userId) => {
+    if (!token || !userId) {
+      console.warn("⛔ [fetchNotifications] Немає токена або user_id");
+      return;
+    }
+    console.log("📥 [fetchNotifications] Старт для user_id:", userId);
     try {
       setLoadingNotifications(true);
       const res = await axios.get(`${API_BASE}/notification/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("✅ [fetchNotifications] Сповіщення:", res.data);
+      console.log("✅ [fetchNotifications] Отримано:", res.data);
       setNotifications(res.data || []);
     } catch (err) {
       console.error("❌ [fetchNotifications] Помилка:", err?.response?.data || err.message);
@@ -88,8 +91,8 @@ const WorkerPage = () => {
       return;
     }
 
+    console.log("🔌 [WebSocket] Підключення до:", SOCKET_URL);
     const socket = io(SOCKET_URL);
-    console.log("🔌 [WebSocket] Підключення...");
 
     socket.on("connect", () => {
       console.log("🟢 [WebSocket] Підключено:", socket.id);
@@ -109,7 +112,7 @@ const WorkerPage = () => {
       console.warn("🔴 [WebSocket] Відключено");
     });
 
-    fetchNotifications();
+    fetchNotifications(userData.id);
 
     return () => {
       console.log("🧹 [WebSocket] Socket disconnect");
