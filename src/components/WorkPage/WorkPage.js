@@ -28,13 +28,11 @@ const WorkerPage = () => {
   const navigate = useNavigate();
 
   const fetchUserProfile = useCallback(async () => {
-    console.log("📥 [fetchUserProfile] Запит профілю...");
     try {
       const res = await axios.get(`${API_BASE}/userRoutes/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const user = res.data;
-      console.log("✅ [fetchUserProfile] Отримано:", user);
       setUserData({
         id: user.id,
         firstName: user.first_name,
@@ -44,7 +42,6 @@ const WorkerPage = () => {
         role: user.role?.toLowerCase() || "worker",
       });
     } catch (err) {
-      console.error("❌ [fetchUserProfile] Помилка:", err.response || err.message);
       if (err.response?.status === 401) {
         localStorage.removeItem("token");
         navigate("/login");
@@ -56,21 +53,16 @@ const WorkerPage = () => {
     }
   }, [navigate, token]);
 
-  const fetchNotifications = useCallback(async (userId) => {
-    if (!token || !userId) {
-      console.warn("⛔ [fetchNotifications] Немає токена або user_id");
-      return;
-    }
-    console.log("📥 [fetchNotifications] Старт для user_id:", userId);
+  const fetchNotifications = useCallback(async () => {
+    if (!token) return;
     try {
       setLoadingNotifications(true);
       const res = await axios.get(`${API_BASE}/notification/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log("✅ [fetchNotifications] Отримано:", res.data);
       setNotifications(res.data || []);
     } catch (err) {
-      console.error("❌ [fetchNotifications] Помилка:", err?.response?.data || err.message);
+      console.error("[fetchNotifications] Error:", err);
     } finally {
       setLoadingNotifications(false);
     }
@@ -78,52 +70,45 @@ const WorkerPage = () => {
 
   useEffect(() => {
     if (!token) {
-      console.warn("⛔ Токен відсутній — редирект на /login");
       navigate("/login");
     } else {
       fetchUserProfile();
     }
-  }, [fetchUserProfile, navigate, token]);
+  }, [fetchUserProfile, token, navigate]);
 
   useEffect(() => {
-    if (!userData?.id || !token) {
-      console.warn("⚠️ [useEffect WebSocket] userData.id або token відсутній");
-      return;
-    }
+    if (!userData?.id || !token) return;
 
-    console.log("🔌 [WebSocket] Підключення до:", SOCKET_URL);
     const socket = io(SOCKET_URL);
 
     socket.on("connect", () => {
-      console.log("🟢 [WebSocket] Підключено:", socket.id);
+      console.log("🟢 WebSocket connected:", socket.id);
     });
 
     socket.on("notification_all", (data) => {
-      console.log("📡 [SOCKET] Загальне сповіщення:", data);
-      setNotifications((prev) => [data, ...prev]);
+      console.log("📡 [SOCKET] Загальне:", data);
+      setNotifications(prev => [data, ...prev]);
     });
 
     socket.on(`notification_${userData.id}`, (data) => {
-      console.log(`📡 [SOCKET] Особисте сповіщення для ${userData.id}:`, data);
-      setNotifications((prev) => [data, ...prev]);
+      console.log(`📡 [SOCKET] Особисте для ${userData.id}:`, data);
+      setNotifications(prev => [data, ...prev]);
     });
 
     socket.on("disconnect", () => {
-      console.warn("🔴 [WebSocket] Відключено");
+      console.warn("🔴 WebSocket disconnected");
     });
 
-    fetchNotifications(userData.id);
+    fetchNotifications();
 
     return () => {
-      console.log("🧹 [WebSocket] Socket disconnect");
       socket.disconnect();
     };
   }, [userData?.id, token, fetchNotifications]);
 
   const markAllAsRead = async () => {
-    console.log("📘 [markAllAsRead] Позначення всіх як прочитані...");
+    const unread = notifications.filter(n => !n.is_read);
     try {
-      const unread = notifications.filter(n => !n.is_read);
       await Promise.all(
         unread.map(n =>
           axios.patch(`${API_BASE}/notification/${n.id}/read`, {}, {
@@ -132,9 +117,8 @@ const WorkerPage = () => {
         )
       );
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      console.log("✅ [markAllAsRead] Успішно");
     } catch (err) {
-      console.error("❌ [markAllAsRead] Помилка:", err);
+      console.error("❌ markAllAsRead:", err);
     }
   };
 
@@ -142,7 +126,6 @@ const WorkerPage = () => {
     const newTheme = isDarkMode ? "light" : "dark";
     setIsDarkMode(!isDarkMode);
     localStorage.setItem("theme", newTheme);
-    console.log(`🎨 Тема змінена на: ${newTheme}`);
   };
 
   const themeMode = {
