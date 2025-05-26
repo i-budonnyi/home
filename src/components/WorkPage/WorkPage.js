@@ -57,15 +57,10 @@ const WorkerPage = () => {
   }, [navigate, token]);
 
   const fetchNotifications = useCallback(async () => {
-    if (!userData?.id) {
-      console.warn("⚠️ [FETCH_NOTIFICATIONS] Відсутній user_id");
-      return;
-    }
-
-    console.log("▶️ [FETCH_NOTIFICATIONS] Старт для user_id:", userData.id);
+    console.log("▶️ [FETCH_NOTIFICATIONS] Старт");
     try {
       setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE}/notification/user/${userData.id}`, {
+      const res = await axios.get(`${API_BASE}/notification/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log("✅ [FETCH_NOTIFICATIONS] Отримано:", res.data);
@@ -75,7 +70,7 @@ const WorkerPage = () => {
     } finally {
       setLoadingNotifications(false);
     }
-  }, [token, userData]);
+  }, [token]);
 
   useEffect(() => {
     console.log("📌 [useEffect] Авторизація...");
@@ -87,7 +82,7 @@ const WorkerPage = () => {
   }, [fetchUserProfile, token, navigate]);
 
   useEffect(() => {
-    if (!userData?.id || !token) return;
+    if (!token) return;
 
     fetchNotifications();
 
@@ -99,16 +94,18 @@ const WorkerPage = () => {
       setNotifications((prev) => [data, ...prev]);
     });
 
-    socket.on(`notification_${userData.id}`, (data) => {
-      console.log("📡 [SOCKET] Особисте сповіщення:", data);
-      setNotifications((prev) => [data, ...prev]);
-    });
+    if (userData?.id) {
+      socket.on(`notification_${userData.id}`, (data) => {
+        console.log("📡 [SOCKET] Особисте сповіщення:", data);
+        setNotifications((prev) => [data, ...prev]);
+      });
+    }
 
     return () => {
       socket.disconnect();
       console.log("🛑 WebSocket відключено");
     };
-  }, [userData, token, fetchNotifications]);
+  }, [token, userData, fetchNotifications]);
 
   const markAllAsRead = async () => {
     console.log("📘 [MARK_ALL_AS_READ] Спроба");
