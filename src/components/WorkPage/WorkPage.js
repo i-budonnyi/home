@@ -21,7 +21,6 @@ const SOCKET_URL = "https://backend-avtologistika.onrender.com";
 const WorkerPage = () => {
   const [userData, setUserData] = useState(null);
   const [notifications, setNotifications] = useState([]);
-  const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [isCheckingRole, setIsCheckingRole] = useState(true);
   const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
@@ -54,26 +53,6 @@ const WorkerPage = () => {
     }
   }, [navigate, token]);
 
-  const fetchNotifications = useCallback(async () => {
-    if (!token) return;
-    try {
-      setLoadingNotifications(true);
-      const res = await axios.get(`${API_BASE}/notification/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (Array.isArray(res.data)) {
-        setNotifications(res.data);
-      } else {
-        console.error("[fetchNotifications] Unexpected response:", res.data);
-        setNotifications([]);
-      }
-    } catch (err) {
-      console.error("[fetchNotifications] Error:", err.message || err);
-    } finally {
-      setLoadingNotifications(false);
-    }
-  }, [token]);
-
   useEffect(() => {
     if (!token) {
       navigate("/login");
@@ -91,6 +70,7 @@ const WorkerPage = () => {
 
     socket.on("connect", () => {
       console.log("🟢 WebSocket connected:", socket.id);
+      setNotifications([]); // Очистити початкові
     });
 
     socket.on("notification_all", (data) => {
@@ -107,12 +87,10 @@ const WorkerPage = () => {
       console.warn("🔴 WebSocket disconnected");
     });
 
-    fetchNotifications();
-
     return () => {
       socket.disconnect();
     };
-  }, [userData?.id, token, fetchNotifications]);
+  }, [userData?.id, token]);
 
   const markAllAsRead = async () => {
     const unread = notifications.filter(n => !n.is_read);
@@ -213,7 +191,6 @@ const WorkerPage = () => {
                 </Title>
                 <List
                   bordered={false}
-                  loading={loadingNotifications}
                   locale={{ emptyText: "Наразі немає новин" }}
                   dataSource={notifications}
                   renderItem={(item) => (
