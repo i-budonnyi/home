@@ -1,5 +1,4 @@
-// Файл: WorkerPage.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout, Menu, Typography, Button, ConfigProvider, theme,
@@ -24,10 +23,11 @@ const WorkerPage = () => {
   const [isCheckingRole, setIsCheckingRole] = useState(true);
   const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
+
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE}/userRoutes/profile`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -51,7 +51,7 @@ const WorkerPage = () => {
     } finally {
       setIsCheckingRole(false);
     }
-  };
+  }, [navigate, token]);
 
   useEffect(() => {
     if (!token) {
@@ -59,7 +59,7 @@ const WorkerPage = () => {
     } else {
       fetchUserProfile();
     }
-  }, [token]);
+  }, [token, navigate, fetchUserProfile]);
 
   useEffect(() => {
     if (!userData?.id || !token) return;
