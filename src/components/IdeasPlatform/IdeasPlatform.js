@@ -9,9 +9,8 @@ import {
   Alert,
   Button,
   Tag,
-  Switch,
   ConfigProvider,
-  theme
+  theme,
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import { SunOutlined, MoonOutlined } from "@ant-design/icons";
@@ -39,9 +38,7 @@ const IdeasSubmissionPage = () => {
   const fetchUserProblems = useCallback(async () => {
     try {
       const token = getAuthToken();
-      if (!token) {
-        throw new Error("❌ Необхідна авторизація. Будь ласка, увійдіть у систему.");
-      }
+      if (!token) throw new Error("Необхідна авторизація.");
 
       const response = await axios.get(`${API_PROBLEM_URL}/user-problems`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -50,11 +47,11 @@ const IdeasSubmissionPage = () => {
       if (response.status === 200 && Array.isArray(response.data)) {
         setProblems(response.data);
       } else {
-        throw new Error(response.data.message || "Не вдалося отримати проблеми.");
+        throw new Error(response.data.message || "Помилка отримання даних.");
       }
     } catch (err) {
-      console.error("❌ ПОМИЛКА у fetchUserProblems:", err.response?.data || err.message);
-      setError(err.response?.data?.message || "❌ Не вдалося завантажити ваші проблеми.");
+      console.error("❌ Fetch Error:", err.response?.data || err.message);
+      setError(err.response?.data?.message || "Помилка завантаження проблем.");
     } finally {
       setIsLoading(false);
     }
@@ -66,14 +63,10 @@ const IdeasSubmissionPage = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending":
-        return "orange";
-      case "approved":
-        return "green";
-      case "rejected":
-        return "red";
-      default:
-        return "blue";
+      case "pending": return "orange";
+      case "approved": return "green";
+      case "rejected": return "red";
+      default: return "blue";
     }
   };
 
@@ -93,36 +86,23 @@ const IdeasSubmissionPage = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
-        <Header
-          style={{
-            background: "transparent",
-            padding: "10px 40px",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center"
-          }}
-        >
-          <div />
-          <Switch
-            checked={!isDarkMode}
-            onChange={toggleTheme}
-            checkedChildren={<SunOutlined />}
-            unCheckedChildren={<MoonOutlined />}
-          />
+        <Header style={{ background: "transparent", padding: "24px 40px 10px", textAlign: "center" }}>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12 }}>
+            <Title level={3} style={{ margin: 0, color: themeMode.token.colorTextBase }}>
+              Мої подані проблеми
+            </Title>
+            <Button
+              type="text"
+              icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+              onClick={toggleTheme}
+              style={{ fontSize: 22, color: isDarkMode ? "#fff" : "#1E63F2" }}
+            />
+          </div>
         </Header>
 
         <Content style={{ padding: "30px 20px", maxWidth: "900px", margin: "0 auto" }}>
-          <Title level={3} style={{ textAlign: "center", marginBottom: 30 }}>
-            Мої подані проблеми
-          </Title>
-
           {error && (
-            <Alert
-              message={error}
-              type="error"
-              showIcon
-              style={{ marginBottom: "20px" }}
-            />
+            <Alert message={error} type="error" showIcon style={{ marginBottom: 20 }} />
           )}
 
           {isLoading ? (
@@ -154,12 +134,12 @@ const IdeasSubmissionPage = () => {
                     <br />
                     <Tag
                       color={getStatusColor(problem.status)}
-                      style={{ marginTop: "10px", fontSize: "14px" }}
+                      style={{ marginTop: 10, fontSize: 14 }}
                     >
                       {problem.status ? problem.status.toUpperCase() : "НЕ ВКАЗАНО"}
                     </Tag>
                     <br />
-                    <Text type="secondary" style={{ fontSize: "14px" }}>
+                    <Text type="secondary" style={{ fontSize: 14 }}>
                       Автор:{" "}
                       {problem.author_first_name && problem.author_last_name
                         ? `${problem.author_first_name} ${problem.author_last_name}`
@@ -169,7 +149,7 @@ const IdeasSubmissionPage = () => {
                     <Button
                       type="primary"
                       onClick={() => navigate(`/problem/${problem.id}`)}
-                      style={{ marginTop: "10px" }}
+                      style={{ marginTop: 10 }}
                     >
                       Детальніше
                     </Button>
