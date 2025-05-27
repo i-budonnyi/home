@@ -1,5 +1,5 @@
 // Файл: WorkerPage.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout, Menu, Typography, Button, ConfigProvider, theme,
@@ -27,7 +27,7 @@ const WorkerPage = () => {
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE}/userRoutes/profile`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -51,7 +51,7 @@ const WorkerPage = () => {
     } finally {
       setIsCheckingRole(false);
     }
-  };
+  }, [navigate, token]);
 
   useEffect(() => {
     if (!token) {
@@ -59,7 +59,7 @@ const WorkerPage = () => {
     } else {
       fetchUserProfile();
     }
-  }, [token]);
+  }, [token, navigate, fetchUserProfile]); // ✅ виправлений масив залежностей
 
   useEffect(() => {
     if (!userData?.id || !token) return;
@@ -70,16 +70,14 @@ const WorkerPage = () => {
 
     socket.on("connect", () => {
       console.log("🟢 WebSocket connected:", socket.id);
-      setNotifications([]); // Очистити
+      setNotifications([]);
     });
 
     socket.on("notification_all", (data) => {
-      console.log("📢 Global notification:", data);
       setNotifications(prev => [data, ...prev]);
     });
 
     socket.on(`notification_${userData.id}`, (data) => {
-      console.log(`📩 Personal notification for ${userData.id}:`, data);
       setNotifications(prev => [data, ...prev]);
     });
 
@@ -94,8 +92,6 @@ const WorkerPage = () => {
         });
         if (Array.isArray(res.data)) {
           setNotifications(res.data);
-        } else {
-          console.warn("[initialNotifications] Unexpected:", res.data);
         }
       } catch (err) {
         console.error("[initialNotifications] Error:", err.message || err);
