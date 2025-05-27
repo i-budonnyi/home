@@ -9,10 +9,9 @@ import {
   Alert,
   Button,
   Tag,
+  Switch,
   ConfigProvider,
   theme,
-  Switch,
-  Space,
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import { MoonOutlined, SunOutlined } from "@ant-design/icons";
@@ -27,14 +26,22 @@ const IdeasSubmissionPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
-  const navigate = useNavigate();
 
+  const navigate = useNavigate();
   const getAuthToken = () => localStorage.getItem("token");
+
+  const toggleTheme = () => {
+    const newTheme = isDarkMode ? "light" : "dark";
+    setIsDarkMode(!isDarkMode);
+    localStorage.setItem("theme", newTheme);
+  };
 
   const fetchUserProblems = useCallback(async () => {
     try {
       const token = getAuthToken();
-      if (!token) throw new Error("❌ Потрібна авторизація.");
+      if (!token) {
+        throw new Error("❌ Необхідна авторизація. Будь ласка, увійдіть у систему.");
+      }
 
       const response = await axios.get(`${API_PROBLEM_URL}/user-problems`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -43,11 +50,11 @@ const IdeasSubmissionPage = () => {
       if (response.status === 200 && Array.isArray(response.data)) {
         setProblems(response.data);
       } else {
-        throw new Error(response.data.message || "Помилка при завантаженні.");
+        throw new Error(response.data.message || "Не вдалося отримати проблеми.");
       }
     } catch (err) {
-      console.error("❌ fetchUserProblems:", err);
-      setError(err.response?.data?.message || err.message || "Помилка.");
+      console.error("❌ ПОМИЛКА у fetchUserProblems:", err.response?.data || err.message);
+      setError(err.response?.data?.message || "❌ Не вдалося завантажити ваші проблеми.");
     } finally {
       setIsLoading(false);
     }
@@ -70,21 +77,16 @@ const IdeasSubmissionPage = () => {
     }
   };
 
-  const toggleTheme = () => {
-    const next = isDarkMode ? "light" : "dark";
-    setIsDarkMode(!isDarkMode);
-    localStorage.setItem("theme", next);
-  };
-
   const themeMode = {
     algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
     token: {
       colorPrimary: "#1E63F2",
+      borderRadius: 12,
       fontFamily: "Roboto, sans-serif",
-      borderRadius: 10,
       colorTextBase: isDarkMode ? "#E1E6EB" : "#1C1C1C",
       colorBgContainer: isDarkMode ? "#1E1E1E" : "#FFFFFF",
       colorBgLayout: isDarkMode ? "#121212" : "#F4F6F8",
+      colorBorder: isDarkMode ? "#2C313A" : "#DDE1E6",
     },
   };
 
@@ -94,29 +96,31 @@ const IdeasSubmissionPage = () => {
         <Header
           style={{
             background: "transparent",
-            padding: "32px 20px 10px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            flexDirection: "column",
+            padding: "40px 20px 20px",
+            textAlign: "center",
           }}
         >
-          <Space style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12 }}>
+            <Title level={3} style={{ margin: 0, color: themeMode.token.colorTextBase }}>
+              Мої подані проблеми
+            </Title>
             <Switch
               checked={!isDarkMode}
               onChange={toggleTheme}
               checkedChildren={<SunOutlined />}
               unCheckedChildren={<MoonOutlined />}
             />
-          </Space>
-          <Title level={3} style={{ color: themeMode.token.colorTextBase, margin: 0 }}>
-            Мої подані проблеми
-          </Title>
+          </div>
         </Header>
 
         <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
           {error && (
-            <Alert message={error} type="error" showIcon style={{ marginBottom: 20 }} />
+            <Alert
+              message={error}
+              type="error"
+              showIcon
+              style={{ marginBottom: "20px" }}
+            />
           )}
 
           {isLoading ? (
@@ -129,17 +133,20 @@ const IdeasSubmissionPage = () => {
                 <List.Item>
                   <Card
                     hoverable
-                    style={{
-                      width: "100%",
-                      borderRadius: 10,
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                      background: themeMode.token.colorBgContainer,
-                    }}
                     title={
                       <Title level={4} style={{ marginBottom: 0 }}>
                         {problem.title || "Без назви"}
                       </Title>
                     }
+                    style={{
+                      width: "100%",
+                      borderRadius: "12px",
+                      boxShadow: isDarkMode
+                        ? "0 4px 12px rgba(0,0,0,0.4)"
+                        : "0 4px 10px rgba(0,0,0,0.1)",
+                      background: themeMode.token.colorBgContainer,
+                    }}
+                    bordered={false}
                   >
                     <Text>{problem.description || "Без опису"}</Text>
                     <br />
@@ -147,7 +154,7 @@ const IdeasSubmissionPage = () => {
                       color={getStatusColor(problem.status)}
                       style={{ marginTop: "10px", fontSize: "14px" }}
                     >
-                      {problem.status?.toUpperCase() || "НЕ ВКАЗАНО"}
+                      {problem.status ? problem.status.toUpperCase() : "НЕ ВКАЗАНО"}
                     </Tag>
                     <br />
                     <Text type="secondary" style={{ fontSize: "14px" }}>
@@ -160,7 +167,7 @@ const IdeasSubmissionPage = () => {
                     <Button
                       type="primary"
                       onClick={() => navigate(`/problem/${problem.id}`)}
-                      style={{ marginTop: 10 }}
+                      style={{ marginTop: "10px" }}
                     >
                       Детальніше
                     </Button>
