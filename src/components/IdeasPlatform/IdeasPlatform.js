@@ -10,9 +10,7 @@ import {
   Button,
   Tag,
   ConfigProvider,
-  theme,
-  Row,
-  Col
+  theme
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import { SunOutlined, MoonOutlined } from "@ant-design/icons";
@@ -89,33 +87,28 @@ const IdeasSubmissionPage = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
-        <Header style={{ background: "transparent", height: 20, padding: 0 }} />
+        <Header style={{ background: "transparent", height: 30, padding: 0 }} />
+        
+        {/* Кнопка Назад + Місяць — зліва і нижче */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, paddingLeft: 20, marginTop: "70px" }}>
+          <div
+            onClick={toggleTheme}
+            style={{ cursor: "pointer", fontSize: 20, color: themeMode.token.colorTextBase }}
+            title="Перемкнути тему"
+          >
+            {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+          </div>
+          <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16, paddingLeft: 0 }}>
+            Назад
+          </Button>
+        </div>
 
-        <Content style={{ padding: "60px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
-          {/* Рядок з кнопкою Назад і перемикачем теми */}
-          <Row justify="start" align="middle" style={{ marginBottom: 30, gap: 16 }}>
-            <Col>
-              <div
-                onClick={toggleTheme}
-                style={{ cursor: "pointer", fontSize: 22, color: themeMode.token.colorTextBase }}
-                title="Перемкнути тему"
-              >
-                {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
-              </div>
-            </Col>
-            <Col>
-              <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
-                Назад
-              </Button>
-            </Col>
-          </Row>
-
+        <Content style={{ padding: "30px 20px", maxWidth: "900px", margin: "0 auto" }}>
           <Title
             level={3}
             style={{
               textAlign: "center",
               marginBottom: 40,
-              marginTop: 0,
               color: themeMode.token.colorTextBase,
             }}
           >
