@@ -219,9 +219,9 @@ const BlogPage = () => {
 
   return (
     <Content style={{ padding: 20, maxWidth: 900, margin: "80px auto 0" }}>
-      <Button href="/worker" style={{ marginBottom: 20 }}>
-        Назад
-      </Button>
+      <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 20 }}>
+        <Button href="/worker">← Назад</Button>
+      </div>
 
       {isLoading ? <Skeleton active /> : (
         <>

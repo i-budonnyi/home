@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Layout, Form, Input, Select, Button, Alert, Typography, Spin } from "antd";
-import { BulbOutlined } from "@ant-design/icons";
+import {
+  Layout, Form, Input, Select, Button, Alert, Typography, Spin, ConfigProvider, theme
+} from "antd";
+import { BulbOutlined, SunOutlined, MoonOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 const { Header, Content } = Layout;
@@ -14,6 +16,7 @@ const SubmitIdeaPage = () => {
   const [loadingAmbassadors, setLoadingAmbassadors] = useState(true);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
   const [form] = Form.useForm();
   const navigate = useNavigate();
 
@@ -31,6 +34,12 @@ const SubmitIdeaPage = () => {
     }
   };
 
+  const toggleTheme = () => {
+    const newTheme = isDarkMode ? "light" : "dark";
+    setIsDarkMode(!isDarkMode);
+    localStorage.setItem("theme", newTheme);
+  };
+
   useEffect(() => {
     const loadAmbassadors = async () => {
       const headers = getAuthHeaders();
@@ -40,7 +49,6 @@ const SubmitIdeaPage = () => {
         return;
       }
 
-      // 🟡 Пінг Render
       try {
         await fetch(`${API_BASE}/ping`).catch(() => {});
       } catch {}
@@ -62,7 +70,6 @@ const SubmitIdeaPage = () => {
           setLoadingAmbassadors(false);
           return;
         } catch (err) {
-          console.warn(`❌ Спроба ${attempt} не вдала:`, err.message);
           if (attempt < retries) {
             await new Promise((res) => setTimeout(res, delay));
           } else {
@@ -115,87 +122,118 @@ const SubmitIdeaPage = () => {
     }
   };
 
+  const themeMode = {
+    algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+    token: {
+      colorPrimary: "#1E63F2",
+      fontFamily: "Roboto, sans-serif",
+      borderRadius: 8,
+      colorTextBase: isDarkMode ? "#E1E6EB" : "#1C1C1C",
+      colorBgContainer: isDarkMode ? "#1E1E1E" : "#FFFFFF",
+      colorBgLayout: isDarkMode ? "#121212" : "#F0F2F5",
+    },
+  };
+
   return (
-    <Layout style={{ minHeight: "100vh", background: "#f4f6f9" }}>
-      <Header style={{ background: "#003366", textAlign: "center", padding: "16px 0" }}>
-        <Title level={3} style={{ color: "#fff", margin: 0 }}>Подати ідею</Title>
-      </Header>
-
-      <Content style={{ padding: "40px 20px", position: "relative" }}>
-        <div style={{ position: "absolute", left: "20px", top: "40px" }}>
+    <ConfigProvider theme={themeMode}>
+      <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
+        <Header
+          style={{
+            background: "transparent",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            paddingInline: 24,
+            paddingBlock: 16,
+          }}
+        >
+          <Title level={3} style={{ margin: 0, color: themeMode.token.colorTextBase }}>
+            Подати ідею
+          </Title>
           <Button
-            type="link"
-            icon={<BulbOutlined />}
-            onClick={() => navigate("/worker")}
-            style={{
-              fontWeight: "bold",
-              color: "#003366",
-              padding: "10px 14px",
-              background: "#e6f7ff",
-              borderRadius: "8px",
-            }}
-          >
-            Повернутись на головну
-          </Button>
-        </div>
+            type="text"
+            icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+            onClick={toggleTheme}
+            style={{ fontSize: 20, color: isDarkMode ? "#fff" : "#1E63F2" }}
+          />
+        </Header>
 
-        <div style={{ maxWidth: "600px", margin: "0 auto", paddingTop: "20px" }}>
-          <Form form={form} layout="vertical" onFinish={handleSubmit}>
-            {message && (
-              <Alert
-                message={message}
-                type={message.includes("успішно") ? "success" : "error"}
-                showIcon
-                style={{ marginBottom: "20px" }}
-              />
-            )}
-            <Form.Item
-              label="Назва ідеї"
-              name="title"
-              rules={[{ required: true, message: "Будь ласка, введіть назву ідеї!" }]}
+        <Content style={{ padding: "40px 20px", position: "relative" }}>
+          <div style={{ position: "absolute", left: "20px", top: "40px" }}>
+            <Button
+              type="link"
+              icon={<BulbOutlined />}
+              onClick={() => navigate("/worker")}
+              style={{
+                fontWeight: "bold",
+                color: "#003366",
+                padding: "10px 14px",
+                background: "#e6f7ff",
+                borderRadius: "8px",
+              }}
             >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              label="Опис ідеї"
-              name="description"
-              rules={[{ required: true, message: "Будь ласка, введіть опис ідеї!" }]}
-            >
-              <Input.TextArea rows={4} />
-            </Form.Item>
-            <Form.Item label="Обрати амбасадора" name="ambassadorId">
-              {loadingAmbassadors ? (
-                <Spin tip="Завантаження амбасадорів..." />
-              ) : (
-                <Select placeholder="Оберіть амбасадора" allowClear>
-                  {ambassadors.map((amb) => (
-                    <Option key={amb.id} value={amb.id}>
-                      {amb.name}
-                    </Option>
-                  ))}
-                </Select>
+              Повернутись на головну
+            </Button>
+          </div>
+
+          <div style={{ maxWidth: "600px", margin: "0 auto", paddingTop: "20px" }}>
+            <Form form={form} layout="vertical" onFinish={handleSubmit}>
+              {message && (
+                <Alert
+                  message={message}
+                  type={message.includes("успішно") ? "success" : "error"}
+                  showIcon
+                  style={{ marginBottom: "20px" }}
+                />
               )}
-            </Form.Item>
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={isSubmitting}
-                style={{
-                  backgroundColor: "#1677ff",
-                  borderRadius: "8px",
-                  padding: "0 24px",
-                  height: "40px",
-                  fontSize: "16px",
-                }}
+              <Form.Item
+                label="Назва ідеї"
+                name="title"
+                rules={[{ required: true, message: "Будь ласка, введіть назву ідеї!" }]}
               >
-                Подати ідею
-              </Button>
-            </Form.Item>
-          </Form>
-        </div>
-      </Content>
-    </Layout>
+                <Input />
+              </Form.Item>
+              <Form.Item
+                label="Опис ідеї"
+                name="description"
+                rules={[{ required: true, message: "Будь ласка, введіть опис ідеї!" }]}
+              >
+                <Input.TextArea rows={4} />
+              </Form.Item>
+              <Form.Item label="Обрати амбасадора" name="ambassadorId">
+                {loadingAmbassadors ? (
+                  <Spin tip="Завантаження амбасадорів..." />
+                ) : (
+                  <Select placeholder="Оберіть амбасадора" allowClear>
+                    {ambassadors.map((amb) => (
+                      <Option key={amb.id} value={amb.id}>
+                        {amb.name}
+                      </Option>
+                    ))}
+                  </Select>
+                )}
+              </Form.Item>
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={isSubmitting}
+                  style={{
+                    backgroundColor: "#1677ff",
+                    borderRadius: "8px",
+                    padding: "0 24px",
+                    height: "40px",
+                    fontSize: "16px",
+                  }}
+                >
+                  Подати ідею
+                </Button>
+              </Form.Item>
+            </Form>
+          </div>
+        </Content>
+      </Layout>
+    </ConfigProvider>
   );
 };
 
