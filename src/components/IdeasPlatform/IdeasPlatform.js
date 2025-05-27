@@ -10,6 +10,10 @@ import {
   Button,
   Tag,
 } from "antd";
+import {
+  SunOutlined,
+  MoonOutlined
+} from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 const { Header, Content } = Layout;
@@ -21,6 +25,7 @@ const IdeasSubmissionPage = () => {
   const [problems, setProblems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
   const navigate = useNavigate();
 
   const getAuthToken = () => localStorage.getItem("token");
@@ -53,6 +58,12 @@ const IdeasSubmissionPage = () => {
     fetchUserProblems();
   }, [fetchUserProblems]);
 
+  const toggleTheme = () => {
+    const newTheme = isDarkMode ? "light" : "dark";
+    setIsDarkMode(!isDarkMode);
+    localStorage.setItem("theme", newTheme);
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
@@ -66,12 +77,31 @@ const IdeasSubmissionPage = () => {
     }
   };
 
+  const backgroundColor = isDarkMode ? "#1e1e1e" : "#f4f6f8";
+  const cardBackground = isDarkMode ? "#2a2a2a" : "#ffffff";
+  const textColor = isDarkMode ? "#e6e6e6" : "#1c1c1c";
+
   return (
-    <Layout style={{ minHeight: "100vh", background: "#f4f6f8" }}>
-      <Header style={{ background: "#003366", textAlign: "center", padding: "15px" }}>
-        <Title style={{ color: "white", fontSize: "24px", margin: 0 }}>
+    <Layout style={{ minHeight: "100vh", background: backgroundColor }}>
+      <Header
+        style={{
+          background: "transparent",
+          padding: "20px",
+          textAlign: "center",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}
+      >
+        <Title level={3} style={{ margin: 0, color: textColor }}>
           Мої подані проблеми
         </Title>
+        <Button
+          shape="circle"
+          icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+          onClick={toggleTheme}
+          style={{ fontSize: 18 }}
+        />
       </Header>
 
       <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
@@ -95,7 +125,7 @@ const IdeasSubmissionPage = () => {
                 <Card
                   hoverable
                   title={
-                    <Title level={4} style={{ marginBottom: 0 }}>
+                    <Title level={4} style={{ marginBottom: 0, color: textColor }}>
                       {problem.title || "Без назви"}
                     </Title>
                   }
@@ -103,10 +133,13 @@ const IdeasSubmissionPage = () => {
                     width: "100%",
                     borderRadius: "10px",
                     boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-                    background: "#ffffff",
+                    background: cardBackground,
+                    color: textColor
                   }}
                 >
-                  <Text>{problem.description || "Без опису"}</Text>
+                  <Text style={{ color: textColor }}>
+                    {problem.description || "Без опису"}
+                  </Text>
                   <br />
                   <Tag
                     color={getStatusColor(problem.status)}
@@ -115,7 +148,7 @@ const IdeasSubmissionPage = () => {
                     {problem.status ? problem.status.toUpperCase() : "НЕ ВКАЗАНО"}
                   </Tag>
                   <br />
-                  <Text type="secondary" style={{ fontSize: "14px" }}>
+                  <Text type="secondary" style={{ fontSize: "14px", color: textColor }}>
                     Автор:{" "}
                     {problem.author_first_name && problem.author_last_name
                       ? `${problem.author_first_name} ${problem.author_last_name}`
