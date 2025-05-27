@@ -87,7 +87,7 @@ const WorkerPage = () => {
 
     const fetchInitialNotifications = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/notifications`, {
+        const res = await axios.get(`${API_BASE}/notifications/${userData.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (Array.isArray(res.data)) {
