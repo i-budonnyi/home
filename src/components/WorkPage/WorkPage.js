@@ -61,9 +61,14 @@ const WorkerPage = () => {
       const res = await axios.get(`${API_BASE}/notification/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setNotifications(res.data || []);
+      if (Array.isArray(res.data)) {
+        setNotifications(res.data);
+      } else {
+        console.error("[fetchNotifications] Unexpected response:", res.data);
+        setNotifications([]);
+      }
     } catch (err) {
-      console.error("[fetchNotifications] Error:", err);
+      console.error("[fetchNotifications] Error:", err.message || err);
     } finally {
       setLoadingNotifications(false);
     }
@@ -80,17 +85,21 @@ const WorkerPage = () => {
   useEffect(() => {
     if (!userData?.id || !token) return;
 
-    const socket = io(SOCKET_URL);
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket"],
+    });
 
     socket.on("connect", () => {
       console.log("🟢 WebSocket connected:", socket.id);
     });
 
     socket.on("notification_all", (data) => {
+      console.log("📢 Global notification:", data);
       setNotifications(prev => [data, ...prev]);
     });
 
     socket.on(`notification_${userData.id}`, (data) => {
+      console.log(`📩 Personal notification for ${userData.id}:`, data);
       setNotifications(prev => [data, ...prev]);
     });
 
@@ -100,7 +109,9 @@ const WorkerPage = () => {
 
     fetchNotifications();
 
-    return () => socket.disconnect();
+    return () => {
+      socket.disconnect();
+    };
   }, [userData?.id, token, fetchNotifications]);
 
   const markAllAsRead = async () => {
@@ -115,7 +126,7 @@ const WorkerPage = () => {
       );
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     } catch (err) {
-      console.error("❌ markAllAsRead:", err);
+      console.error("❌ markAllAsRead:", err.message || err);
     }
   };
 
