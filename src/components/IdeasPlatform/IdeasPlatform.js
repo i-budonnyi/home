@@ -10,7 +10,9 @@ import {
   Button,
   Tag,
   ConfigProvider,
-  theme
+  theme,
+  Row,
+  Col
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import { SunOutlined, MoonOutlined } from "@ant-design/icons";
@@ -39,11 +41,9 @@ const IdeasSubmissionPage = () => {
     try {
       const token = getAuthToken();
       if (!token) throw new Error("Необхідна авторизація.");
-
       const response = await axios.get(`${API_PROBLEM_URL}/user-problems`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (response.status === 200 && Array.isArray(response.data)) {
         setProblems(response.data);
       } else {
@@ -89,31 +89,27 @@ const IdeasSubmissionPage = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
-        <Header
-          style={{
-            background: "transparent",
-            padding: "16px 24px 0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div
-              onClick={toggleTheme}
-              style={{ cursor: "pointer", fontSize: 20, color: themeMode.token.colorTextBase }}
-              title="Перемкнути тему"
-            >
-              {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
-            </div>
+        <Header style={{ background: "transparent", height: 20, padding: 0 }} />
 
-            <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
-              Назад
-            </Button>
-          </div>
-        </Header>
+        <Content style={{ padding: "60px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
+          {/* Рядок з кнопкою Назад і перемикачем теми */}
+          <Row justify="start" align="middle" style={{ marginBottom: 30, gap: 16 }}>
+            <Col>
+              <div
+                onClick={toggleTheme}
+                style={{ cursor: "pointer", fontSize: 22, color: themeMode.token.colorTextBase }}
+                title="Перемкнути тему"
+              >
+                {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+              </div>
+            </Col>
+            <Col>
+              <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
+                Назад
+              </Button>
+            </Col>
+          </Row>
 
-        <Content style={{ padding: "100px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
           <Title
             level={3}
             style={{
