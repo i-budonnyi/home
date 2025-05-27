@@ -113,18 +113,18 @@ const IdeasSubmissionPage = () => {
           </div>
         </Header>
 
-        <Content style={{ padding: "40px 20px", maxWidth: "900px", margin: "0 auto" }}>
-          <Title
-            level={3}
-            style={{
-              textAlign: "center",
-              marginBottom: 30,
-              marginTop: 20,
-              color: themeMode.token.colorTextBase,
-            }}
-          >
-            Мої подані проблеми
-          </Title>
+        <Content style={{ padding: "80px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
+  <Title
+    level={3}
+    style={{
+      textAlign: "center",
+      marginBottom: 40,
+      marginTop: 0,
+      color: themeMode.token.colorTextBase,
+    }}
+  >
+    Мої подані проблеми
+  </Title>
 
           {error && (
             <Alert
