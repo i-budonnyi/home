@@ -85,27 +85,36 @@ const IdeasSubmissionPage = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
-        <Header style={{ background: "transparent", height: 64 }} />
-        <Content style={{ padding: "30px 20px", maxWidth: "900px", margin: "0 auto" }}>
-          <div style={{
+        <Header
+          style={{
+            background: "transparent",
+            padding: "20px 40px",
             display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            marginBottom: 40,
-            gap: 16,
-            flexDirection: "column"
-          }}>
-            <Title level={3} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>
-              Мої подані проблеми
-            </Title>
-            <span
-              onClick={toggleTheme}
-              style={{ cursor: "pointer", fontSize: 22 }}
-              title="Перемкнути тему"
-            >
-              {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
-            </span>
+            justifyContent: "space-between",
+            alignItems: "center"
+          }}
+        >
+          <div
+            onClick={toggleTheme}
+            style={{
+              cursor: "pointer",
+              fontSize: 22,
+              color: themeMode.token.colorTextBase
+            }}
+            title="Перемкнути тему"
+          >
+            {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
           </div>
+
+          <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
+            Назад
+          </Button>
+        </Header>
+
+        <Content style={{ padding: "10px 20px", maxWidth: "900px", margin: "0 auto" }}>
+          <Title level={3} style={{ textAlign: "center", marginBottom: 30, color: themeMode.token.colorTextBase }}>
+            Мої подані проблеми
+          </Title>
 
           {error && (
             <Alert
@@ -127,7 +136,7 @@ const IdeasSubmissionPage = () => {
                   <Card
                     hoverable
                     title={
-                      <Title level={4} style={{ marginBottom: 0 }}>
+                      <Title level={4} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>
                         {problem.title || "Без назви"}
                       </Title>
                     }
@@ -141,7 +150,9 @@ const IdeasSubmissionPage = () => {
                     }}
                     bordered={false}
                   >
-                    <Text>{problem.description || "Без опису"}</Text>
+                    <Text style={{ color: themeMode.token.colorTextBase }}>
+                      {problem.description || "Без опису"}
+                    </Text>
                     <br />
                     <Tag
                       color={getStatusColor(problem.status)}
