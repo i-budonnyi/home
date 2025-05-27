@@ -10,7 +10,7 @@ import {
   Button,
   Tag,
   ConfigProvider,
-  theme,
+  theme
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import { SunOutlined, MoonOutlined } from "@ant-design/icons";
@@ -47,11 +47,10 @@ const IdeasSubmissionPage = () => {
       if (response.status === 200 && Array.isArray(response.data)) {
         setProblems(response.data);
       } else {
-        throw new Error(response.data.message || "Помилка отримання даних.");
+        throw new Error(response.data.message || "Не вдалося отримати проблеми.");
       }
     } catch (err) {
-      console.error("❌ Fetch Error:", err.response?.data || err.message);
-      setError(err.response?.data?.message || "Помилка завантаження проблем.");
+      setError(err.response?.data?.message || "Не вдалося завантажити проблеми.");
     } finally {
       setIsLoading(false);
     }
@@ -86,23 +85,35 @@ const IdeasSubmissionPage = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
-        <Header style={{ background: "transparent", padding: "24px 40px 10px", textAlign: "center" }}>
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12 }}>
-            <Title level={3} style={{ margin: 0, color: themeMode.token.colorTextBase }}>
+        <Header style={{ background: "transparent", height: 64 }} />
+        <Content style={{ padding: "30px 20px", maxWidth: "900px", margin: "0 auto" }}>
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            marginBottom: 40,
+            gap: 16,
+            flexDirection: "column"
+          }}>
+            <Title level={3} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>
               Мої подані проблеми
             </Title>
-            <Button
-              type="text"
-              icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+            <span
               onClick={toggleTheme}
-              style={{ fontSize: 22, color: isDarkMode ? "#fff" : "#1E63F2" }}
-            />
+              style={{ cursor: "pointer", fontSize: 22 }}
+              title="Перемкнути тему"
+            >
+              {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+            </span>
           </div>
-        </Header>
 
-        <Content style={{ padding: "30px 20px", maxWidth: "900px", margin: "0 auto" }}>
           {error && (
-            <Alert message={error} type="error" showIcon style={{ marginBottom: 20 }} />
+            <Alert
+              message={error}
+              type="error"
+              showIcon
+              style={{ marginBottom: "20px" }}
+            />
           )}
 
           {isLoading ? (
@@ -134,12 +145,12 @@ const IdeasSubmissionPage = () => {
                     <br />
                     <Tag
                       color={getStatusColor(problem.status)}
-                      style={{ marginTop: 10, fontSize: 14 }}
+                      style={{ marginTop: "10px", fontSize: "14px" }}
                     >
                       {problem.status ? problem.status.toUpperCase() : "НЕ ВКАЗАНО"}
                     </Tag>
                     <br />
-                    <Text type="secondary" style={{ fontSize: 14 }}>
+                    <Text type="secondary" style={{ fontSize: "14px" }}>
                       Автор:{" "}
                       {problem.author_first_name && problem.author_last_name
                         ? `${problem.author_first_name} ${problem.author_last_name}`
@@ -149,7 +160,7 @@ const IdeasSubmissionPage = () => {
                     <Button
                       type="primary"
                       onClick={() => navigate(`/problem/${problem.id}`)}
-                      style={{ marginTop: 10 }}
+                      style={{ marginTop: "10px" }}
                     >
                       Детальніше
                     </Button>
