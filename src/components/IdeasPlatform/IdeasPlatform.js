@@ -10,7 +10,7 @@ import {
   Button,
   Tag,
   ConfigProvider,
-  theme
+  theme,
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import { SunOutlined, MoonOutlined } from "@ant-design/icons";
@@ -62,10 +62,14 @@ const IdeasSubmissionPage = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending": return "orange";
-      case "approved": return "green";
-      case "rejected": return "red";
-      default: return "blue";
+      case "pending":
+        return "orange";
+      case "approved":
+        return "green";
+      case "rejected":
+        return "red";
+      default:
+        return "blue";
     }
   };
 
@@ -88,31 +92,36 @@ const IdeasSubmissionPage = () => {
         <Header
           style={{
             background: "transparent",
-            padding: "20px 40px",
+            padding: "16px 24px 0",
             display: "flex",
+            alignItems: "center",
             justifyContent: "space-between",
-            alignItems: "center"
           }}
         >
-          <div
-            onClick={toggleTheme}
-            style={{
-              cursor: "pointer",
-              fontSize: 22,
-              color: themeMode.token.colorTextBase
-            }}
-            title="Перемкнути тему"
-          >
-            {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
-          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div
+              onClick={toggleTheme}
+              style={{ cursor: "pointer", fontSize: 20, color: themeMode.token.colorTextBase }}
+              title="Перемкнути тему"
+            >
+              {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+            </div>
 
-          <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
-            Назад
-          </Button>
+            <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
+              Назад
+            </Button>
+          </div>
         </Header>
 
-        <Content style={{ padding: "10px 20px", maxWidth: "900px", margin: "0 auto" }}>
-          <Title level={3} style={{ textAlign: "center", marginBottom: 30, color: themeMode.token.colorTextBase }}>
+        <Content style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
+          <Title
+            level={3}
+            style={{
+              textAlign: "center",
+              margin: "20px 0 30px",
+              color: themeMode.token.colorTextBase,
+            }}
+          >
             Мої подані проблеми
           </Title>
 
@@ -136,7 +145,10 @@ const IdeasSubmissionPage = () => {
                   <Card
                     hoverable
                     title={
-                      <Title level={4} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>
+                      <Title
+                        level={4}
+                        style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}
+                      >
                         {problem.title || "Без назви"}
                       </Title>
                     }
