@@ -1,5 +1,5 @@
 // Файл: WorkerPage.jsx
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout, Menu, Typography, Button, ConfigProvider, theme,
@@ -27,7 +27,7 @@ const WorkerPage = () => {
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
-  const fetchUserProfile = useCallback(async () => {
+  const fetchUserProfile = async () => {
     try {
       const res = await axios.get(`${API_BASE}/userRoutes/profile`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -51,7 +51,7 @@ const WorkerPage = () => {
     } finally {
       setIsCheckingRole(false);
     }
-  }, [navigate, token]);
+  };
 
   useEffect(() => {
     if (!token) {
@@ -59,14 +59,12 @@ const WorkerPage = () => {
     } else {
       fetchUserProfile();
     }
-  }, [token, navigate, fetchUserProfile]); // ✅ виправлений масив залежностей
+  }, [token]);
 
   useEffect(() => {
     if (!userData?.id || !token) return;
 
-    const socket = io(SOCKET_URL, {
-      transports: ["websocket"],
-    });
+    const socket = io(SOCKET_URL, { transports: ["websocket"] });
 
     socket.on("connect", () => {
       console.log("🟢 WebSocket connected:", socket.id);
@@ -74,10 +72,12 @@ const WorkerPage = () => {
     });
 
     socket.on("notification_all", (data) => {
+      console.log("📢 Global notification:", data);
       setNotifications(prev => [data, ...prev]);
     });
 
     socket.on(`notification_${userData.id}`, (data) => {
+      console.log(`📩 Personal notification for ${userData.id}:`, data);
       setNotifications(prev => [data, ...prev]);
     });
 
@@ -87,11 +87,13 @@ const WorkerPage = () => {
 
     const fetchInitialNotifications = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/notification`, {
+        const res = await axios.get(`${API_BASE}/notifications`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (Array.isArray(res.data)) {
           setNotifications(res.data);
+        } else {
+          console.warn("[initialNotifications] Unexpected:", res.data);
         }
       } catch (err) {
         console.error("[initialNotifications] Error:", err.message || err);
@@ -100,9 +102,7 @@ const WorkerPage = () => {
 
     fetchInitialNotifications();
 
-    return () => {
-      socket.disconnect();
-    };
+    return () => socket.disconnect();
   }, [userData?.id, token]);
 
   const markAllAsRead = async () => {
@@ -110,7 +110,7 @@ const WorkerPage = () => {
     try {
       await Promise.all(
         unread.map(n =>
-          axios.patch(`${API_BASE}/notification/${n.id}/read`, {}, {
+          axios.patch(`${API_BASE}/notifications/${n.id}/read`, {}, {
             headers: { Authorization: `Bearer ${token}` },
           })
         )
