@@ -10,7 +10,7 @@ import {
   Button,
   Tag,
   ConfigProvider,
-  theme,
+  theme
 } from "antd";
 import { useNavigate } from "react-router-dom";
 import { SunOutlined, MoonOutlined } from "@ant-design/icons";
@@ -113,12 +113,13 @@ const IdeasSubmissionPage = () => {
           </div>
         </Header>
 
-        <Content style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
+        <Content style={{ padding: "40px 20px", maxWidth: "900px", margin: "0 auto" }}>
           <Title
             level={3}
             style={{
               textAlign: "center",
-              margin: "20px 0 30px",
+              marginBottom: 30,
+              marginTop: 20,
               color: themeMode.token.colorTextBase,
             }}
           >
