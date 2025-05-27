@@ -1,5 +1,5 @@
 // Файл: WorkerPage.jsx
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Layout, Menu, Typography, Button, ConfigProvider, theme,
@@ -27,7 +27,7 @@ const WorkerPage = () => {
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
-  const fetchUserProfile = useCallback(async () => {
+  const fetchUserProfile = async () => {
     try {
       const res = await axios.get(`${API_BASE}/userRoutes/profile`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -51,7 +51,7 @@ const WorkerPage = () => {
     } finally {
       setIsCheckingRole(false);
     }
-  }, [navigate, token]);
+  };
 
   useEffect(() => {
     if (!token) {
@@ -59,7 +59,7 @@ const WorkerPage = () => {
     } else {
       fetchUserProfile();
     }
-  }, [fetchUserProfile, token, navigate]);
+  }, [token]);
 
   useEffect(() => {
     if (!userData?.id || !token) return;
@@ -70,7 +70,7 @@ const WorkerPage = () => {
 
     socket.on("connect", () => {
       console.log("🟢 WebSocket connected:", socket.id);
-      setNotifications([]); // Очистити початкові
+      setNotifications([]); // Очистити
     });
 
     socket.on("notification_all", (data) => {
@@ -86,6 +86,23 @@ const WorkerPage = () => {
     socket.on("disconnect", () => {
       console.warn("🔴 WebSocket disconnected");
     });
+
+    const fetchInitialNotifications = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/notification`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (Array.isArray(res.data)) {
+          setNotifications(res.data);
+        } else {
+          console.warn("[initialNotifications] Unexpected:", res.data);
+        }
+      } catch (err) {
+        console.error("[initialNotifications] Error:", err.message || err);
+      }
+    };
+
+    fetchInitialNotifications();
 
     return () => {
       socket.disconnect();
