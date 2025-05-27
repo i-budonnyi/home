@@ -11,10 +11,10 @@ import {
   Tag,
   Switch,
   ConfigProvider,
-  theme,
+  theme
 } from "antd";
 import { useNavigate } from "react-router-dom";
-import { MoonOutlined, SunOutlined } from "@ant-design/icons";
+import { SunOutlined, MoonOutlined } from "@ant-design/icons";
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -96,24 +96,26 @@ const IdeasSubmissionPage = () => {
         <Header
           style={{
             background: "transparent",
-            padding: "40px 20px 20px",
-            textAlign: "center",
+            padding: "10px 40px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center"
           }}
         >
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 12 }}>
-            <Title level={3} style={{ margin: 0, color: themeMode.token.colorTextBase }}>
-              Мої подані проблеми
-            </Title>
-            <Switch
-              checked={!isDarkMode}
-              onChange={toggleTheme}
-              checkedChildren={<SunOutlined />}
-              unCheckedChildren={<MoonOutlined />}
-            />
-          </div>
+          <div />
+          <Switch
+            checked={!isDarkMode}
+            onChange={toggleTheme}
+            checkedChildren={<SunOutlined />}
+            unCheckedChildren={<MoonOutlined />}
+          />
         </Header>
 
-        <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
+        <Content style={{ padding: "30px 20px", maxWidth: "900px", margin: "0 auto" }}>
+          <Title level={3} style={{ textAlign: "center", marginBottom: 30 }}>
+            Мої подані проблеми
+          </Title>
+
           {error && (
             <Alert
               message={error}
