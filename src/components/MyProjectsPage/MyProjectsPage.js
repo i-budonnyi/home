@@ -11,8 +11,11 @@ import {
   Tag,
   Input,
   message,
+  ConfigProvider,
+  theme,
 } from "antd";
 import { useNavigate } from "react-router-dom";
+import { SunOutlined, MoonOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
@@ -27,8 +30,9 @@ const MyProjectsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [commentText, setCommentText] = useState({});
-  const navigate = useNavigate();
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
 
+  const navigate = useNavigate();
   const getAuthToken = () => localStorage.getItem("token");
 
   const currentUserId = useMemo(() => {
@@ -41,6 +45,25 @@ const MyProjectsPage = () => {
       return null;
     }
   }, []);
+
+  const toggleTheme = () => {
+    const newTheme = isDarkMode ? "light" : "dark";
+    setIsDarkMode(!isDarkMode);
+    localStorage.setItem("theme", newTheme);
+  };
+
+  const themeMode = {
+    algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+    token: {
+      colorPrimary: "#1E63F2",
+      borderRadius: 12,
+      fontFamily: "Roboto, sans-serif",
+      colorTextBase: isDarkMode ? "#E1E6EB" : "#1C1C1C",
+      colorBgContainer: isDarkMode ? "#1E1E1E" : "#FFFFFF",
+      colorBgLayout: isDarkMode ? "#121212" : "#F4F6F8",
+      colorBorder: isDarkMode ? "#2C313A" : "#DDE1E6",
+    },
+  };
 
   const validateAuthToken = useCallback(() => {
     const token = getAuthToken();
@@ -83,10 +106,8 @@ const MyProjectsPage = () => {
       });
 
       if (response.status === 200) {
-        setIdeas(response.data); // без фільтрації
-        response.data.forEach((idea) => {
-          fetchComments(idea.id, token);
-        });
+        setIdeas(response.data);
+        response.data.forEach((idea) => fetchComments(idea.id, token));
       }
     } catch {
       setError("Не вдалося завантажити ваші ідеї.");
@@ -111,8 +132,7 @@ const MyProjectsPage = () => {
       message.success("✅ Коментар успішно додано.");
       setCommentText((prev) => ({ ...prev, [ideaId]: "" }));
       fetchComments(ideaId, token);
-    } catch (error) {
-      console.error("❌ ПОМИЛКА ДОДАВАННЯ КОМЕНТАРЯ", error.message);
+    } catch {
       message.error("❌ Сталася помилка при додаванні коментаря.");
     }
   };
@@ -134,88 +154,134 @@ const MyProjectsPage = () => {
   }, [fetchUserIdeas]);
 
   return (
-    <Layout style={{ minHeight: "100vh", background: "#f4f6f8" }}>
-      <Header style={{ background: "#003366", textAlign: "center", padding: "15px" }}>
-        <Title style={{ color: "white", fontSize: "24px" }}>Мої подані ідеї</Title>
-      </Header>
+    <ConfigProvider theme={themeMode}>
+      <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
+        <Header
+          style={{
+            background: "transparent",
+            padding: "20px 30px 0",
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+          }}
+        >
+          <div
+            onClick={toggleTheme}
+            style={{ cursor: "pointer", fontSize: 20, color: themeMode.token.colorTextBase }}
+            title="Перемкнути тему"
+          >
+            {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+          </div>
 
-      <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
-        {error && <Alert message={error} type="error" showIcon />}
-        {isLoading ? (
-          <Skeleton active />
-        ) : (
-          <List
-            grid={{ gutter: 20, column: 1 }}
-            dataSource={ideas}
-            renderItem={(idea) => (
-              <List.Item>
-                <Card hoverable title={<Title level={4}>{idea.title}</Title>} style={{ width: "100%" }}>
-                  <Text strong>Автор:</Text>{" "}
-                  {idea.author_first_name || "Невідомий"} {idea.author_last_name || ""}
-                  <br />
-                  <Tag color={
-                    idea.status === "approved"
-                      ? "green"
-                      : idea.status === "pending"
-                      ? "orange"
-                      : idea.status === "applied"
-                      ? "blue"
-                      : "red"
-                  }>
-                    {idea.status?.toUpperCase()}
-                  </Tag>
-                  <br />
-                  <Text>{idea.description || "Без опису"}</Text>
-                  <br />
-                  {idea.status === "applied" ? (
-                    <Tag color="blue" style={{ marginTop: "10px" }}>📨 Заявку вже подано</Tag>
-                  ) : (
-                    <Button
-                      type="primary"
-                      onClick={() => handleSelectIdea(idea)}
-                      style={{ marginTop: "10px" }}
+          <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
+            Назад
+          </Button>
+        </Header>
+
+        <Content style={{ padding: "60px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
+          <Title
+            level={3}
+            style={{ textAlign: "center", marginBottom: 40, color: themeMode.token.colorTextBase }}
+          >
+            Мої подані ідеї
+          </Title>
+
+          {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 20 }} />}
+
+          {isLoading ? (
+            <Skeleton active />
+          ) : (
+            <List
+              grid={{ gutter: 20, column: 1 }}
+              dataSource={ideas}
+              renderItem={(idea) => (
+                <List.Item>
+                  <Card
+                    hoverable
+                    title={
+                      <Title level={4} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>
+                        {idea.title || "Без назви"}
+                      </Title>
+                    }
+                    style={{
+                      width: "100%",
+                      borderRadius: "12px",
+                      background: themeMode.token.colorBgContainer,
+                      boxShadow: isDarkMode
+                        ? "0 4px 12px rgba(0,0,0,0.4)"
+                        : "0 4px 10px rgba(0,0,0,0.1)",
+                    }}
+                    bordered={false}
+                  >
+                    <Text style={{ color: themeMode.token.colorTextBase }}>
+                      {idea.description || "Без опису"}
+                    </Text>
+                    <br />
+                    <Tag
+                      color={
+                        idea.status === "approved"
+                          ? "green"
+                          : idea.status === "pending"
+                          ? "orange"
+                          : idea.status === "applied"
+                          ? "blue"
+                          : "red"
+                      }
+                      style={{ marginTop: 10 }}
                     >
-                      📌 Відкрити заявку
-                    </Button>
-                  )}
-
-                  {comments[idea.id] && (
-                    <>
-                      <List
-                        bordered
-                        style={{ marginTop: "15px" }}
-                        dataSource={comments[idea.id]}
-                        renderItem={(comment) => (
-                          <List.Item>
-                            <Text strong>{formatName(comment)}</Text>: {comment.text}
-                          </List.Item>
-                        )}
-                      />
-                      <TextArea
-                        rows={4}
-                        value={commentText[idea.id] || ""}
-                        onChange={(e) =>
-                          setCommentText((prev) => ({ ...prev, [idea.id]: e.target.value }))
-                        }
-                        placeholder="Напишіть ваш коментар..."
-                        style={{ marginTop: "10px" }}
-                      />
+                      {idea.status?.toUpperCase()}
+                    </Tag>
+                    <br />
+                    {idea.status === "applied" ? (
+                      <Tag color="blue" style={{ marginTop: 10 }}>📨 Заявку вже подано</Tag>
+                    ) : (
                       <Button
                         type="primary"
-                        onClick={() => handleAddComment(idea.id)}
-                        style={{ marginTop: "10px" }}
+                        onClick={() => handleSelectIdea(idea)}
+                        style={{ marginTop: 10 }}
                       >
-                        Додати коментар
+                        📌 Відкрити заявку
                       </Button>
-                    </>
-                  )}
-                </Card>
-              </List.Item>
-            )}
-          />
-        )}
-      </Content>
-    </Layout>
+                    )}
+
+                    {comments[idea.id] && (
+                      <>
+                        <List
+                          bordered
+                          style={{ marginTop: 15 }}
+                          dataSource={comments[idea.id]}
+                          renderItem={(comment) => (
+                            <List.Item>
+                              <Text strong>{formatName(comment)}</Text>: {comment.text}
+                            </List.Item>
+                          )}
+                        />
+                        <TextArea
+                          rows={4}
+                          value={commentText[idea.id] || ""}
+                          onChange={(e) =>
+                            setCommentText((prev) => ({ ...prev, [idea.id]: e.target.value }))
+                          }
+                          placeholder="Напишіть ваш коментар..."
+                          style={{ marginTop: 10 }}
+                        />
+                        <Button
+                          type="primary"
+                          onClick={() => handleAddComment(idea.id)}
+                          style={{ marginTop: 10 }}
+                        >
+                          Додати коментар
+                        </Button>
+                      </>
+                    )}
+                  </Card>
+                </List.Item>
+              )}
+            />
+          )}
+        </Content>
+      </Layout>
+    </ConfigProvider>
   );
 };
 
