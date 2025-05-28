@@ -282,7 +282,7 @@ const BlogPage = () => {
         footer={null}
       >
         <p><b>Посилання:</b> {shareModal.url}</p>
-        <Space wrap style={{ marginTop: 10 }}>
+        <Space wrap style={{ marginTop: 12 }}>
           <Button icon={<CopyOutlined />} onClick={() => {
             navigator.clipboard.writeText(shareModal.url);
             message.success("Скопійовано!");
