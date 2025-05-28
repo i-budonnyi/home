@@ -64,9 +64,7 @@ const BlogPage = () => {
           userLiked: res.data.likedBy?.some(u => u.user_id === res.data.currentUserId),
         }
       }));
-    } catch (err) {
-      console.error("❌ Лайки:", err.message);
-    }
+    } catch {}
   }, []);
 
   const fetchComments = useCallback(async (entry) => {
@@ -75,13 +73,8 @@ const BlogPage = () => {
       const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setCommentsData(prev => ({
-        ...prev,
-        [entry.id]: res.data.comments || []
-      }));
-    } catch (err) {
-      console.error("❌ Коментарі:", err.message);
-    }
+      setCommentsData(prev => ({ ...prev, [entry.id]: res.data.comments || [] }));
+    } catch {}
   }, []);
 
   const fetchAllEntries = useCallback(async () => {
@@ -117,8 +110,7 @@ const BlogPage = () => {
         fetchLikes(entry);
         fetchComments(entry);
       });
-    } catch (err) {
-      console.error("❌ Дані:", err.message);
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -135,9 +127,7 @@ const BlogPage = () => {
         return acc;
       }, {});
       setSubscribedEntries(map);
-    } catch (err) {
-      console.error("❌ Підписки:", err.message);
-    }
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -146,84 +136,34 @@ const BlogPage = () => {
   }, [fetchAllEntries, fetchSubscriptions]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const type = params.get("entryType");
-    const id = params.get("id");
-    if (type && id) {
-      setFilteredType(type);
-      setTimeout(() => {
-        const el = document.getElementById(`entry-${type}-${id}`);
-        if (el) el.scrollIntoView({ behavior: "smooth" });
-      }, 500);
-    }
-  }, [entries]);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     if (!token) return;
-
     const socket = io(SOCKET_URL, { transports: ["websocket"] });
 
     socket.on("connect", () => {
-      console.log("🟢 WebSocket connected:", socket.id);
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
         socket.emit("register", payload.user_id || payload.id);
-      } catch {
-        console.warn("❗ Неможливо витягти user_id з токена");
-      }
+      } catch {}
     });
 
     socket.on("entry_created", (entry) => {
-      console.log("📥 Нова ідея/блог:", entry);
-      const entryWithDefaults = {
+      const fullEntry = {
         ...entry,
         entryType: entry.type,
-        authorname: entry.author_name || "Невідомий",
+        authorname: entry.author_name || "Невідомий"
       };
-      setEntries(prev => [entryWithDefaults, ...prev]);
-      fetchLikes(entryWithDefaults);
-      fetchComments(entryWithDefaults);
+      setEntries(prev => [fullEntry, ...prev]);
+      fetchLikes(fullEntry);
+      fetchComments(fullEntry);
     });
 
     socket.on("new_comment", (data) => {
-      console.log("💬 Новий коментар:", data);
       fetchComments({ id: data.entry_id, entryType: data.entry_type });
-    });
-
-    socket.on("notification", (data) => {
-      console.log("🔔 Сповіщення:", data.message);
     });
 
     return () => socket.disconnect();
   }, [fetchLikes, fetchComments]);
-
-  const toggleLike = async (entry) => {
-    try {
-      const token = getAuthToken();
-      await axios.post(`${API_LIKE_URL}/toggle-like`, {
-        entry_id: entry.id,
-        entry_type: entry.entryType
-      }, { headers: { Authorization: `Bearer ${token}` } });
-      fetchLikes(entry);
-    } catch {
-      message.error("Не вдалося змінити лайк.");
-    }
-  };
-
-  const handleSubscribe = async (entry) => {
-    try {
-      const token = getAuthToken();
-      const isSub = subscribedEntries[entry.id];
-      const method = isSub ? "delete" : "post";
-      const url = `${API_SUBSCRIBE_URL}/${isSub ? "unsubscribe" : "subscribe"}`;
-      await axios({ method, url, data: { entry_id: entry.id, entry_type: entry.entryType }, headers: { Authorization: `Bearer ${token}` } });
-      setSubscribedEntries(prev => ({ ...prev, [entry.id]: !isSub }));
-      message.success(isSub ? "Відписано" : "Підписано");
-    } catch {
-      message.error("Не вдалося змінити підписку.");
-    }
-  };
 
   const handleCommentSubmit = async (entry) => {
     const comment = newComment[entry.id]?.trim();
@@ -242,116 +182,45 @@ const BlogPage = () => {
     }
   };
 
-  const translateStatus = (status) =>
-    STATUS_TRANSLATION[status] || decodeURIComponent(status || "").replace(/_/g, " ");
-
-  const filteredEntries = filteredType === "all"
-    ? entries
-    : entries.filter(e => e.entryType === filteredType);
-
-  const handleShare = (entry) => {
-    const url = `${window.location.origin}/blog?entryType=${entry.entryType}&id=${entry.id}`;
-    setShareModal({ visible: true, url });
-    navigator.clipboard.writeText(url).then(() => {
-      message.success("Посилання скопійовано в буфер");
-    });
-  };
-
   return (
     <Content style={{ padding: 20, maxWidth: 900, margin: "80px auto 0" }}>
-      <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 20 }}>
-        <Button href="/worker">← Назад</Button>
-      </div>
-
+      <Button onClick={() => setFilteredType("all")}>Показати всі</Button>
+      <Space style={{ marginBottom: 20, marginLeft: 20 }}>
+        {['blog', 'idea', 'problem'].map(type => (
+          <Button
+            key={type}
+            type={filteredType === type ? "primary" : "default"}
+            onClick={() => setFilteredType(type)}
+          >
+            {type.toUpperCase()}
+          </Button>
+        ))}
+      </Space>
       {isLoading ? <Skeleton active /> : (
-        <>
-          <Space style={{ marginBottom: 20 }}>
-            {["all", "blog", "idea", "problem"].map((type) => (
-              <Button
-                key={type}
-                type={filteredType === type ? "primary" : "default"}
-                onClick={() => setFilteredType(type)}
-              >
-                {type === "all" ? "Усі" : type}
-              </Button>
-            ))}
-          </Space>
-
-          <Space direction="vertical" style={{ width: "100%" }}>
-            {filteredEntries.map(entry => (
-              <Card key={entry.id} id={`entry-${entry.entryType}-${entry.id}`}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <Title level={4} style={{ cursor: "pointer" }} onClick={() => setSelectedEntry(entry)}>
-                    {entry.title}
-                  </Title>
-                  <Button icon={<UserAddOutlined />} onClick={() => handleSubscribe(entry)}>
-                    {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
-                  </Button>
-                </div>
-
-                <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
-                <Text strong>Автор: {entry.authorname}</Text>
-                {entry.status && (
-                  <p style={{ marginTop: 8 }}><b>Статус:</b> {translateStatus(entry.status)}</p>
-                )}
-
+        <Space direction="vertical" style={{ width: "100%" }}>
+          {entries
+            .filter(e => filteredType === "all" || e.entryType === filteredType)
+            .map(entry => (
+              <Card key={entry.id}>
+                <Title level={4}>{entry.title}</Title>
+                <Tag color={getTagColor(entry.entryType)}>{entry.entryType}</Tag>
+                <Text>{entry.description}</Text>
                 <Divider />
-                <Text>{entry.description || "Без опису"}</Text>
-
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
-                  <Space>
-                    <Button type="text" onClick={() => toggleLike(entry)}>
-                      {likesData[entry.id]?.userLiked ? <HeartFilled style={{ color: "red" }} /> : <HeartOutlined />}
-                    </Button>
-                    <Text>{likesData[entry.id]?.likesCount || 0}</Text>
-                  </Space>
-                  <Button icon={<ShareAltOutlined />} onClick={() => handleShare(entry)}>Поділитися</Button>
-                </div>
-
-                <Divider />
-                <Title level={5}>Коментарі:</Title>
-                {(commentsData[entry.id] || []).map(comment => (
-                  <Card key={comment.id} size="small" style={{ marginBottom: 8 }}>
-                    <Text strong>{`${comment.author_first_name || ""} ${comment.author_last_name || ""}`}</Text>
-                    <p>{comment.text}</p>
-                  </Card>
-                ))}
                 <TextArea
                   value={newComment[entry.id] || ""}
-                  onChange={(e) => setNewComment({ ...newComment, [entry.id]: e.target.value })}
-                  placeholder="Ваш коментар..."
+                  onChange={(e) => setNewComment(prev => ({ ...prev, [entry.id]: e.target.value }))}
                 />
-                <Button icon={<SendOutlined />} type="primary" style={{ marginTop: 8 }} onClick={() => handleCommentSubmit(entry)}>
+                <Button icon={<SendOutlined />} type="primary" onClick={() => handleCommentSubmit(entry)}>
                   Надіслати
                 </Button>
+                <Divider />
+                {(commentsData[entry.id] || []).map((c, i) => (
+                  <p key={i}><Text strong>{c.author_first_name || "Анонім"}</Text>: {c.text}</p>
+                ))}
               </Card>
             ))}
-          </Space>
-        </>
-      )}
-
-      <Modal title="Поділитися постом" open={shareModal.visible} onCancel={() => setShareModal({ visible: false, url: "" })} footer={null}>
-        <p><b>Посилання:</b> {shareModal.url}</p>
-        <Space wrap style={{ marginTop: 10 }}>
-          <Button icon={<CopyOutlined />} onClick={() => {
-            navigator.clipboard.writeText(shareModal.url);
-            message.success("Скопійовано!");
-          }}>
-            Копіювати
-          </Button>
-          <Button href={`https://t.me/share/url?url=${encodeURIComponent(shareModal.url)}`} target="_blank">Telegram</Button>
-          <Button href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareModal.url)}`} target="_blank">Facebook</Button>
-          <Button href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareModal.url)}`} target="_blank">Twitter</Button>
         </Space>
-      </Modal>
-
-      <Modal title={selectedEntry?.title} open={!!selectedEntry} onCancel={() => setSelectedEntry(null)} footer={null}>
-        <Tag color={getTagColor(selectedEntry?.entryType)}>{selectedEntry?.entryType?.toUpperCase()}</Tag>
-        <p><b>Автор:</b> {selectedEntry?.authorname}</p>
-        {selectedEntry?.status && <p><b>Статус:</b> {translateStatus(selectedEntry.status)}</p>}
-        <Divider />
-        <p>{selectedEntry?.description || "Без опису"}</p>
-      </Modal>
+      )}
     </Content>
   );
 };
