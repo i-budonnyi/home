@@ -6,16 +6,17 @@ import {
 import {
   HeartOutlined, HeartFilled,
   UserAddOutlined, SendOutlined,
-  ShareAltOutlined,
-  CopyOutlined
+  ShareAltOutlined, CopyOutlined
 } from "@ant-design/icons";
 import axios from "axios";
+import io from "socket.io-client";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
+const SOCKET_URL = "https://backend-avtologistika.onrender.com";
 const API_BLOG_URL = `${API_BASE}/blogRoutes`;
 const API_PROBLEMS_URL = `${API_BASE}/problems`;
 const API_LIKE_URL = `${API_BASE}/likeRoutes`;
@@ -112,7 +113,6 @@ const BlogPage = () => {
       );
 
       setEntries(all);
-
       all.forEach(entry => {
         fetchLikes(entry);
         fetchComments(entry);
@@ -157,6 +157,46 @@ const BlogPage = () => {
       }, 500);
     }
   }, [entries]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const socket = io(SOCKET_URL, { transports: ["websocket"] });
+
+    socket.on("connect", () => {
+      console.log("🟢 WebSocket connected:", socket.id);
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        socket.emit("register", payload.user_id || payload.id);
+      } catch {
+        console.warn("❗ Неможливо витягти user_id з токена");
+      }
+    });
+
+    socket.on("entry_created", (entry) => {
+      console.log("📥 Нова ідея/блог:", entry);
+      const entryWithDefaults = {
+        ...entry,
+        entryType: entry.type,
+        authorname: entry.author_name || "Невідомий",
+      };
+      setEntries(prev => [entryWithDefaults, ...prev]);
+      fetchLikes(entryWithDefaults);
+      fetchComments(entryWithDefaults);
+    });
+
+    socket.on("new_comment", (data) => {
+      console.log("💬 Новий коментар:", data);
+      fetchComments({ id: data.entry_id, entryType: data.entry_type });
+    });
+
+    socket.on("notification", (data) => {
+      console.log("🔔 Сповіщення:", data.message);
+    });
+
+    return () => socket.disconnect();
+  }, [fetchLikes, fetchComments]);
 
   const toggleLike = async (entry) => {
     try {
@@ -241,11 +281,7 @@ const BlogPage = () => {
             {filteredEntries.map(entry => (
               <Card key={entry.id} id={`entry-${entry.entryType}-${entry.id}`}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <Title
-                    level={4}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => setSelectedEntry(entry)}
-                  >
+                  <Title level={4} style={{ cursor: "pointer" }} onClick={() => setSelectedEntry(entry)}>
                     {entry.title}
                   </Title>
                   <Button icon={<UserAddOutlined />} onClick={() => handleSubscribe(entry)}>
@@ -256,9 +292,7 @@ const BlogPage = () => {
                 <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
                 <Text strong>Автор: {entry.authorname}</Text>
                 {entry.status && (
-                  <p style={{ marginTop: 8 }}>
-                    <b>Статус:</b> {translateStatus(entry.status)}
-                  </p>
+                  <p style={{ marginTop: 8 }}><b>Статус:</b> {translateStatus(entry.status)}</p>
                 )}
 
                 <Divider />
@@ -271,9 +305,7 @@ const BlogPage = () => {
                     </Button>
                     <Text>{likesData[entry.id]?.likesCount || 0}</Text>
                   </Space>
-                  <Button icon={<ShareAltOutlined />} onClick={() => handleShare(entry)}>
-                    Поділитися
-                  </Button>
+                  <Button icon={<ShareAltOutlined />} onClick={() => handleShare(entry)}>Поділитися</Button>
                 </div>
 
                 <Divider />
@@ -289,12 +321,7 @@ const BlogPage = () => {
                   onChange={(e) => setNewComment({ ...newComment, [entry.id]: e.target.value })}
                   placeholder="Ваш коментар..."
                 />
-                <Button
-                  icon={<SendOutlined />}
-                  type="primary"
-                  style={{ marginTop: 8 }}
-                  onClick={() => handleCommentSubmit(entry)}
-                >
+                <Button icon={<SendOutlined />} type="primary" style={{ marginTop: 8 }} onClick={() => handleCommentSubmit(entry)}>
                   Надіслати
                 </Button>
               </Card>
@@ -303,12 +330,7 @@ const BlogPage = () => {
         </>
       )}
 
-      <Modal
-        title="Поділитися постом"
-        open={shareModal.visible}
-        onCancel={() => setShareModal({ visible: false, url: "" })}
-        footer={null}
-      >
+      <Modal title="Поділитися постом" open={shareModal.visible} onCancel={() => setShareModal({ visible: false, url: "" })} footer={null}>
         <p><b>Посилання:</b> {shareModal.url}</p>
         <Space wrap style={{ marginTop: 10 }}>
           <Button icon={<CopyOutlined />} onClick={() => {
@@ -317,29 +339,16 @@ const BlogPage = () => {
           }}>
             Копіювати
           </Button>
-          <Button href={`https://t.me/share/url?url=${encodeURIComponent(shareModal.url)}`} target="_blank">
-            Telegram
-          </Button>
-          <Button href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareModal.url)}`} target="_blank">
-            Facebook
-          </Button>
-          <Button href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareModal.url)}`} target="_blank">
-            Twitter
-          </Button>
+          <Button href={`https://t.me/share/url?url=${encodeURIComponent(shareModal.url)}`} target="_blank">Telegram</Button>
+          <Button href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareModal.url)}`} target="_blank">Facebook</Button>
+          <Button href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareModal.url)}`} target="_blank">Twitter</Button>
         </Space>
       </Modal>
 
-      <Modal
-        title={selectedEntry?.title}
-        open={!!selectedEntry}
-        onCancel={() => setSelectedEntry(null)}
-        footer={null}
-      >
+      <Modal title={selectedEntry?.title} open={!!selectedEntry} onCancel={() => setSelectedEntry(null)} footer={null}>
         <Tag color={getTagColor(selectedEntry?.entryType)}>{selectedEntry?.entryType?.toUpperCase()}</Tag>
         <p><b>Автор:</b> {selectedEntry?.authorname}</p>
-        {selectedEntry?.status && (
-          <p><b>Статус:</b> {translateStatus(selectedEntry.status)}</p>
-        )}
+        {selectedEntry?.status && <p><b>Статус:</b> {translateStatus(selectedEntry.status)}</p>}
         <Divider />
         <p>{selectedEntry?.description || "Без опису"}</p>
       </Modal>
