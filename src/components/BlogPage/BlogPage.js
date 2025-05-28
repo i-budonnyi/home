@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Layout,
   Card,
@@ -12,6 +12,7 @@ import {
   message,
   Modal,
   Tooltip,
+  Drawer,
 } from "antd";
 import {
   HeartOutlined,
@@ -53,28 +54,12 @@ const BlogPage = () => {
   const [filteredType, setFilteredType] = useState("all");
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [shareLink, setShareLink] = useState("");
-
-  useEffect(() => {
-    fetchUserId();
-    fetchAllEntries();
-    fetchSubscriptions();
-
-    const socket = io(SOCKET_URL);
-    socket.on("new_entry", (entry) => {
-      setEntries((prev) => [entry, ...prev]);
-    });
-    socket.on("new_comment", ({ entryId, comment }) => {
-      setCommentsData((prev) => ({
-        ...prev,
-        [entryId]: [...(prev[entryId] || []), comment],
-      }));
-    });
-    return () => socket.disconnect();
-  }, []);
+  const [selectedEntry, setSelectedEntry] = useState(null);
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   const getAuthToken = () => localStorage.getItem("token");
 
-  const fetchUserId = () => {
+  const fetchUserId = useCallback(() => {
     try {
       const token = getAuthToken();
       if (!token) return;
@@ -84,9 +69,9 @@ const BlogPage = () => {
     } catch (error) {
       console.error("❌ ПОМИЛКА отримання ID користувача:", error.message);
     }
-  };
+  }, []);
 
-  const fetchAllEntries = async () => {
+  const fetchAllEntries = useCallback(async () => {
     try {
       const [blogsRes, problemsRes] = await Promise.all([
         axios.get(`${API_BLOG_URL}/entries`),
@@ -113,7 +98,38 @@ const BlogPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]);
+
+  const fetchSubscriptions = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`);
+      const subscriptions = response.data.subscriptions.reduce((acc, sub) => {
+        acc[sub.blog_id || sub.idea_id || sub.problem_id] = true;
+        return acc;
+      }, {});
+      setSubscribedEntries(subscriptions);
+    } catch (err) {
+      console.error("❌ Помилка підписок:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUserId();
+    fetchAllEntries();
+    fetchSubscriptions();
+
+    const socket = io(SOCKET_URL);
+    socket.on("new_entry", (entry) => {
+      setEntries((prev) => [entry, ...prev]);
+    });
+    socket.on("new_comment", ({ entryId, comment }) => {
+      setCommentsData((prev) => ({
+        ...prev,
+        [entryId]: [...(prev[entryId] || []), comment],
+      }));
+    });
+    return () => socket.disconnect();
+  }, [fetchUserId, fetchAllEntries, fetchSubscriptions]);
 
   const fetchLikes = async (entry) => {
     try {
@@ -141,19 +157,6 @@ const BlogPage = () => {
     } catch (err) {
       console.error(`❌ Помилка лайкування:`, err);
       message.error("Не вдалося змінити лайк.");
-    }
-  };
-
-  const fetchSubscriptions = async () => {
-    try {
-      const response = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`);
-      const subscriptions = response.data.subscriptions.reduce((acc, sub) => {
-        acc[sub.blog_id || sub.idea_id || sub.problem_id] = true;
-        return acc;
-      }, {});
-      setSubscribedEntries(subscriptions);
-    } catch (err) {
-      console.error("❌ Помилка підписок:", err);
     }
   };
 
@@ -222,6 +225,11 @@ const BlogPage = () => {
     } catch {
       message.error("Не вдалося скопіювати.");
     }
+  };
+
+  const openDrawer = (entry) => {
+    setSelectedEntry(entry);
+    setDrawerVisible(true);
   };
 
   const renderShareModal = () => (
@@ -304,97 +312,88 @@ const BlogPage = () => {
 
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
             {filteredEntries.map((entry) => (
-              <Card key={entry.id} hoverable style={{ borderRadius: 10 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <Title level={4} style={{ margin: 0 }}>{entry.title}</Title>
-                  <Button
-                    type="primary"
-                    icon={<UserAddOutlined />}
-                    onClick={() => handleSubscribe(entry)}
-                  >
-                    {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
-                  </Button>
-                </div>
+              <Card key={entry.id} hoverable style={{ borderRadius: 10 }} onClick={() => openDrawer(entry)}>
+                <Title level={4} style={{ marginBottom: 0 }}>{entry.title}</Title>
+                <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
+              </Card>
+            ))}
+          </Space>
+          {renderShareModal()}
 
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-                  <Tag color={getTagColor(entry.entryType)}>
-                    {entry.entryType.toUpperCase()}
-                  </Tag>
-                  <Text strong style={{ color: "#555" }}>Автор: {entry.authorname || "Невідомий"}</Text>
-                </div>
+          <Drawer
+            title={selectedEntry?.title}
+            open={drawerVisible}
+            onClose={() => setDrawerVisible(false)}
+            width={500}
+          >
+            {selectedEntry && (
+              <>
+                <Tag color={getTagColor(selectedEntry.entryType)}>{selectedEntry.entryType.toUpperCase()}</Tag>
+                <Text strong style={{ display: "block", marginBottom: 12 }}>
+                  Автор: {selectedEntry.authorname || "Невідомий"}
+                </Text>
+                <Text>{selectedEntry.description || "Без опису"}</Text>
 
-                <Divider style={{ margin: "8px 0" }} />
-                <Text>{entry.description || "Без опису"}</Text>
-
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+                <Divider />
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <Space>
-                    <Button type="text" onClick={() => toggleLike(entry)}>
-                      {likesData[entry.id]?.userLiked ? (
+                    <Button type="text" onClick={() => toggleLike(selectedEntry)}>
+                      {likesData[selectedEntry.id]?.userLiked ? (
                         <HeartFilled style={{ color: "red" }} />
                       ) : (
                         <HeartOutlined />
                       )}
                     </Button>
-                    <Text>{likesData[entry.id]?.likesCount || 0} лайк(ів)</Text>
+                    <Text>{likesData[selectedEntry.id]?.likesCount || 0} лайк(ів)</Text>
                   </Space>
-                  <Button type="text" onClick={() => handleShare(entry)} icon={<ShareAltOutlined />} />
+                  <Button type="text" onClick={() => handleShare(selectedEntry)} icon={<ShareAltOutlined />} />
                 </div>
 
                 <Divider />
+                <Title level={5}>Коментарі:</Title>
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  {commentsData[selectedEntry.id]?.length ? (
+                    commentsData[selectedEntry.id].map((comment) => (
+                      <Card
+                        key={comment.id}
+                        size="small"
+                        style={{ backgroundColor: "#fafafa", border: "1px solid #eee" }}
+                      >
+                        <Text strong>{comment.authorName || "Анонім"}</Text>
+                        <br />
+                        <Text type="secondary" style={{ fontSize: "12px" }}>
+                          {new Date(comment.createdAt).toLocaleString("uk-UA")}
+                        </Text>
+                        <br />
+                        <Text>{comment.text}</Text>
+                      </Card>
+                    ))
+                  ) : (
+                    <Text type="secondary">Коментарів ще немає.</Text>
+                  )}
+                </Space>
 
-                <div style={{ marginBottom: "16px" }}>
-                  <Title level={5}>Коментарі:</Title>
-                  <Space direction="vertical" style={{ width: "100%" }}>
-                    {commentsData[entry.id]?.length ? (
-                      commentsData[entry.id].map((comment) => (
-                        <Card
-                          key={comment.id}
-                          size="small"
-                          style={{
-                            backgroundColor: "#fafafa",
-                            border: "1px solid #eee",
-                            borderRadius: "6px",
-                            padding: "12px",
-                          }}
-                        >
-                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                            <Text strong>{comment.authorName || "Анонім"}</Text>
-                            <Text type="secondary" style={{ fontSize: "12px" }}>
-                              {new Date(comment.createdAt).toLocaleString("uk-UA")}
-                            </Text>
-                          </div>
-                          <Text>{comment.text}</Text>
-                        </Card>
-                      ))
-                    ) : (
-                      <Text type="secondary">Коментарів ще немає.</Text>
-                    )}
-                  </Space>
-                </div>
-
-                <div style={{ marginTop: "12px" }}>
-                  <Text strong>Додати коментар:</Text>
-                  <TextArea
-                    rows={2}
-                    value={newComment[entry.id] || ""}
-                    onChange={(e) =>
-                      setNewComment({ ...newComment, [entry.id]: e.target.value })
-                    }
-                    placeholder="Напишіть коментар..."
-                    style={{ marginTop: "8px", marginBottom: "8px" }}
-                  />
-                  <Button
-                    type="primary"
-                    icon={<SendOutlined />}
-                    onClick={() => handleCommentSubmit(entry)}
-                  >
-                    Відправити
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </Space>
-          {renderShareModal()}
+                <Divider />
+                <Text strong>Додати коментар:</Text>
+                <TextArea
+                  rows={2}
+                  value={newComment[selectedEntry.id] || ""}
+                  onChange={(e) =>
+                    setNewComment({ ...newComment, [selectedEntry.id]: e.target.value })
+                  }
+                  placeholder="Напишіть коментар..."
+                  style={{ marginTop: "8px", marginBottom: "8px" }}
+                />
+                <Button
+                  type="primary"
+                  icon={<SendOutlined />}
+                  onClick={() => handleCommentSubmit(selectedEntry)}
+                >
+                  Відправити
+                </Button>
+              </>
+            )}
+          </Drawer>
         </>
       )}
     </Content>
