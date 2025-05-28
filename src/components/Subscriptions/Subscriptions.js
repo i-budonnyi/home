@@ -95,30 +95,24 @@ const Subscriptions = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
-        {/* 🔻 Нижче перемикач і кнопка Назад */}
-        <Header
-          style={{
-            background: "transparent",
-            padding: "16px 24px 0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-start",
-            gap: 16,
-          }}
-        >
-          <div
-            onClick={toggleTheme}
-            style={{ cursor: "pointer", fontSize: 20, color: themeMode.token.colorTextBase }}
-            title="Перемкнути тему"
-          >
-            {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
-          </div>
-          <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
-            Назад
-          </Button>
-        </Header>
+        <Header style={{ background: "transparent", padding: "0 24px" }} />
 
-        <Content style={{ padding: "80px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
+        <Content style={{ padding: "60px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
+          {/* 🔽 Перемикач теми і Назад */}
+          <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 24 }}>
+            <div
+              onClick={toggleTheme}
+              style={{ cursor: "pointer", fontSize: 20, color: themeMode.token.colorTextBase }}
+              title="Перемкнути тему"
+            >
+              {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+            </div>
+            <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
+              Назад
+            </Button>
+          </div>
+
+          {/* Заголовок */}
           <Title
             level={3}
             style={{
