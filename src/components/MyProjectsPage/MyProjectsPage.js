@@ -156,29 +156,30 @@ const MyProjectsPage = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
-        <Header
-          style={{
-            background: "transparent",
-            padding: "20px 30px 0",
-            display: "flex",
-            alignItems: "center",
-            gap: 16,
-          }}
-        >
+        <Header style={{ background: "transparent", padding: "0" }} />
+        <Content style={{ padding: "40px 20px", maxWidth: "900px", margin: "0 auto" }}>
           <div
-            onClick={toggleTheme}
-            style={{ cursor: "pointer", fontSize: 20, color: themeMode.token.colorTextBase }}
-            title="Перемкнути тему"
+            style={{
+              display: "flex",
+              justifyContent: "flex-start",
+              alignItems: "center",
+              gap: 16,
+              marginBottom: 30,
+            }}
           >
-            {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+            <div
+              onClick={toggleTheme}
+              style={{ cursor: "pointer", fontSize: 20, color: themeMode.token.colorTextBase }}
+              title="Перемкнути тему"
+            >
+              {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
+            </div>
+
+            <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
+              Назад
+            </Button>
           </div>
 
-          <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
-            Назад
-          </Button>
-        </Header>
-
-        <Content style={{ padding: "60px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
           <Title
             level={3}
             style={{ textAlign: "center", marginBottom: 40, color: themeMode.token.colorTextBase }}
