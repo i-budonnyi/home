@@ -68,16 +68,11 @@ const WorkerPage = () => {
 
     socket.on("connect", () => {
       console.log("🟢 WebSocket connected:", socket.id);
-      setNotifications([]);
+      socket.emit("register", userData.id); // 👈 обов'язково зареєструвати користувача
     });
 
-    socket.on("notification_all", (data) => {
-      console.log("📢 Global notification:", data);
-      setNotifications(prev => [data, ...prev]);
-    });
-
-    socket.on(`notification_${userData.id}`, (data) => {
-      console.log(`📩 Personal notification for ${userData.id}:`, data);
+    socket.on("notification", (data) => {
+      console.log("🔔 Notification received:", data);
       setNotifications(prev => [data, ...prev]);
     });
 
