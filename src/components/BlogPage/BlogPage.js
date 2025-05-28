@@ -49,8 +49,6 @@ const BlogPage = () => {
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
   const [filteredType, setFilteredType] = useState("all");
-  const [shareModal, setShareModal] = useState({ visible: false, url: "" });
-  const [selectedEntry, setSelectedEntry] = useState(null);
 
   const getAuthToken = () => localStorage.getItem("token");
 

@@ -59,26 +59,47 @@ const Header = () => {
   if (!isLoaded) return null;
 
   return (
-    <header style={{ ...headerStyle, color: textColor }}>
-      <div style={{ ...leftStyle, color: textColor }} onClick={() => navigate('/')}>
-        Avtologistika
-      </div>
-      <div style={rightStyle}>
-        {userName ? (
-          <>
-            <span style={{ ...nameStyle, color: textColor }} onClick={() => navigate('/worker')}>
-              {userName}
-            </span>
-            <button style={{ ...linkStyle, color: textColor }} onClick={handleLogout}>Вийти</button>
-          </>
-        ) : (
-          <>
-            <button style={{ ...linkStyle, color: textColor }} onClick={() => navigate('/login')}>Вхід</button>
-            <button style={{ ...linkStyle, color: textColor }} onClick={() => navigate('/register')}>Реєстрація</button>
-          </>
-        )}
-      </div>
-    </header>
+    <>
+      <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@700&display=swap" rel="stylesheet" />
+      <header style={{ ...headerStyle, color: textColor }}>
+        <div
+          style={{ ...leftStyle, color: textColor, fontFamily: 'Roboto Slab, serif' }}
+          onClick={() => navigate('/')}
+          className="logo-text"
+        >
+          Avtologistika
+        </div>
+        <div style={rightStyle}>
+          {userName ? (
+            <>
+              <span style={{ ...nameStyle, color: textColor }} onClick={() => navigate('/worker')}>
+                {userName}
+              </span>
+              <button style={{ ...linkStyle, color: textColor }} onClick={handleLogout}>Вийти</button>
+            </>
+          ) : (
+            <>
+              <button style={{ ...linkStyle, color: textColor }} onClick={() => navigate('/login')}>Вхід</button>
+              <button style={{ ...linkStyle, color: textColor }} onClick={() => navigate('/register')}>Реєстрація</button>
+            </>
+          )}
+        </div>
+      </header>
+      <style>
+        {`
+          .logo-text {
+            animation: fadeInLogo 1s ease-in-out;
+            font-weight: bold;
+            font-size: 20px;
+          }
+
+          @keyframes fadeInLogo {
+            0% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+        `}
+      </style>
+    </>
   );
 };
 
