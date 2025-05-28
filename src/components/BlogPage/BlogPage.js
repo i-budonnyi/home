@@ -255,7 +255,7 @@ const BlogPage = () => {
                 <Divider />
                 <Title level={5}>Коментарі:</Title>
                 {(commentsData[entry.id] || []).map((comment, i) => (
-                  <p key={i}><Text strong>{comment.author_first_name || "Анонім"}:</Text> {comment.text}</p>
+                  <p key={i}><Text strong>{comment.author_first_name || "Анонім"}:</Text> {comment.comment}</p>
                 ))}
                 <TextArea
                   value={newComment[entry.id] || ""}
@@ -282,7 +282,7 @@ const BlogPage = () => {
         footer={null}
       >
         <p><b>Посилання:</b> {shareModal.url}</p>
-        <Space wrap style={{ marginTop: 12 }}>
+        <Space wrap style={{ marginTop: 10 }}>
           <Button icon={<CopyOutlined />} onClick={() => {
             navigator.clipboard.writeText(shareModal.url);
             message.success("Скопійовано!");
