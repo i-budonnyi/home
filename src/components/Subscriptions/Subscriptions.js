@@ -8,20 +8,19 @@ import {
   Skeleton,
   Alert,
   Tag,
-  Button,
   message,
+  Button,
   ConfigProvider,
-  theme,
+  theme
 } from "antd";
 import { useNavigate } from "react-router-dom";
-import { io } from "socket.io-client";
-import { MoonOutlined, SunOutlined } from "@ant-design/icons";
+import { SunOutlined, MoonOutlined } from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 
 const API_SUBSCRIPTIONS_URL = "https://backend-avtologistika.onrender.com/api/subscriptionRoutes/user-subscriptions";
-const SOCKET_URL = "https://backend-avtologistika.onrender.com";
+const API_UPDATE_STATUS_URL = "https://backend-avtologistika.onrender.com/api/statusRoutes/update-status"; // замість AMBASSADOR_API
 
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -62,29 +61,6 @@ const Subscriptions = () => {
 
   useEffect(() => {
     fetchUserSubscriptions();
-
-    const socket = io(SOCKET_URL, {
-      transports: ["websocket"],
-      auth: { token: getAuthToken() }
-    });
-
-    socket.on("connect", () => {
-      console.log("🧠 WebSocket підключено:", socket.id);
-    });
-
-    socket.on("subscription_update", (data) => {
-      console.log("📬 Отримано оновлення підписки:", data);
-      message.info("🔔 Змінилась підписка на ідею");
-      fetchUserSubscriptions();
-    });
-
-    socket.on("disconnect", () => {
-      console.warn("📴 Вебсокет відключено");
-    });
-
-    return () => {
-      if (socket) socket.disconnect();
-    };
   }, [fetchUserSubscriptions]);
 
   const getStatusColor = (status) => {
@@ -101,8 +77,8 @@ const Subscriptions = () => {
     algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
     token: {
       colorPrimary: "#1E63F2",
-      fontFamily: "Roboto, sans-serif",
       borderRadius: 12,
+      fontFamily: "Roboto, sans-serif",
       colorTextBase: isDarkMode ? "#E1E6EB" : "#1C1C1C",
       colorBgContainer: isDarkMode ? "#1E1E1E" : "#FFFFFF",
       colorBgLayout: isDarkMode ? "#121212" : "#F4F6F8",
@@ -143,14 +119,14 @@ const Subscriptions = () => {
             style={{
               textAlign: "center",
               marginBottom: 40,
-              marginTop: 0,
               color: themeMode.token.colorTextBase,
             }}
           >
             Мої підписки
           </Title>
 
-          {error && <Alert message={error} type="error" showIcon />}
+          {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 20 }} />}
+
           {isLoading ? (
             <Skeleton active />
           ) : (
