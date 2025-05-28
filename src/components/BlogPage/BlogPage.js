@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Layout, Card, Space, Typography, Skeleton, Button,
-  Tag, Input, Divider, message
+  Tag, Input, Divider, message, Modal
 } from "antd";
 import {
   HeartOutlined, HeartFilled,
-  UserAddOutlined, SendOutlined
+  UserAddOutlined, SendOutlined,
+  ShareAltOutlined, CopyOutlined
 } from "@ant-design/icons";
 import axios from "axios";
 import io from "socket.io-client";
@@ -39,6 +40,8 @@ const BlogPage = () => {
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
   const [filteredType, setFilteredType] = useState("all");
+  const [selectedEntry, setSelectedEntry] = useState(null);
+  const [shareModal, setShareModal] = useState({ visible: false, url: "" });
 
   const getAuthToken = () => localStorage.getItem("token");
 
@@ -197,6 +200,14 @@ const BlogPage = () => {
     }
   };
 
+  const handleShare = (entry) => {
+    const url = `${window.location.origin}/blog?entryType=${entry.entryType}&id=${entry.id}`;
+    setShareModal({ visible: true, url });
+    navigator.clipboard.writeText(url).then(() => {
+      message.success("Посилання скопійовано в буфер");
+    });
+  };
+
   return (
     <Content style={{ padding: 20, maxWidth: 900, margin: "80px auto 0" }}>
       <Button onClick={() => setFilteredType("all")}>Показати всі</Button>
@@ -218,7 +229,9 @@ const BlogPage = () => {
             .map(entry => (
               <Card key={entry.id}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <Title level={4}>{entry.title}</Title>
+                  <Title level={4} onClick={() => setSelectedEntry(entry)} style={{ cursor: "pointer" }}>
+                    {entry.title}
+                  </Title>
                   <Button icon={<UserAddOutlined />} onClick={() => handleSubscribe(entry)}>
                     {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
                   </Button>
@@ -232,6 +245,9 @@ const BlogPage = () => {
                     </Button>
                     <Text>{likesData[entry.id]?.likesCount || 0}</Text>
                   </Space>
+                  <Button icon={<ShareAltOutlined />} onClick={() => handleShare(entry)}>
+                    Поділитися
+                  </Button>
                 </div>
                 <Divider />
                 <Title level={5}>Коментарі:</Title>
@@ -255,6 +271,44 @@ const BlogPage = () => {
             ))}
         </Space>
       )}
+
+      <Modal
+        title="Поділитися записом"
+        open={shareModal.visible}
+        onCancel={() => setShareModal({ visible: false, url: "" })}
+        footer={null}
+      >
+        <p><b>Посилання:</b> {shareModal.url}</p>
+        <Space wrap style={{ marginTop: 10 }}>
+          <Button icon={<CopyOutlined />} onClick={() => {
+            navigator.clipboard.writeText(shareModal.url);
+            message.success("Скопійовано!");
+          }}>
+            Копіювати
+          </Button>
+          <Button href={`https://t.me/share/url?url=${encodeURIComponent(shareModal.url)}`} target="_blank">
+            Telegram
+          </Button>
+          <Button href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareModal.url)}`} target="_blank">
+            Facebook
+          </Button>
+          <Button href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareModal.url)}`} target="_blank">
+            Twitter
+          </Button>
+        </Space>
+      </Modal>
+
+      <Modal
+        title={selectedEntry?.title}
+        open={!!selectedEntry}
+        onCancel={() => setSelectedEntry(null)}
+        footer={null}
+      >
+        <Tag color={getTagColor(selectedEntry?.entryType)}>{selectedEntry?.entryType}</Tag>
+        <p><b>Автор:</b> {selectedEntry?.authorname}</p>
+        <Divider />
+        <p>{selectedEntry?.description}</p>
+      </Modal>
     </Content>
   );
 };
