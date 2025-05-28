@@ -1,31 +1,12 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
-  Layout,
-  Card,
-  Space,
-  Typography,
-  Skeleton,
-  Button,
-  Tag,
-  Input,
-  Divider,
-  message,
-  Modal,
-  Tooltip,
-  Drawer,
+  Layout, Card, Space, Typography, Skeleton, Button, Tag, Input,
+  Divider, message, Modal, Tooltip, Drawer
 } from "antd";
 import {
-  HeartOutlined,
-  HeartFilled,
-  UserAddOutlined,
-  SendOutlined,
-  ShareAltOutlined,
-  CopyOutlined,
-} from "@ant-design/icons";
-import {
-  FacebookFilled,
-  TwitterSquareFilled,
-  SendOutlined as TelegramIcon,
+  HeartOutlined, HeartFilled, SendOutlined,
+  ShareAltOutlined, CopyOutlined, FacebookFilled,
+  TwitterSquareFilled, SendOutlined as TelegramIcon
 } from "@ant-design/icons";
 import axios from "axios";
 import io from "socket.io-client";
@@ -67,9 +48,24 @@ const BlogPage = () => {
       const decoded = JSON.parse(atob(token.split(".")[1]));
       setUserId(decoded?.user_id || decoded?.id || null);
     } catch (error) {
-      console.error("❌ ПОМИЛКА отримання ID користувача:", error.message);
+      console.error("❌ Error fetching user ID:", error.message);
     }
   }, []);
+
+  const fetchLikes = useCallback(async (entry) => {
+    try {
+      const res = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
+      setLikesData(prev => ({
+        ...prev,
+        [entry.id]: {
+          likesCount: res.data.likesCount || 0,
+          userLiked: res.data.likedBy?.some(u => u.user_id === userId)
+        },
+      }));
+    } catch (err) {
+      console.error("❌ Error fetching likes:", err);
+    }
+  }, [userId]);
 
   const fetchAllEntries = useCallback(async () => {
     try {
@@ -78,120 +74,47 @@ const BlogPage = () => {
         axios.get(`${API_PROBLEMS_URL}`),
       ]);
 
-      const blogs = blogsRes.data?.blogs?.map((b) => ({ ...b, entryType: "blog" })) || [];
-      const ideas = blogsRes.data?.ideas?.map((i) => ({ ...i, entryType: "idea" })) || [];
-      const problems = problemsRes.data?.map((p) => ({
-        ...p,
-        entryType: "problem",
-        authorname: p.author || "Невідомий",
+      const blogs = blogsRes.data?.blogs?.map(b => ({ ...b, entryType: "blog" })) || [];
+      const ideas = blogsRes.data?.ideas?.map(i => ({ ...i, entryType: "idea" })) || [];
+      const problems = problemsRes.data?.map(p => ({
+        ...p, entryType: "problem", authorname: p.author || "Невідомий"
       })) || [];
 
-      const allEntries = [...blogs, ...ideas, ...problems];
-      setEntries(allEntries);
-
-      allEntries.forEach((entry) => {
+      const all = [...blogs, ...ideas, ...problems];
+      setEntries(all);
+      all.forEach(entry => {
         fetchLikes(entry);
         fetchComments(entry);
       });
     } catch (err) {
-      console.error("❌ Не вдалося завантажити дані:", err);
+      console.error("❌ Error fetching entries:", err);
     } finally {
       setIsLoading(false);
     }
-  }, [userId]);
+  }, [fetchLikes]);
 
   const fetchSubscriptions = useCallback(async () => {
     try {
-      const response = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`);
-      const subscriptions = response.data.subscriptions.reduce((acc, sub) => {
+      const res = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`);
+      const map = res.data.subscriptions.reduce((acc, sub) => {
         acc[sub.blog_id || sub.idea_id || sub.problem_id] = true;
         return acc;
       }, {});
-      setSubscribedEntries(subscriptions);
+      setSubscribedEntries(map);
     } catch (err) {
-      console.error("❌ Помилка підписок:", err);
+      console.error("❌ Error fetching subscriptions:", err);
     }
   }, []);
 
-  useEffect(() => {
-    fetchUserId();
-    fetchAllEntries();
-    fetchSubscriptions();
-
-    const socket = io(SOCKET_URL);
-    socket.on("new_entry", (entry) => {
-      setEntries((prev) => [entry, ...prev]);
-    });
-    socket.on("new_comment", ({ entryId, comment }) => {
-      setCommentsData((prev) => ({
-        ...prev,
-        [entryId]: [...(prev[entryId] || []), comment],
-      }));
-    });
-    return () => socket.disconnect();
-  }, [fetchUserId, fetchAllEntries, fetchSubscriptions]);
-
-  const fetchLikes = async (entry) => {
-    try {
-      const response = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
-      setLikesData((prev) => ({
-        ...prev,
-        [entry.id]: {
-          likesCount: response.data.likesCount || 0,
-          userLiked: response.data.likedBy?.some((user) => user.user_id === userId),
-        },
-      }));
-    } catch (err) {
-      console.error(`❌ Помилка отримання лайків:`, err);
-    }
-  };
-
-  const toggleLike = async (entry) => {
-    try {
-      if (!entry.id || !entry.entryType) return;
-      const response = await axios.post(`${API_LIKE_URL}/toggle-like`, {
-        entry_id: entry.id,
-        entry_type: entry.entryType,
-      });
-      if (response.status === 200 || response.status === 201) fetchLikes(entry);
-    } catch (err) {
-      console.error(`❌ Помилка лайкування:`, err);
-      message.error("Не вдалося змінити лайк.");
-    }
-  };
-
-  const handleSubscribe = async (entry) => {
-    try {
-      const isSubscribed = subscribedEntries[entry.id];
-      const response = await axios({
-        method: isSubscribed ? "delete" : "post",
-        url: `${API_SUBSCRIBE_URL}/${isSubscribed ? "unsubscribe" : "subscribe"}`,
-        data: { entry_id: entry.id, entry_type: entry.entryType },
-      });
-
-      if (response.status === 200 || response.status === 201) {
-        setSubscribedEntries((prev) => ({
-          ...prev,
-          [entry.id]: !isSubscribed,
-        }));
-        message.success(response.data.message);
-      }
-    } catch (err) {
-      console.error("❌ Помилка підписки/відписки:", err);
-      message.error("Не вдалося виконати операцію.");
-    }
-  };
-
   const fetchComments = async (entry) => {
     try {
-      const response = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
-      if (!response.data || !Array.isArray(response.data.comments)) return;
-      setCommentsData((prev) => ({
+      const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
+      setCommentsData(prev => ({
         ...prev,
-        [entry.id]: response.data.comments,
+        [entry.id]: res.data.comments || [],
       }));
     } catch (err) {
-      console.error(`❌ Помилка коментарів:`, err);
+      console.error("❌ Error fetching comments:", err);
     }
   };
 
@@ -204,24 +127,34 @@ const BlogPage = () => {
         entry_type: entry.entryType,
         text,
       });
-      setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
+      setNewComment(prev => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
     } catch (err) {
-      console.error("❌ Помилка додавання коментаря:", err);
       message.error("Не вдалося додати коментар.");
     }
   };
 
+  const toggleLike = async (entry) => {
+    try {
+      await axios.post(`${API_LIKE_URL}/toggle-like`, {
+        entry_id: entry.id,
+        entry_type: entry.entryType,
+      });
+      fetchLikes(entry);
+    } catch (err) {
+      message.error("Не вдалося змінити лайк.");
+    }
+  };
+
   const handleShare = (entry) => {
-    const url = `${window.location.origin}/post/${entry.id}`;
-    setShareLink(url);
+    setShareLink(`${window.location.origin}/post/${entry.id}`);
     setShareModalVisible(true);
   };
 
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(shareLink);
-      message.success("Посилання скопійовано!");
+      message.success("Скопійовано!");
     } catch {
       message.error("Не вдалося скопіювати.");
     }
@@ -232,73 +165,36 @@ const BlogPage = () => {
     setDrawerVisible(true);
   };
 
-  const renderShareModal = () => (
-    <Modal
-      title="Поділитися записом"
-      open={shareModalVisible}
-      onCancel={() => setShareModalVisible(false)}
-      footer={null}
-    >
-      <Space>
-        <Tooltip title="Telegram">
-          <a
-            href={`https://t.me/share/url?url=${encodeURIComponent(shareLink)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <TelegramIcon style={{ fontSize: "28px", color: "#229ED9" }} />
-          </a>
-        </Tooltip>
-        <Tooltip title="Facebook">
-          <a
-            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <FacebookFilled style={{ fontSize: "28px", color: "#4267B2" }} />
-          </a>
-        </Tooltip>
-        <Tooltip title="Twitter">
-          <a
-            href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <TwitterSquareFilled style={{ fontSize: "28px", color: "#1DA1F2" }} />
-          </a>
-        </Tooltip>
-        <Tooltip title="Копіювати посилання">
-          <CopyOutlined
-            onClick={copyToClipboard}
-            style={{ fontSize: "24px", cursor: "pointer" }}
-          />
-        </Tooltip>
-      </Space>
-    </Modal>
-  );
+  useEffect(() => {
+    fetchUserId();
+    fetchAllEntries();
+    fetchSubscriptions();
+    const socket = io(SOCKET_URL);
+    socket.on("new_entry", entry => setEntries(prev => [entry, ...prev]));
+    socket.on("new_comment", ({ entryId, comment }) => {
+      setCommentsData(prev => ({
+        ...prev,
+        [entryId]: [...(prev[entryId] || []), comment],
+      }));
+    });
+    return () => socket.disconnect();
+  }, [fetchUserId, fetchAllEntries, fetchSubscriptions]);
 
   const getTagColor = (type) => {
-    switch (type) {
-      case "blog": return "blue";
-      case "idea": return "green";
-      case "problem": return "gold";
-      default: return "default";
-    }
+    if (type === "blog") return "blue";
+    if (type === "idea") return "green";
+    if (type === "problem") return "gold";
+    return "default";
   };
 
-  const filteredEntries =
-    filteredType === "all" ? entries : entries.filter((e) => e.entryType === filteredType);
-
   return (
-    <Content style={{ padding: "20px", maxWidth: "900px", margin: "auto" }}>
-      {isLoading ? (
-        <Skeleton active />
-      ) : (
+    <Content style={{ padding: 20, maxWidth: 900, margin: "auto" }}>
+      {isLoading ? <Skeleton active /> : (
         <>
-          <div style={{ marginBottom: "20px", textAlign: "center" }}>
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
             <Title level={5}>Фільтрувати за типом:</Title>
             <Space>
-              {"all blog idea problem".split(" ").map((type) => (
+              {["all", "blog", "idea", "problem"].map(type => (
                 <Button
                   key={type}
                   type={filteredType === type ? "primary" : "default"}
@@ -311,86 +207,73 @@ const BlogPage = () => {
           </div>
 
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
-            {filteredEntries.map((entry) => (
-              <Card key={entry.id} hoverable style={{ borderRadius: 10 }} onClick={() => openDrawer(entry)}>
-                <Title level={4} style={{ marginBottom: 0 }}>{entry.title}</Title>
+            {entries.filter(e => filteredType === "all" || e.entryType === filteredType).map(entry => (
+              <Card key={entry.id} hoverable onClick={() => openDrawer(entry)}>
+                <Title level={4}>{entry.title}</Title>
                 <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
               </Card>
             ))}
           </Space>
-          {renderShareModal()}
 
-          <Drawer
-            title={selectedEntry?.title}
-            open={drawerVisible}
-            onClose={() => setDrawerVisible(false)}
-            width={500}
-          >
+          <Modal title="Поділитися" open={shareModalVisible} onCancel={() => setShareModalVisible(false)} footer={null}>
+            <Space>
+              <Tooltip title="Telegram">
+                <a href={`https://t.me/share/url?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
+                  <TelegramIcon style={{ fontSize: 28, color: "#229ED9" }} />
+                </a>
+              </Tooltip>
+              <Tooltip title="Facebook">
+                <a href={`https://facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
+                  <FacebookFilled style={{ fontSize: 28, color: "#4267B2" }} />
+                </a>
+              </Tooltip>
+              <Tooltip title="Twitter">
+                <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
+                  <TwitterSquareFilled style={{ fontSize: 28, color: "#1DA1F2" }} />
+                </a>
+              </Tooltip>
+              <Tooltip title="Копіювати посилання">
+                <CopyOutlined style={{ fontSize: 24 }} onClick={copyToClipboard} />
+              </Tooltip>
+            </Space>
+          </Modal>
+
+          <Drawer title={selectedEntry?.title} open={drawerVisible} onClose={() => setDrawerVisible(false)} width={500}>
             {selectedEntry && (
               <>
                 <Tag color={getTagColor(selectedEntry.entryType)}>{selectedEntry.entryType.toUpperCase()}</Tag>
-                <Text strong style={{ display: "block", marginBottom: 12 }}>
-                  Автор: {selectedEntry.authorname || "Невідомий"}
-                </Text>
-                <Text>{selectedEntry.description || "Без опису"}</Text>
-
+                <Text strong>Автор: {selectedEntry.authorname || "Невідомий"}</Text>
                 <Divider />
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <Space>
-                    <Button type="text" onClick={() => toggleLike(selectedEntry)}>
-                      {likesData[selectedEntry.id]?.userLiked ? (
-                        <HeartFilled style={{ color: "red" }} />
-                      ) : (
-                        <HeartOutlined />
-                      )}
-                    </Button>
-                    <Text>{likesData[selectedEntry.id]?.likesCount || 0} лайк(ів)</Text>
-                  </Space>
+                <Text>{selectedEntry.description || "Без опису"}</Text>
+                <Divider />
+                <Space>
+                  <Button type="text" onClick={() => toggleLike(selectedEntry)}>
+                    {likesData[selectedEntry.id]?.userLiked ? <HeartFilled style={{ color: "red" }} /> : <HeartOutlined />}
+                  </Button>
+                  <Text>{likesData[selectedEntry.id]?.likesCount || 0} лайків</Text>
                   <Button type="text" onClick={() => handleShare(selectedEntry)} icon={<ShareAltOutlined />} />
-                </div>
-
+                </Space>
                 <Divider />
                 <Title level={5}>Коментарі:</Title>
                 <Space direction="vertical" style={{ width: "100%" }}>
                   {commentsData[selectedEntry.id]?.length ? (
-                    commentsData[selectedEntry.id].map((comment) => (
-                      <Card
-                        key={comment.id}
-                        size="small"
-                        style={{ backgroundColor: "#fafafa", border: "1px solid #eee" }}
-                      >
-                        <Text strong>{comment.authorName || "Анонім"}</Text>
-                        <br />
-                        <Text type="secondary" style={{ fontSize: "12px" }}>
-                          {new Date(comment.createdAt).toLocaleString("uk-UA")}
-                        </Text>
-                        <br />
+                    commentsData[selectedEntry.id].map(comment => (
+                      <Card key={comment.id} size="small" style={{ backgroundColor: "#f9f9f9" }}>
+                        <Text strong>{comment.authorName || "Анонім"}</Text><br />
+                        <Text type="secondary" style={{ fontSize: 12 }}>{new Date(comment.createdAt).toLocaleString("uk-UA")}</Text><br />
                         <Text>{comment.text}</Text>
                       </Card>
                     ))
-                  ) : (
-                    <Text type="secondary">Коментарів ще немає.</Text>
-                  )}
+                  ) : <Text type="secondary">Коментарів ще немає.</Text>}
                 </Space>
-
                 <Divider />
                 <Text strong>Додати коментар:</Text>
                 <TextArea
                   rows={2}
                   value={newComment[selectedEntry.id] || ""}
-                  onChange={(e) =>
-                    setNewComment({ ...newComment, [selectedEntry.id]: e.target.value })
-                  }
-                  placeholder="Напишіть коментар..."
-                  style={{ marginTop: "8px", marginBottom: "8px" }}
+                  onChange={e => setNewComment(prev => ({ ...prev, [selectedEntry.id]: e.target.value }))}
                 />
-                <Button
-                  type="primary"
-                  icon={<SendOutlined />}
-                  onClick={() => handleCommentSubmit(selectedEntry)}
-                >
-                  Відправити
-                </Button>
+                <Button type="primary" icon={<SendOutlined />} onClick={() => handleCommentSubmit(selectedEntry)}>Відправити</Button>
               </>
             )}
           </Drawer>
