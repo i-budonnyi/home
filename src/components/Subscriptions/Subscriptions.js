@@ -9,7 +9,6 @@ import {
   Alert,
   Tag,
   Button,
-  message,
   ConfigProvider,
   theme,
 } from "antd";
@@ -17,7 +16,7 @@ import { SunOutlined, MoonOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
-const { Content } = Layout;
+const { Header, Content } = Layout;
 
 const API_SUBSCRIPTIONS_URL =
   "https://backend-avtologistika.onrender.com/api/subscriptionRoutes/user-subscriptions";
@@ -96,25 +95,30 @@ const Subscriptions = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
-        <Content style={{ padding: "80px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
-          {/* Назад + Перемикач теми */}
-          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
-            <div
-              onClick={toggleTheme}
-              style={{
-                cursor: "pointer",
-                fontSize: 20,
-                color: themeMode.token.colorTextBase,
-              }}
-              title="Перемкнути тему"
-            >
-              {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
-            </div>
-            <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
-              Назад
-            </Button>
+        {/* 🔻 Нижче перемикач і кнопка Назад */}
+        <Header
+          style={{
+            background: "transparent",
+            padding: "16px 24px 0",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            gap: 16,
+          }}
+        >
+          <div
+            onClick={toggleTheme}
+            style={{ cursor: "pointer", fontSize: 20, color: themeMode.token.colorTextBase }}
+            title="Перемкнути тему"
+          >
+            {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
           </div>
+          <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
+            Назад
+          </Button>
+        </Header>
 
+        <Content style={{ padding: "80px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
           <Title
             level={3}
             style={{
