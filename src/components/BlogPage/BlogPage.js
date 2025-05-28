@@ -3,7 +3,10 @@ import {
   Layout, Card, Space, Typography, Skeleton, Button,
   Tag, Input, Divider, message
 } from "antd";
-import { SendOutlined } from "@ant-design/icons";
+import {
+  HeartOutlined, HeartFilled,
+  UserAddOutlined, SendOutlined
+} from "@ant-design/icons";
 import axios from "axios";
 import io from "socket.io-client";
 
@@ -15,7 +18,9 @@ const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const SOCKET_URL = "https://backend-avtologistika.onrender.com";
 const API_BLOG_URL = `${API_BASE}/blogRoutes`;
 const API_PROBLEMS_URL = `${API_BASE}/problems`;
+const API_LIKE_URL = `${API_BASE}/likeRoutes`;
 const API_COMMENT_URL = `${API_BASE}/commentRoutes`;
+const API_SUBSCRIBE_URL = `${API_BASE}/subscriptionRoutes`;
 
 const getTagColor = (type) => {
   switch (type) {
@@ -29,11 +34,26 @@ const getTagColor = (type) => {
 const BlogPage = () => {
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [likesData, setLikesData] = useState({});
+  const [subscribedEntries, setSubscribedEntries] = useState({});
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
   const [filteredType, setFilteredType] = useState("all");
 
   const getAuthToken = () => localStorage.getItem("token");
+
+  const fetchLikes = useCallback(async (entry) => {
+    try {
+      const res = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
+      setLikesData(prev => ({
+        ...prev,
+        [entry.id]: {
+          likesCount: res.data.likesCount || 0,
+          userLiked: res.data.likedBy?.some(u => u.user_id === res.data.currentUserId),
+        }
+      }));
+    } catch {}
+  }, []);
 
   const fetchComments = useCallback(async (entry) => {
     try {
@@ -55,20 +75,17 @@ const BlogPage = () => {
       ]);
 
       const blogs = blogsRes.data?.blogs?.map(b => ({
-        ...b,
-        entryType: "blog",
+        ...b, entryType: "blog",
         authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author_email || "Невідомий"
       })) || [];
 
       const ideas = blogsRes.data?.ideas?.map(i => ({
-        ...i,
-        entryType: "idea",
+        ...i, entryType: "idea",
         authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author_email || "Невідомий"
       })) || [];
 
       const problems = problemsRes.data?.map(p => ({
-        ...p,
-        entryType: "problem",
+        ...p, entryType: "problem",
         authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author_email || "Невідомий"
       })) || [];
 
@@ -77,16 +94,34 @@ const BlogPage = () => {
       );
 
       setEntries(all);
-      all.forEach(fetchComments);
+      all.forEach(entry => {
+        fetchLikes(entry);
+        fetchComments(entry);
+      });
     } catch {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchComments]);
+  }, [fetchLikes, fetchComments]);
+
+  const fetchSubscriptions = useCallback(async () => {
+    try {
+      const token = getAuthToken();
+      const res = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const map = res.data.subscriptions.reduce((acc, sub) => {
+        acc[sub.blog_id || sub.idea_id || sub.problem_id] = true;
+        return acc;
+      }, {});
+      setSubscribedEntries(map);
+    } catch {}
+  }, []);
 
   useEffect(() => {
     fetchAllEntries();
-  }, [fetchAllEntries]);
+    fetchSubscriptions();
+  }, [fetchAllEntries, fetchSubscriptions]);
 
   useEffect(() => {
     const token = getAuthToken();
@@ -107,6 +142,7 @@ const BlogPage = () => {
         authorname: entry.author_name || "Невідомий"
       };
       setEntries(prev => [fullEntry, ...prev]);
+      fetchLikes(fullEntry);
       fetchComments(fullEntry);
     });
 
@@ -115,7 +151,34 @@ const BlogPage = () => {
     });
 
     return () => socket.disconnect();
-  }, [fetchComments]);
+  }, [fetchLikes, fetchComments]);
+
+  const toggleLike = async (entry) => {
+    try {
+      const token = getAuthToken();
+      await axios.post(`${API_LIKE_URL}/toggle-like`, {
+        entry_id: entry.id,
+        entry_type: entry.entryType
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      fetchLikes(entry);
+    } catch {
+      message.error("Не вдалося змінити лайк.");
+    }
+  };
+
+  const handleSubscribe = async (entry) => {
+    try {
+      const token = getAuthToken();
+      const isSub = subscribedEntries[entry.id];
+      const method = isSub ? "delete" : "post";
+      const url = `${API_SUBSCRIBE_URL}/${isSub ? "unsubscribe" : "subscribe"}`;
+      await axios({ method, url, data: { entry_id: entry.id, entry_type: entry.entryType }, headers: { Authorization: `Bearer ${token}` } });
+      setSubscribedEntries(prev => ({ ...prev, [entry.id]: !isSub }));
+      message.success(isSub ? "Відписано" : "Підписано");
+    } catch {
+      message.error("Не вдалося змінити підписку.");
+    }
+  };
 
   const handleCommentSubmit = async (entry) => {
     const comment = newComment[entry.id]?.trim();
@@ -138,7 +201,7 @@ const BlogPage = () => {
     <Content style={{ padding: 20, maxWidth: 900, margin: "80px auto 0" }}>
       <Button onClick={() => setFilteredType("all")}>Показати всі</Button>
       <Space style={{ marginBottom: 20, marginLeft: 20 }}>
-        {['blog', 'idea', 'problem'].map(type => (
+        {["blog", "idea", "problem"].map((type) => (
           <Button
             key={type}
             type={filteredType === type ? "primary" : "default"}
@@ -154,21 +217,40 @@ const BlogPage = () => {
             .filter(e => filteredType === "all" || e.entryType === filteredType)
             .map(entry => (
               <Card key={entry.id}>
-                <Title level={4}>{entry.title}</Title>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <Title level={4}>{entry.title}</Title>
+                  <Button icon={<UserAddOutlined />} onClick={() => handleSubscribe(entry)}>
+                    {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
+                  </Button>
+                </div>
                 <Tag color={getTagColor(entry.entryType)}>{entry.entryType}</Tag>
                 <Text>{entry.description}</Text>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+                  <Space>
+                    <Button type="text" onClick={() => toggleLike(entry)}>
+                      {likesData[entry.id]?.userLiked ? <HeartFilled style={{ color: "red" }} /> : <HeartOutlined />}
+                    </Button>
+                    <Text>{likesData[entry.id]?.likesCount || 0}</Text>
+                  </Space>
+                </div>
                 <Divider />
+                <Title level={5}>Коментарі:</Title>
+                {(commentsData[entry.id] || []).map((comment, i) => (
+                  <p key={i}><Text strong>{comment.author_first_name || "Анонім"}:</Text> {comment.text}</p>
+                ))}
                 <TextArea
                   value={newComment[entry.id] || ""}
                   onChange={(e) => setNewComment(prev => ({ ...prev, [entry.id]: e.target.value }))}
+                  placeholder="Ваш коментар..."
                 />
-                <Button icon={<SendOutlined />} type="primary" onClick={() => handleCommentSubmit(entry)}>
+                <Button
+                  icon={<SendOutlined />}
+                  type="primary"
+                  style={{ marginTop: 8 }}
+                  onClick={() => handleCommentSubmit(entry)}
+                >
                   Надіслати
                 </Button>
-                <Divider />
-                {(commentsData[entry.id] || []).map((c, i) => (
-                  <p key={i}><Text strong>{c.author_first_name || "Анонім"}</Text>: {c.text}</p>
-                ))}
               </Card>
             ))}
         </Space>
