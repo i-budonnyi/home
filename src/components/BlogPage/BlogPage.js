@@ -265,7 +265,7 @@ const BlogPage = () => {
               </Tooltip>
               <Tooltip title="Facebook">
                 <a href={`https://facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
-                  <FacebookFilled style={{ fontSize: 28, color: "#4267B2" }} />
+                  <FacebookFilled style={{ fontSize: 30, color: "#4267B2" }} />
                 </a>
               </Tooltip>
               <Tooltip title="Twitter">
