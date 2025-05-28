@@ -15,22 +15,20 @@ import {
 } from "antd";
 import { SunOutlined, MoonOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { io } from "socket.io-client";
 
 const { Title, Text } = Typography;
-const { Header, Content } = Layout;
+const { Content } = Layout;
 
 const API_SUBSCRIPTIONS_URL =
   "https://backend-avtologistika.onrender.com/api/subscriptionRoutes/user-subscriptions";
-const SOCKET_URL = "https://backend-avtologistika.onrender.com";
-
-let socket;
 
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
+  const [isDarkMode, setIsDarkMode] = useState(
+    localStorage.getItem("theme") === "dark"
+  );
 
   const navigate = useNavigate();
   const getAuthToken = () => localStorage.getItem("token");
@@ -65,20 +63,6 @@ const Subscriptions = () => {
 
   useEffect(() => {
     fetchUserSubscriptions();
-
-    socket = io(SOCKET_URL, {
-      transports: ["websocket"],
-      auth: { token: getAuthToken() },
-    });
-
-    socket.on("subscription_update", () => {
-      message.info("🔔 Змінилась підписка");
-      fetchUserSubscriptions();
-    });
-
-    return () => {
-      if (socket) socket.disconnect();
-    };
   }, [fetchUserSubscriptions]);
 
   const getStatusColor = (status) => {
@@ -113,11 +97,15 @@ const Subscriptions = () => {
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
         <Content style={{ padding: "80px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
-          {/* Назад + Тема */}
+          {/* Назад + Перемикач теми */}
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
             <div
               onClick={toggleTheme}
-              style={{ cursor: "pointer", fontSize: 20, color: themeMode.token.colorTextBase }}
+              style={{
+                cursor: "pointer",
+                fontSize: 20,
+                color: themeMode.token.colorTextBase,
+              }}
               title="Перемкнути тему"
             >
               {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
