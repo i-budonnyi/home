@@ -1,13 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Layout, Card, Space, Typography, Skeleton, Button,
-  Tag, Input, Divider, message, Modal
+  Tag, Input, Divider, message
 } from "antd";
-import {
-  HeartOutlined, HeartFilled,
-  UserAddOutlined, SendOutlined,
-  ShareAltOutlined, CopyOutlined
-} from "@ant-design/icons";
+import { SendOutlined } from "@ant-design/icons";
 import axios from "axios";
 import io from "socket.io-client";
 
@@ -44,26 +40,11 @@ const getTagColor = (type) => {
 const BlogPage = () => {
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [likesData, setLikesData] = useState({});
-  const [subscribedEntries, setSubscribedEntries] = useState({});
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
   const [filteredType, setFilteredType] = useState("all");
 
   const getAuthToken = () => localStorage.getItem("token");
-
-  const fetchLikes = useCallback(async (entry) => {
-    try {
-      const res = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
-      setLikesData(prev => ({
-        ...prev,
-        [entry.id]: {
-          likesCount: res.data.likesCount || 0,
-          userLiked: res.data.likedBy?.some(u => u.user_id === res.data.currentUserId),
-        }
-      }));
-    } catch {}
-  }, []);
 
   const fetchComments = useCallback(async (entry) => {
     try {
@@ -105,33 +86,17 @@ const BlogPage = () => {
 
       setEntries(all);
       all.forEach(entry => {
-        fetchLikes(entry);
         fetchComments(entry);
       });
     } catch {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchLikes, fetchComments]);
-
-  const fetchSubscriptions = useCallback(async () => {
-    try {
-      const token = getAuthToken();
-      const res = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const map = res.data.subscriptions.reduce((acc, sub) => {
-        acc[sub.blog_id || sub.idea_id || sub.problem_id] = true;
-        return acc;
-      }, {});
-      setSubscribedEntries(map);
-    } catch {}
-  }, []);
+  }, [fetchComments]);
 
   useEffect(() => {
     fetchAllEntries();
-    fetchSubscriptions();
-  }, [fetchAllEntries, fetchSubscriptions]);
+  }, [fetchAllEntries]);
 
   useEffect(() => {
     const token = getAuthToken();
@@ -152,7 +117,6 @@ const BlogPage = () => {
         authorname: entry.author_name || "Невідомий"
       };
       setEntries(prev => [fullEntry, ...prev]);
-      fetchLikes(fullEntry);
       fetchComments(fullEntry);
     });
 
@@ -161,7 +125,7 @@ const BlogPage = () => {
     });
 
     return () => socket.disconnect();
-  }, [fetchLikes, fetchComments]);
+  }, [fetchComments]);
 
   const handleCommentSubmit = async (entry) => {
     const comment = newComment[entry.id]?.trim();
