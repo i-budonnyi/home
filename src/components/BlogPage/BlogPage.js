@@ -15,18 +15,7 @@ const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const SOCKET_URL = "https://backend-avtologistika.onrender.com";
 const API_BLOG_URL = `${API_BASE}/blogRoutes`;
 const API_PROBLEMS_URL = `${API_BASE}/problems`;
-const API_LIKE_URL = `${API_BASE}/likeRoutes`;
 const API_COMMENT_URL = `${API_BASE}/commentRoutes`;
-const API_SUBSCRIBE_URL = `${API_BASE}/subscriptionRoutes`;
-
-const STATUS_TRANSLATION = {
-  "до_секретаря": "Амбасадор рекомендує секретарю",
-  "нове": "Нове",
-  "очікує": "Очікує",
-  "відхилено": "Відхилено",
-  "відхилено_з_переглядом": "Відхилено з переглядом",
-  "відхилено_на_доопрацювання": "Відхилено на доопрацювання"
-};
 
 const getTagColor = (type) => {
   switch (type) {
@@ -66,17 +55,20 @@ const BlogPage = () => {
       ]);
 
       const blogs = blogsRes.data?.blogs?.map(b => ({
-        ...b, entryType: "blog",
+        ...b,
+        entryType: "blog",
         authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author_email || "Невідомий"
       })) || [];
 
       const ideas = blogsRes.data?.ideas?.map(i => ({
-        ...i, entryType: "idea",
+        ...i,
+        entryType: "idea",
         authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author_email || "Невідомий"
       })) || [];
 
       const problems = problemsRes.data?.map(p => ({
-        ...p, entryType: "problem",
+        ...p,
+        entryType: "problem",
         authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author_email || "Невідомий"
       })) || [];
 
@@ -85,9 +77,7 @@ const BlogPage = () => {
       );
 
       setEntries(all);
-      all.forEach(entry => {
-        fetchComments(entry);
-      });
+      all.forEach(fetchComments);
     } catch {
     } finally {
       setIsLoading(false);
