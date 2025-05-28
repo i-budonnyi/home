@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   Layout, Card, Space, Typography, Skeleton, Button, Tag, Input,
-  Divider, message, Modal, Tooltip, Drawer
+  Divider, message, Modal, Tooltip
 } from "antd";
 import {
   HeartOutlined, HeartFilled, SendOutlined,
@@ -34,7 +34,7 @@ const BlogPage = () => {
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [shareLink, setShareLink] = useState("");
   const [selectedEntry, setSelectedEntry] = useState(null);
-  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const getAuthToken = () => localStorage.getItem("token");
 
@@ -107,10 +107,13 @@ const BlogPage = () => {
     const text = newComment[entry.id]?.trim();
     if (!text) return;
     try {
+      const token = getAuthToken();
       await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
         entry_type: entry.entryType,
-        text,
+        comment: text
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       setNewComment(prev => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
@@ -145,9 +148,10 @@ const BlogPage = () => {
     }
   };
 
-  const openDrawer = (entry) => {
+  const openModal = (entry) => {
     setSelectedEntry(entry);
-    setDrawerVisible(true);
+    setModalVisible(true);
+    fetchComments(entry);
   };
 
   useEffect(() => {
@@ -192,37 +196,22 @@ const BlogPage = () => {
 
           <Space direction="vertical" size="large" style={{ width: "100%" }}>
             {entries.filter(e => filteredType === "all" || e.entryType === filteredType).map(entry => (
-              <Card key={entry.id} hoverable onClick={() => openDrawer(entry)}>
+              <Card key={entry.id} hoverable onClick={() => openModal(entry)}>
                 <Title level={4}>{entry.title}</Title>
                 <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
               </Card>
             ))}
           </Space>
 
-          <Modal title="Поділитися" open={shareModalVisible} onCancel={() => setShareModalVisible(false)} footer={null}>
-            <Space>
-              <Tooltip title="Telegram">
-                <a href={`https://t.me/share/url?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
-                  <TelegramIcon style={{ fontSize: 28, color: "#229ED9" }} />
-                </a>
-              </Tooltip>
-              <Tooltip title="Facebook">
-                <a href={`https://facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
-                  <FacebookFilled style={{ fontSize: 28, color: "#4267B2" }} />
-                </a>
-              </Tooltip>
-              <Tooltip title="Twitter">
-                <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
-                  <TwitterSquareFilled style={{ fontSize: 28, color: "#1DA1F2" }} />
-                </a>
-              </Tooltip>
-              <Tooltip title="Копіювати посилання">
-                <CopyOutlined style={{ fontSize: 24 }} onClick={copyToClipboard} />
-              </Tooltip>
-            </Space>
-          </Modal>
-
-          <Drawer title={selectedEntry?.title} open={drawerVisible} onClose={() => setDrawerVisible(false)} width={500}>
+          <Modal
+            open={modalVisible}
+            title={selectedEntry?.title}
+            onCancel={() => setModalVisible(false)}
+            footer={null}
+            centered
+            width={600}
+          >
+            {/* 👇 Мітка: редагуй тут, щоб змінити позицію або дизайн модального вікна */}
             {selectedEntry && (
               <>
                 <Tag color={getTagColor(selectedEntry.entryType)}>{selectedEntry.entryType.toUpperCase()}</Tag>
@@ -243,8 +232,12 @@ const BlogPage = () => {
                   {commentsData[selectedEntry.id]?.length ? (
                     commentsData[selectedEntry.id].map(comment => (
                       <Card key={comment.id} size="small" style={{ backgroundColor: "#f9f9f9" }}>
-                        <Text strong>{comment.authorName || "Анонім"}</Text><br />
-                        <Text type="secondary" style={{ fontSize: 12 }}>{new Date(comment.createdAt).toLocaleString("uk-UA")}</Text><br />
+                        <Text strong>
+                          {comment.author_first_name || "Анонім"} {comment.author_last_name || ""}
+                        </Text><br />
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {new Date(comment.createdAt).toLocaleString("uk-UA")}
+                        </Text><br />
                         <Text>{comment.text}</Text>
                       </Card>
                     ))
@@ -260,7 +253,7 @@ const BlogPage = () => {
                 <Button type="primary" icon={<SendOutlined />} onClick={() => handleCommentSubmit(selectedEntry)}>Відправити</Button>
               </>
             )}
-          </Drawer>
+          </Modal>
         </>
       )}
     </Content>
