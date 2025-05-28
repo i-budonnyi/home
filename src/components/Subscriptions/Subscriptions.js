@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import axios from "axios";
 import {
   Layout,
   List,
@@ -8,19 +9,22 @@ import {
   Alert,
   Tag,
   Button,
+  message,
   ConfigProvider,
   theme,
 } from "antd";
-import axios from "axios";
+import { SunOutlined, MoonOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { MoonOutlined, SunOutlined } from "@ant-design/icons";
+import { io } from "socket.io-client";
 
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 
-const API_BASE = "https://backend-avtologistika.onrender.com/api";
-const API_SUBSCRIPTIONS = `${API_BASE}/subscriptionRoutes/user-subscriptions`;
-const API_STATUS_UPDATE = `${API_BASE}/statusRoutes/update-status`;
+const API_SUBSCRIPTIONS_URL =
+  "https://backend-avtologistika.onrender.com/api/subscriptionRoutes/user-subscriptions";
+const SOCKET_URL = "https://backend-avtologistika.onrender.com";
+
+let socket;
 
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -29,7 +33,6 @@ const Subscriptions = () => {
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
 
   const navigate = useNavigate();
-
   const getAuthToken = () => localStorage.getItem("token");
 
   const toggleTheme = () => {
@@ -43,7 +46,7 @@ const Subscriptions = () => {
       const token = getAuthToken();
       if (!token) throw new Error("⛔ Необхідна авторизація.");
 
-      const response = await axios.get(API_SUBSCRIPTIONS, {
+      const response = await axios.get(API_SUBSCRIPTIONS_URL, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -53,38 +56,43 @@ const Subscriptions = () => {
         throw new Error("❌ Не вдалося отримати підписки.");
       }
     } catch (err) {
+      console.error("❌ ПОМИЛКА:", err);
       setError(err.response?.data?.message || err.message || "Сталася помилка.");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const fetchStatuses = useCallback(async () => {
-    try {
-      const token = getAuthToken();
-      if (!token) return;
-
-      await axios.get(API_STATUS_UPDATE, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      fetchUserSubscriptions(); // оновити після статусів
-    } catch (err) {
-      console.error("❌ Статуси не оновились:", err.message);
-    }
-  }, [fetchUserSubscriptions]);
-
   useEffect(() => {
-    fetchStatuses(); // оновлює статуси і підписки
-  }, [fetchStatuses]);
+    fetchUserSubscriptions();
+
+    socket = io(SOCKET_URL, {
+      transports: ["websocket"],
+      auth: { token: getAuthToken() },
+    });
+
+    socket.on("subscription_update", () => {
+      message.info("🔔 Змінилась підписка");
+      fetchUserSubscriptions();
+    });
+
+    return () => {
+      if (socket) socket.disconnect();
+    };
+  }, [fetchUserSubscriptions]);
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending": return "orange";
-      case "approved": return "green";
-      case "rejected": return "red";
-      case "до_секретаря": return "purple";
-      default: return "blue";
+      case "pending":
+        return "orange";
+      case "approved":
+        return "green";
+      case "rejected":
+        return "red";
+      case "до_секретаря":
+        return "purple";
+      default:
+        return "blue";
     }
   };
 
@@ -104,16 +112,9 @@ const Subscriptions = () => {
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
-        <Header
-          style={{
-            background: "transparent",
-            padding: "16px 24px 0",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <Content style={{ padding: "80px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
+          {/* Назад + Тема */}
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
             <div
               onClick={toggleTheme}
               style={{ cursor: "pointer", fontSize: 20, color: themeMode.token.colorTextBase }}
@@ -121,14 +122,11 @@ const Subscriptions = () => {
             >
               {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
             </div>
-
             <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
               Назад
             </Button>
           </div>
-        </Header>
 
-        <Content style={{ padding: "80px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
           <Title
             level={3}
             style={{
@@ -152,21 +150,19 @@ const Subscriptions = () => {
                   <Card
                     hoverable
                     title={
-                      <Title
-                        level={4}
-                        style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}
-                      >
+                      <Title level={4} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>
                         {sub.title || "Без назви"}
                       </Title>
                     }
                     style={{
                       width: "100%",
-                      borderRadius: "10px",
+                      borderRadius: "12px",
                       boxShadow: isDarkMode
                         ? "0 4px 12px rgba(0,0,0,0.4)"
                         : "0 4px 10px rgba(0,0,0,0.1)",
                       background: themeMode.token.colorBgContainer,
                     }}
+                    bordered={false}
                   >
                     <Text style={{ color: themeMode.token.colorTextBase }}>
                       {sub.description || "Без опису"}
@@ -176,7 +172,7 @@ const Subscriptions = () => {
                       color={getStatusColor(sub.status)}
                       style={{ marginTop: "10px", fontSize: "14px" }}
                     >
-                      {sub.status ? sub.status.toUpperCase() : "N/A"}
+                      {sub.status ? sub.status.toUpperCase() : "НЕ ВКАЗАНО"}
                     </Tag>
                     <br />
                     <Text type="secondary" style={{ fontSize: "14px" }}>
