@@ -65,7 +65,9 @@ const BlogPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCommentsData(prev => ({ ...prev, [entry.id]: res.data.comments || [] }));
-    } catch {}
+    } catch (e) {
+      console.error("Коментарі не завантажено", e);
+    }
   }, []);
 
   const fetchAllEntries = useCallback(async () => {
@@ -101,7 +103,8 @@ const BlogPage = () => {
         fetchLikes(entry);
         fetchComments(entry);
       });
-    } catch {
+    } catch (err) {
+      console.error("Не вдалося завантажити записи:", err);
     } finally {
       setIsLoading(false);
     }
@@ -195,7 +198,7 @@ const BlogPage = () => {
       }, { headers: { Authorization: `Bearer ${token}` } });
       setNewComment(prev => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
-    } catch {
+    } catch (err) {
       message.error("Не вдалося додати коментар.");
     }
   };
