@@ -22,13 +22,11 @@ const API_BLOG_URL = `${API_BASE}/blogRoutes`;
 const API_PROBLEMS_URL = `${API_BASE}/problems`;
 const API_LIKE_URL = `${API_BASE}/likeRoutes`;
 const API_COMMENT_URL = `${API_BASE}/commentRoutes`;
-const API_SUBSCRIBE_URL = `${API_BASE}/subscriptionRoutes`;
 
 const BlogPage = () => {
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [likesData, setLikesData] = useState({});
-  const [subscribedEntries, setSubscribedEntries] = useState({});
   const [commentsData, setCommentsData] = useState({});
   const [newComment, setNewComment] = useState({});
   const [userId, setUserId] = useState(null);
@@ -93,19 +91,6 @@ const BlogPage = () => {
     }
   }, [fetchLikes]);
 
-  const fetchSubscriptions = useCallback(async () => {
-    try {
-      const res = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`);
-      const map = res.data.subscriptions.reduce((acc, sub) => {
-        acc[sub.blog_id || sub.idea_id || sub.problem_id] = true;
-        return acc;
-      }, {});
-      setSubscribedEntries(map);
-    } catch (err) {
-      console.error("❌ Error fetching subscriptions:", err);
-    }
-  }, []);
-
   const fetchComments = async (entry) => {
     try {
       const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
@@ -168,7 +153,6 @@ const BlogPage = () => {
   useEffect(() => {
     fetchUserId();
     fetchAllEntries();
-    fetchSubscriptions();
     const socket = io(SOCKET_URL);
     socket.on("new_entry", entry => setEntries(prev => [entry, ...prev]));
     socket.on("new_comment", ({ entryId, comment }) => {
@@ -178,7 +162,7 @@ const BlogPage = () => {
       }));
     });
     return () => socket.disconnect();
-  }, [fetchUserId, fetchAllEntries, fetchSubscriptions]);
+  }, [fetchUserId, fetchAllEntries]);
 
   const getTagColor = (type) => {
     if (type === "blog") return "blue";
