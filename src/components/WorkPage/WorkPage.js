@@ -68,7 +68,7 @@ const WorkerPage = () => {
 
     socket.on("connect", () => {
       console.log("🟢 WebSocket connected:", socket.id);
-      socket.emit("register", userData.id); // 👈 обов'язково зареєструвати користувача
+      socket.emit("register", userData.id);
     });
 
     socket.on("notification", (data) => {
@@ -79,23 +79,6 @@ const WorkerPage = () => {
     socket.on("disconnect", () => {
       console.warn("🔴 WebSocket disconnected");
     });
-
-    const fetchInitialNotifications = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/notifications/${userData.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (Array.isArray(res.data)) {
-          setNotifications(res.data);
-        } else {
-          console.warn("[initialNotifications] Unexpected:", res.data);
-        }
-      } catch (err) {
-        console.error("[initialNotifications] Error:", err.message || err);
-      }
-    };
-
-    fetchInitialNotifications();
 
     return () => socket.disconnect();
   }, [userData?.id, token]);
