@@ -6,8 +6,9 @@ import {
 import {
   HeartOutlined, HeartFilled, SendOutlined,
   ShareAltOutlined, CopyOutlined, FacebookFilled,
-  TwitterSquareFilled, SendOutlined as TelegramIcon
+  TwitterSquareFilled
 } from "@ant-design/icons";
+import { SendOutlined as TelegramIcon } from "@ant-design/icons";
 import axios from "axios";
 import io from "socket.io-client";
 
@@ -253,6 +254,29 @@ const BlogPage = () => {
                 <Button type="primary" icon={<SendOutlined />} onClick={() => handleCommentSubmit(selectedEntry)}>Відправити</Button>
               </>
             )}
+          </Modal>
+
+          <Modal title="Поділитися" open={shareModalVisible} onCancel={() => setShareModalVisible(false)} footer={null}>
+            <Space>
+              <Tooltip title="Telegram">
+                <a href={`https://t.me/share/url?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
+                  <TelegramIcon style={{ fontSize: 28, color: "#229ED9" }} />
+                </a>
+              </Tooltip>
+              <Tooltip title="Facebook">
+                <a href={`https://facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
+                  <FacebookFilled style={{ fontSize: 28, color: "#4267B2" }} />
+                </a>
+              </Tooltip>
+              <Tooltip title="Twitter">
+                <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
+                  <TwitterSquareFilled style={{ fontSize: 28, color: "#1DA1F2" }} />
+                </a>
+              </Tooltip>
+              <Tooltip title="Копіювати посилання">
+                <CopyOutlined style={{ fontSize: 24 }} onClick={copyToClipboard} />
+              </Tooltip>
+            </Space>
           </Modal>
         </>
       )}
