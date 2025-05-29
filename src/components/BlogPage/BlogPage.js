@@ -85,10 +85,25 @@ const BlogPage = () => {
         axios.get(`${API_PROBLEMS_URL}`),
       ]);
 
-      const blogs = blogsRes.data?.blogs?.map(b => ({ ...b, entryType: "blog" })) || [];
-      const ideas = blogsRes.data?.ideas?.map(i => ({ ...i, entryType: "idea" })) || [];
+      const blogs = blogsRes.data?.blogs?.map(b => ({
+        ...b,
+        entryType: "blog",
+        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`,
+        createdAt: b.createdAt
+      })) || [];
+
+      const ideas = blogsRes.data?.ideas?.map(i => ({
+        ...i,
+        entryType: "idea",
+        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`,
+        createdAt: i.createdAt
+      })) || [];
+
       const problems = problemsRes.data?.map(p => ({
-        ...p, entryType: "problem", authorname: p.author || "Невідомий"
+        ...p,
+        entryType: "problem",
+        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`,
+        createdAt: p.createdAt
       })) || [];
 
       const all = [...blogs, ...ideas, ...problems];
@@ -201,7 +216,9 @@ const BlogPage = () => {
                 <Title level={4}>{entry.title}</Title>
                 <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
                 <Text type="secondary">
-                  Опубліковано: {new Date(entry.createdAt).toLocaleDateString("uk-UA")}
+                  Опубліковано: {entry.createdAt && !isNaN(Date.parse(entry.createdAt)) 
+                    ? new Date(entry.createdAt).toLocaleDateString("uk-UA") 
+                    : "невідомо"}
                 </Text><br />
                 <Text>{entry.description?.slice(0, 150) || "Без опису..."}</Text><br />
                 <Space>
@@ -233,7 +250,11 @@ const BlogPage = () => {
               <>
                 <Tag color={getTagColor(selectedEntry.entryType)}>{selectedEntry.entryType.toUpperCase()}</Tag>
                 <Text strong>Автор: {selectedEntry.authorname || "Невідомий"}</Text><br />
-                <Text type="secondary">Опубліковано: {new Date(selectedEntry.createdAt).toLocaleDateString("uk-UA")}</Text>
+                <Text type="secondary">
+                  Опубліковано: {selectedEntry.createdAt && !isNaN(Date.parse(selectedEntry.createdAt))
+                    ? new Date(selectedEntry.createdAt).toLocaleDateString("uk-UA")
+                    : "невідомо"}
+                </Text>
                 <Divider />
                 <Text>{selectedEntry.description || "Без опису"}</Text>
                 <Divider />
