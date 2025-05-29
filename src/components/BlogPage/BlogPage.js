@@ -66,6 +66,18 @@ const BlogPage = () => {
     }
   }, [userId]);
 
+  const fetchComments = async (entry) => {
+    try {
+      const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
+      setCommentsData(prev => ({
+        ...prev,
+        [entry.id]: res.data.comments || [],
+      }));
+    } catch (err) {
+      console.error("❌ Error fetching comments:", err);
+    }
+  };
+
   const fetchAllEntries = useCallback(async () => {
     try {
       const [blogsRes, problemsRes] = await Promise.all([
@@ -91,18 +103,6 @@ const BlogPage = () => {
       setIsLoading(false);
     }
   }, [fetchLikes]);
-
-  const fetchComments = async (entry) => {
-    try {
-      const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
-      setCommentsData(prev => ({
-        ...prev,
-        [entry.id]: res.data.comments || [],
-      }));
-    } catch (err) {
-      console.error("❌ Error fetching comments:", err);
-    }
-  };
 
   const handleCommentSubmit = async (entry) => {
     const text = newComment[entry.id]?.trim();
@@ -200,6 +200,23 @@ const BlogPage = () => {
               <Card key={entry.id} hoverable onClick={() => openModal(entry)}>
                 <Title level={4}>{entry.title}</Title>
                 <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
+                <Text type="secondary">
+                  Опубліковано: {new Date(entry.createdAt).toLocaleDateString("uk-UA")}
+                </Text><br />
+                <Text>{entry.description?.slice(0, 150) || "Без опису..."}</Text><br />
+                <Space>
+                  <Text type="secondary">❤️ {likesData[entry.id]?.likesCount || 0}</Text>
+                  <Button
+                    type="text"
+                    icon={<SendOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openModal(entry);
+                    }}
+                  >
+                    Коментарі
+                  </Button>
+                </Space>
               </Card>
             ))}
           </Space>
@@ -212,19 +229,20 @@ const BlogPage = () => {
             centered
             width={600}
           >
-            {/* 👇 Мітка: редагуй тут, щоб змінити позицію або дизайн модального вікна */}
             {selectedEntry && (
               <>
                 <Tag color={getTagColor(selectedEntry.entryType)}>{selectedEntry.entryType.toUpperCase()}</Tag>
-                <Text strong>Автор: {selectedEntry.authorname || "Невідомий"}</Text>
+                <Text strong>Автор: {selectedEntry.authorname || "Невідомий"}</Text><br />
+                <Text type="secondary">Опубліковано: {new Date(selectedEntry.createdAt).toLocaleDateString("uk-UA")}</Text>
                 <Divider />
                 <Text>{selectedEntry.description || "Без опису"}</Text>
                 <Divider />
-                <Space>
+                <Space wrap>
                   <Button type="text" onClick={() => toggleLike(selectedEntry)}>
                     {likesData[selectedEntry.id]?.userLiked ? <HeartFilled style={{ color: "red" }} /> : <HeartOutlined />}
                   </Button>
                   <Text>{likesData[selectedEntry.id]?.likesCount || 0} лайків</Text>
+                  <Button type="primary" onClick={() => message.success("Підписка оформлена!")}>Підписатися</Button>
                   <Button type="text" onClick={() => handleShare(selectedEntry)} icon={<ShareAltOutlined />} />
                 </Space>
                 <Divider />
