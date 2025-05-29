@@ -112,7 +112,7 @@ const BlogPage = () => {
       await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
         entry_type: entry.entryType,
-        comment: text
+        text: text
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
