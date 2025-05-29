@@ -68,13 +68,17 @@ const BlogPage = () => {
 
   const fetchComments = async (entry) => {
     try {
+      console.log(`[fetchComments] 📥 Для entry.id = ${entry.id}`);
       const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
+      console.log(`[fetchComments] ✅ Відповідь:`, res.data);
       setCommentsData(prev => ({
         ...prev,
         [entry.id]: res.data.comments || [],
       }));
     } catch (err) {
-      console.error("❌ Error fetching comments:", err);
+      console.error(`[fetchComments] ❌ ПОМИЛКА для entry.id = ${entry.id}`);
+      console.error("➡️ message:", err.message);
+      console.error("➡️ response:", err.response?.data);
     }
   };
 
@@ -121,19 +125,26 @@ const BlogPage = () => {
 
   const handleCommentSubmit = async (entry) => {
     const text = newComment[entry.id]?.trim();
-    if (!text) return;
+    if (!text) {
+      console.warn("[handleCommentSubmit] ⚠️ Порожній коментар");
+      return;
+    }
     try {
       const token = getAuthToken();
-      await axios.post(`${API_COMMENT_URL}/add`, {
+      const payload = {
         entry_id: entry.id,
         entry_type: entry.entryType,
-        text: text
-      }, {
+        text
+      };
+      console.log("[handleCommentSubmit] 📤 Надсилаємо:", payload);
+      await axios.post(`${API_COMMENT_URL}/add`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNewComment(prev => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
     } catch (err) {
+      console.error("[handleCommentSubmit] ❌", err.message);
+      console.error("➡️ response:", err.response?.data);
       message.error("Не вдалося додати коментар.");
     }
   };
