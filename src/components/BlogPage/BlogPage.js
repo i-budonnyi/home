@@ -68,17 +68,13 @@ const BlogPage = () => {
 
   const fetchComments = async (entry) => {
     try {
-      console.log(`[fetchComments] 📥 Для entry.id = ${entry.id}`);
       const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
-      console.log(`[fetchComments] ✅ Відповідь:`, res.data);
       setCommentsData(prev => ({
         ...prev,
         [entry.id]: res.data.comments || [],
       }));
     } catch (err) {
-      console.error(`[fetchComments] ❌ ПОМИЛКА для entry.id = ${entry.id}`);
-      console.error("➡️ message:", err.message);
-      console.error("➡️ response:", err.response?.data);
+      console.error(`[fetchComments] ❌ Entry ID ${entry.id}:`, err.response?.data || err.message);
     }
   };
 
@@ -124,27 +120,24 @@ const BlogPage = () => {
   }, [fetchLikes]);
 
   const handleCommentSubmit = async (entry) => {
-    const text = newComment[entry.id]?.trim();
-    if (!text) {
-      console.warn("[handleCommentSubmit] ⚠️ Порожній коментар");
+    const comment = newComment[entry.id]?.trim();
+    if (!comment) {
+      console.warn("⚠️ Порожній коментар");
       return;
     }
     try {
       const token = getAuthToken();
-      const payload = {
+      await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
         entry_type: entry.entryType,
-        text
-      };
-      console.log("[handleCommentSubmit] 📤 Надсилаємо:", payload);
-      await axios.post(`${API_COMMENT_URL}/add`, payload, {
+        comment // 🟢 ключ відповідає назві колонки в БД
+      }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNewComment(prev => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
     } catch (err) {
       console.error("[handleCommentSubmit] ❌", err.message);
-      console.error("➡️ response:", err.response?.data);
       message.error("Не вдалося додати коментар.");
     }
   };
@@ -227,8 +220,8 @@ const BlogPage = () => {
                 <Title level={4}>{entry.title}</Title>
                 <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
                 <Text type="secondary">
-                  Опубліковано: {entry.createdAt && !isNaN(Date.parse(entry.createdAt)) 
-                    ? new Date(entry.createdAt).toLocaleDateString("uk-UA") 
+                  Опубліковано: {entry.createdAt && !isNaN(Date.parse(entry.createdAt))
+                    ? new Date(entry.createdAt).toLocaleDateString("uk-UA")
                     : "невідомо"}
                 </Text><br />
                 <Text>{entry.description?.slice(0, 150) || "Без опису..."}</Text><br />
