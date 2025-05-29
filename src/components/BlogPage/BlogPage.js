@@ -121,16 +121,14 @@ const BlogPage = () => {
 
   const handleCommentSubmit = async (entry) => {
     const comment = newComment[entry.id]?.trim();
-    if (!comment) {
-      console.warn("⚠️ Порожній коментар");
-      return;
-    }
+    if (!comment) return;
+
     try {
       const token = getAuthToken();
       await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
         entry_type: entry.entryType,
-        comment // 🟢 ключ відповідає назві колонки в БД
+        comment
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -282,7 +280,7 @@ const BlogPage = () => {
                         <Text type="secondary" style={{ fontSize: 12 }}>
                           {new Date(comment.createdAt).toLocaleString("uk-UA")}
                         </Text><br />
-                        <Text>{comment.text}</Text>
+                        <Text>{comment.comment || comment.text}</Text>
                       </Card>
                     ))
                   ) : <Text type="secondary">Коментарів ще немає.</Text>}
