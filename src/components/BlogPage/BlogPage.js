@@ -119,43 +119,54 @@ const BlogPage = () => {
     }
   }, [fetchLikes]);
 
+  const toggleLike = async (entry) => {
+    try {
+      console.log("[toggleLike] 🟡 Відправка запиту для лайка:", entry);
+      await axios.post(`${API_LIKE_URL}/toggle-like`, {
+        entry_id: entry.id,
+        entry_type: entry.entryType,
+      }, {
+        headers: { Authorization: `Bearer ${getAuthToken()}` }
+      });
+      console.log("[toggleLike] ✅ Лайк оновлено");
+      fetchLikes(entry);
+    } catch (err) {
+      console.error("[toggleLike] ❌ Помилка:", err.response?.data || err.message);
+      message.error("Не вдалося змінити лайк.");
+    }
+  };
+
   const handleCommentSubmit = async (entry) => {
-  const comment = newComment[entry.id]?.trim();
-  if (!comment) {
-    console.warn("[handleCommentSubmit] ⚠️ Порожній коментар, нічого не відправлено.");
-    return;
-  }
+    const comment = newComment[entry.id]?.trim();
+    if (!comment) {
+      console.warn("[handleCommentSubmit] ⚠️ Порожній коментар, нічого не відправлено.");
+      return;
+    }
 
-  const token = getAuthToken();
-  console.log("[handleCommentSubmit] 🟡 Старт відправки коментаря:", {
-    token: !!token ? "[ТОКЕН Є]" : "[ТОКЕН ВІДСУТНІЙ]",
-    entry_id: entry.id,
-    entry_type: entry.entryType,
-    comment
-  });
-
-  try {
-    const res = await axios.post(`${API_COMMENT_URL}/add`, {
+    const token = getAuthToken();
+    console.log("[handleCommentSubmit] 🟡 Відправка коментаря:", {
       entry_id: entry.id,
       entry_type: entry.entryType,
       comment
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
     });
 
-    console.log("[handleCommentSubmit] ✅ Коментар успішно надіслано:", res.data);
-    setNewComment(prev => ({ ...prev, [entry.id]: "" }));
-    fetchComments(entry);
-  } catch (err) {
-    console.error("[handleCommentSubmit] ❌ ПОМИЛКА при надсиланні:", {
-      message: err.message,
-      response: err.response?.data,
-      status: err.response?.status
-    });
-    message.error("Не вдалося додати коментар.");
-  }
-};
+    try {
+      const res = await axios.post(`${API_COMMENT_URL}/add`, {
+        entry_id: entry.id,
+        entry_type: entry.entryType,
+        comment
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
+      console.log("[handleCommentSubmit] ✅ Коментар додано:", res.data);
+      setNewComment(prev => ({ ...prev, [entry.id]: "" }));
+      fetchComments(entry);
+    } catch (err) {
+      console.error("[handleCommentSubmit] ❌ ПОМИЛКА:", err.response?.data || err.message);
+      message.error("Не вдалося додати коментар.");
+    }
+  };
 
   const handleShare = (entry) => {
     setShareLink(`${window.location.origin}/post/${entry.id}`);
