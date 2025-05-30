@@ -120,37 +120,42 @@ const BlogPage = () => {
   }, [fetchLikes]);
 
   const handleCommentSubmit = async (entry) => {
-    const comment = newComment[entry.id]?.trim();
-    if (!comment) return;
+  const comment = newComment[entry.id]?.trim();
+  if (!comment) {
+    console.warn("[handleCommentSubmit] ⚠️ Порожній коментар, нічого не відправлено.");
+    return;
+  }
 
-    try {
-      const token = getAuthToken();
-      await axios.post(`${API_COMMENT_URL}/add`, {
-        entry_id: entry.id,
-        entry_type: entry.entryType,
-        comment
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setNewComment(prev => ({ ...prev, [entry.id]: "" }));
-      fetchComments(entry);
-    } catch (err) {
-      console.error("[handleCommentSubmit] ❌", err.message);
-      message.error("Не вдалося додати коментар.");
-    }
-  };
+  const token = getAuthToken();
+  console.log("[handleCommentSubmit] 🟡 Старт відправки коментаря:", {
+    token: !!token ? "[ТОКЕН Є]" : "[ТОКЕН ВІДСУТНІЙ]",
+    entry_id: entry.id,
+    entry_type: entry.entryType,
+    comment
+  });
 
-  const toggleLike = async (entry) => {
-    try {
-      await axios.post(`${API_LIKE_URL}/toggle-like`, {
-        entry_id: entry.id,
-        entry_type: entry.entryType,
-      });
-      fetchLikes(entry);
-    } catch (err) {
-      message.error("Не вдалося змінити лайк.");
-    }
-  };
+  try {
+    const res = await axios.post(`${API_COMMENT_URL}/add`, {
+      entry_id: entry.id,
+      entry_type: entry.entryType,
+      comment
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    console.log("[handleCommentSubmit] ✅ Коментар успішно надіслано:", res.data);
+    setNewComment(prev => ({ ...prev, [entry.id]: "" }));
+    fetchComments(entry);
+  } catch (err) {
+    console.error("[handleCommentSubmit] ❌ ПОМИЛКА при надсиланні:", {
+      message: err.message,
+      response: err.response?.data,
+      status: err.response?.status
+    });
+    message.error("Не вдалося додати коментар.");
+  }
+};
+
 
   const handleShare = (entry) => {
     setShareLink(`${window.location.origin}/post/${entry.id}`);
