@@ -36,6 +36,7 @@ const BlogPage = () => {
   const [shareLink, setShareLink] = useState("");
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [socket, setSocket] = useState(null);
 
   const getAuthToken = () => localStorage.getItem("token");
 
@@ -142,7 +143,7 @@ const BlogPage = () => {
     const entryType = entry.entryType.toLowerCase();
 
     try {
-      await axios.post(`${API_COMMENT_URL}/add`, {
+      const res = await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
         entry_type: entryType,
         comment
@@ -150,8 +151,17 @@ const BlogPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      const newAdded = res.data?.comment || res.data;
+      setCommentsData(prev => ({
+        ...prev,
+        [entry.id]: [...(prev[entry.id] || []), newAdded]
+      }));
+
+      if (socket) {
+        socket.emit("new_comment", { entryId: entry.id, comment: newAdded });
+      }
+
       setNewComment(prev => ({ ...prev, [entry.id]: "" }));
-      fetchComments(entry);
     } catch (err) {
       console.error("[handleCommentSubmit] ❌ Error:", err.response?.data || err.message);
       message.error("Не вдалося додати коментар.");
@@ -198,22 +208,21 @@ const BlogPage = () => {
     fetchUserId();
     fetchAllEntries();
 
-    const socket = io(SOCKET_URL, { transports: ['websocket'] });
+    const newSocket = io(SOCKET_URL, { transports: ['websocket'] });
+    setSocket(newSocket);
 
-    socket.on("new_entry", entry => {
+    newSocket.on("new_entry", entry => {
       setEntries(prev => [entry, ...prev]);
     });
 
-    socket.on("new_comment", ({ entryId, comment }) => {
+    newSocket.on("new_comment", ({ entryId, comment }) => {
       setCommentsData(prev => ({
         ...prev,
         [entryId]: [...(prev[entryId] || []), comment],
       }));
     });
 
-    return () => {
-      socket.disconnect();
-    };
+    return () => newSocket.disconnect();
   }, [fetchUserId, fetchAllEntries]);
 
   const getTagColor = (type) => {
@@ -225,16 +234,6 @@ const BlogPage = () => {
 
   return (
     <Content style={{ padding: 20, maxWidth: 900, margin: "auto" }}>
-      <Card style={{ marginBottom: 24, backgroundColor: "#f0f5ff", border: "1px solid #91d5ff" }}>
-        <Title level={4}>💬 Коментарі як в Instagram</Title>
-        <ul style={{ paddingLeft: 20, marginBottom: 0 }}>
-          <li>⚡ WebSocket оновлює їх в реальному часі</li>
-          <li>🔁 Автоматична прокрутка до останнього коментаря</li>
-          <li>❌ Можна видаляти свої коментарі</li>
-          <li>📎 Повний функціонал (лайки, підписки, share) збережено</li>
-        </ul>
-      </Card>
-
       {isLoading ? <Skeleton active /> : (
         <>
           <div style={{ textAlign: "center", marginBottom: 20 }}>
