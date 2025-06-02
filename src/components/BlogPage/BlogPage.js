@@ -142,7 +142,7 @@ const BlogPage = () => {
     const entryType = entry.entryType.toLowerCase();
 
     try {
-      const res = await axios.post(`${API_COMMENT_URL}/add`, {
+      await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
         entry_type: entryType,
         comment
@@ -162,13 +162,7 @@ const BlogPage = () => {
     setShareLink(`${window.location.origin}/post/${entry.id}`);
     setShareModalVisible(true);
   };
-module.exports = {
-  // інші налаштування
-  rules: {
-    // інші правила
-    'no-unused-vars': 'off', // вимикає помилку про "невикористані змінні"
-  },
-};
+
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(shareLink);
