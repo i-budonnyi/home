@@ -137,36 +137,39 @@ const BlogPage = () => {
   };
 
   const handleCommentSubmit = async (entry) => {
-    const comment = newComment[entry.id]?.trim();
-    if (!comment) {
-      console.warn("[handleCommentSubmit] ⚠️ Порожній коментар, нічого не відправлено.");
-      return;
-    }
+  const comment = newComment[entry.id]?.trim();
+  if (!comment) {
+    console.warn("[handleCommentSubmit] ⚠️ Порожній коментар, нічого не відправлено.");
+    return;
+  }
 
-    const token = getAuthToken();
-    console.log("[handleCommentSubmit] 🟡 Відправка коментаря:", {
+  const token = getAuthToken();
+  const entryType = entry.entryType.toLowerCase(); // 🛠 Виправлення тут
+
+  console.log("[handleCommentSubmit] 🟡 Відправка коментаря:", {
+    entry_id: entry.id,
+    entry_type: entryType,
+    comment
+  });
+
+  try {
+    const res = await axios.post(`${API_COMMENT_URL}/add`, {
       entry_id: entry.id,
-      entry_type: entry.entryType,
+      entry_type: entryType,
       comment
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
     });
 
-    try {
-      const res = await axios.post(`${API_COMMENT_URL}/add`, {
-        entry_id: entry.id,
-        entry_type: entry.entryType,
-        comment
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+    console.log("[handleCommentSubmit] ✅ Коментар додано:", res.data);
+    setNewComment(prev => ({ ...prev, [entry.id]: "" }));
+    fetchComments(entry);
+  } catch (err) {
+    console.error("[handleCommentSubmit] ❌ ПОМИЛКА:", err.response?.data || err.message);
+    message.error("Не вдалося додати коментар.");
+  }
+};
 
-      console.log("[handleCommentSubmit] ✅ Коментар додано:", res.data);
-      setNewComment(prev => ({ ...prev, [entry.id]: "" }));
-      fetchComments(entry);
-    } catch (err) {
-      console.error("[handleCommentSubmit] ❌ ПОМИЛКА:", err.response?.data || err.message);
-      message.error("Не вдалося додати коментар.");
-    }
-  };
 
   const handleShare = (entry) => {
     setShareLink(`${window.location.origin}/post/${entry.id}`);
