@@ -1,0 +1,83 @@
+﻿<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PM Projects Page</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+  <div id="app" class="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-10">
+    <h1 class="text-2xl font-bold mb-4">👨‍💼 Проєктний менеджер</h1>
+    <div id="pm-info" class="border p-4 rounded-md shadow-md bg-gray-50 mb-6">
+      <p><strong>Ім'я:</strong> <span id="pm-name">Завантаження...</span></p>
+      <p><strong>Email:</strong> <span id="pm-email"></span></p>
+      <p><strong>Телефон:</strong> <span id="pm-phone"></span></p>
+    </div>
+
+    <h2 class="text-xl font-semibold mt-6">✅ Схвалені рішення журі</h2>
+    <ul id="decisions-list" class="mt-4 space-y-4"></ul>
+
+    <p id="no-decisions" class="mt-4 text-gray-500 hidden">❌ Немає схвалених рішень журі</p>
+    <p id="error-message" class="mt-4 text-red-500 hidden">❌ Помилка при отриманні даних</p>
+  </div>
+
+  <script>
+    const API_PM_URL = "https://idea-backend.onrender.com/api/projectManagerRoutes";
+    const API_JURY_URL = "https://idea-backend.onrender.com/api/juryDecisions";
+    const token = localStorage.getItem("token");
+
+    async function fetchPMAndDecisions() {
+      if (!token) {
+        document.getElementById("error-message").textContent = "❌ Користувач не автентифікований.";
+        document.getElementById("error-message").classList.remove("hidden");
+        return;
+      }
+
+      try {
+        // PM Info
+        const pmRes = await fetch(`${API_PM_URL}/pm/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const pmData = await pmRes.json();
+        if (pmData && pmData.pm_id) {
+          localStorage.setItem("pmId", pmData.pm_id);
+          document.getElementById("pm-name").textContent = `${pmData.first_name} ${pmData.last_name}`;
+          document.getElementById("pm-email").textContent = pmData.email;
+          document.getElementById("pm-phone").textContent = pmData.phone;
+        } else {
+          throw new Error("PM не знайдено");
+        }
+
+        // Jury Decisions
+        const decisionRes = await fetch(`${API_JURY_URL}/jury-decisions/approved`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const decisions = await decisionRes.json();
+
+        const list = document.getElementById("decisions-list");
+        if (decisions && decisions.length > 0) {
+          decisions.forEach(decision => {
+            const li = document.createElement("li");
+            li.className = "border p-4 rounded-md shadow-md bg-gray-50";
+            li.innerHTML = `
+              <p><strong>Проєкт ID:</strong> ${decision.project_id}</p>
+              <p><strong>Рішення:</strong> ${decision.decision}</p>
+              <p><strong>Сума бонусу:</strong> ${decision.bonus_amount} грн</p>
+              <p><strong>Дата прийняття:</strong> ${new Date(decision.decision_date).toLocaleDateString()}</p>
+            `;
+            list.appendChild(li);
+          });
+        } else {
+          document.getElementById("no-decisions").classList.remove("hidden");
+        }
+      } catch (err) {
+        console.error("Помилка:", err);
+        document.getElementById("error-message").classList.remove("hidden");
+      }
+    }
+
+    fetchPMAndDecisions();
+  </script>
+</body>
+</html>
