@@ -10,15 +10,12 @@ import {
 } from "@ant-design/icons";
 import { SendOutlined as TelegramIcon } from "@ant-design/icons";
 import axios from "axios";
-import io from "socket.io-client";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
-const SOCKET_URL = "https://backend-avtologistika.onrender.com";
-
 const API_BLOG_URL = `${API_BASE}/blogRoutes`;
 const API_PROBLEMS_URL = `${API_BASE}/problems`;
 const API_LIKE_URL = `${API_BASE}/likeRoutes`;
@@ -345,7 +342,7 @@ const BlogPage = () => {
                   <FacebookFilled style={{ fontSize: 30, color: "#4267B2" }} />
                 </a>
               </Tooltip>
-              <Tooltip title="X">
+              <Tooltip title="X (Twitter)">
                 <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
                   <TwitterOutlined style={{ fontSize: 28, color: "#000" }} />
                 </a>
