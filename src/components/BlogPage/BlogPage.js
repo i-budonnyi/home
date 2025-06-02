@@ -121,55 +121,42 @@ const BlogPage = () => {
 
   const toggleLike = async (entry) => {
     try {
-      console.log("[toggleLike] 🟡 Відправка запиту для лайка:", entry);
       await axios.post(`${API_LIKE_URL}/toggle-like`, {
         entry_id: entry.id,
         entry_type: entry.entryType,
       }, {
         headers: { Authorization: `Bearer ${getAuthToken()}` }
       });
-      console.log("[toggleLike] ✅ Лайк оновлено");
       fetchLikes(entry);
     } catch (err) {
-      console.error("[toggleLike] ❌ Помилка:", err.response?.data || err.message);
+      console.error("[toggleLike] ❌ Error:", err.response?.data || err.message);
       message.error("Не вдалося змінити лайк.");
     }
   };
 
   const handleCommentSubmit = async (entry) => {
-  const comment = newComment[entry.id]?.trim();
-  if (!comment) {
-    console.warn("[handleCommentSubmit] ⚠️ Порожній коментар, нічого не відправлено.");
-    return;
-  }
+    const comment = newComment[entry.id]?.trim();
+    if (!comment) return;
 
-  const token = getAuthToken();
-  const entryType = entry.entryType.toLowerCase(); // 🛠 Виправлення тут
+    const token = getAuthToken();
+    const entryType = entry.entryType.toLowerCase();
 
-  console.log("[handleCommentSubmit] 🟡 Відправка коментаря:", {
-    entry_id: entry.id,
-    entry_type: entryType,
-    comment
-  });
+    try {
+      const res = await axios.post(`${API_COMMENT_URL}/add`, {
+        entry_id: entry.id,
+        entry_type: entryType,
+        comment
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-  try {
-    const res = await axios.post(`${API_COMMENT_URL}/add`, {
-      entry_id: entry.id,
-      entry_type: entryType,
-      comment
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-
-    console.log("[handleCommentSubmit] ✅ Коментар додано:", res.data);
-    setNewComment(prev => ({ ...prev, [entry.id]: "" }));
-    fetchComments(entry);
-  } catch (err) {
-    console.error("[handleCommentSubmit] ❌ ПОМИЛКА:", err.response?.data || err.message);
-    message.error("Не вдалося додати коментар.");
-  }
-};
-
+      setNewComment(prev => ({ ...prev, [entry.id]: "" }));
+      fetchComments(entry);
+    } catch (err) {
+      console.error("[handleCommentSubmit] ❌ Error:", err.response?.data || err.message);
+      message.error("Не вдалося додати коментар.");
+    }
+  };
 
   const handleShare = (entry) => {
     setShareLink(`${window.location.origin}/post/${entry.id}`);
@@ -194,15 +181,25 @@ const BlogPage = () => {
   useEffect(() => {
     fetchUserId();
     fetchAllEntries();
-    const socket = io(SOCKET_URL);
-    socket.on("new_entry", entry => setEntries(prev => [entry, ...prev]));
+
+    const socket = io(SOCKET_URL, {
+      transports: ['websocket'],
+    });
+
+    socket.on("new_entry", entry => {
+      setEntries(prev => [entry, ...prev]);
+    });
+
     socket.on("new_comment", ({ entryId, comment }) => {
       setCommentsData(prev => ({
         ...prev,
         [entryId]: [...(prev[entryId] || []), comment],
       }));
     });
-    return () => socket.disconnect();
+
+    return () => {
+      socket.disconnect();
+    };
   }, [fetchUserId, fetchAllEntries]);
 
   const getTagColor = (type) => {
