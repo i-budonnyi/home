@@ -162,7 +162,13 @@ const BlogPage = () => {
     setShareLink(`${window.location.origin}/post/${entry.id}`);
     setShareModalVisible(true);
   };
-
+module.exports = {
+  // інші налаштування
+  rules: {
+    // інші правила
+    'no-unused-vars': 'off', // вимикає помилку про "невикористані змінні"
+  },
+};
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(shareLink);
