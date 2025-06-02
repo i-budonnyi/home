@@ -6,7 +6,7 @@ import {
 import {
   HeartOutlined, HeartFilled, SendOutlined,
   ShareAltOutlined, CopyOutlined, FacebookFilled,
-  TwitterSquareFilled
+  TwitterOutlined
 } from "@ant-design/icons";
 import { SendOutlined as TelegramIcon } from "@ant-design/icons";
 import axios from "axios";
@@ -36,7 +36,6 @@ const BlogPage = () => {
   const [shareLink, setShareLink] = useState("");
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [socket, setSocket] = useState(null);
 
   const getAuthToken = () => localStorage.getItem("token");
 
@@ -151,19 +150,14 @@ const BlogPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      const newAdded = res.data?.comment || res.data;
+      const added = res.data?.comment || res.data;
       setCommentsData(prev => ({
         ...prev,
-        [entry.id]: [...(prev[entry.id] || []), newAdded]
+        [entry.id]: [...(prev[entry.id] || []), added]
       }));
-
-      if (socket) {
-        socket.emit("new_comment", { entryId: entry.id, comment: newAdded });
-      }
-
       setNewComment(prev => ({ ...prev, [entry.id]: "" }));
     } catch (err) {
-      console.error("[handleCommentSubmit] ❌ Error:", err.response?.data || err.message);
+      console.error("[handleCommentSubmit] ❌", err.response?.data || err.message);
       message.error("Не вдалося додати коментар.");
     }
   };
@@ -207,22 +201,6 @@ const BlogPage = () => {
   useEffect(() => {
     fetchUserId();
     fetchAllEntries();
-
-    const newSocket = io(SOCKET_URL, { transports: ['websocket'] });
-    setSocket(newSocket);
-
-    newSocket.on("new_entry", entry => {
-      setEntries(prev => [entry, ...prev]);
-    });
-
-    newSocket.on("new_comment", ({ entryId, comment }) => {
-      setCommentsData(prev => ({
-        ...prev,
-        [entryId]: [...(prev[entryId] || []), comment],
-      }));
-    });
-
-    return () => newSocket.disconnect();
   }, [fetchUserId, fetchAllEntries]);
 
   const getTagColor = (type) => {
@@ -256,11 +234,12 @@ const BlogPage = () => {
               <Card key={entry.id} hoverable onClick={() => openModal(entry)}>
                 <Title level={4}>{entry.title}</Title>
                 <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
-                <Text type="secondary">
-                  Опубліковано: {entry.createdAt && !isNaN(Date.parse(entry.createdAt))
-                    ? new Date(entry.createdAt).toLocaleDateString("uk-UA")
-                    : "невідомо"}
-                </Text><br />
+                {entry.createdAt && !isNaN(Date.parse(entry.createdAt)) && (
+                  <Text type="secondary">
+                    Опубліковано: {new Date(entry.createdAt).toLocaleDateString("uk-UA")}
+                  </Text>
+                )}
+                <br />
                 <Text>{entry.description?.slice(0, 150) || "Без опису..."}</Text><br />
                 <Space>
                   <Text type="secondary">❤️ {likesData[entry.id]?.likesCount || 0}</Text>
@@ -273,6 +252,15 @@ const BlogPage = () => {
                     }}
                   >
                     Коментарі
+                  </Button>
+                  <Button
+                    type="link"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openModal(entry);
+                    }}
+                  >
+                    Детальніше
                   </Button>
                 </Space>
               </Card>
@@ -291,11 +279,11 @@ const BlogPage = () => {
               <>
                 <Tag color={getTagColor(selectedEntry.entryType)}>{selectedEntry.entryType.toUpperCase()}</Tag>
                 <Text strong>Автор: {selectedEntry.authorname || "Невідомий"}</Text><br />
-                <Text type="secondary">
-                  Опубліковано: {selectedEntry.createdAt && !isNaN(Date.parse(selectedEntry.createdAt))
-                    ? new Date(selectedEntry.createdAt).toLocaleDateString("uk-UA")
-                    : "невідомо"}
-                </Text>
+                {selectedEntry.createdAt && !isNaN(Date.parse(selectedEntry.createdAt)) && (
+                  <Text type="secondary">
+                    Опубліковано: {new Date(selectedEntry.createdAt).toLocaleDateString("uk-UA")}
+                  </Text>
+                )}
                 <Divider />
                 <Text>{selectedEntry.description || "Без опису"}</Text>
                 <Divider />
@@ -357,9 +345,9 @@ const BlogPage = () => {
                   <FacebookFilled style={{ fontSize: 30, color: "#4267B2" }} />
                 </a>
               </Tooltip>
-              <Tooltip title="Twitter">
+              <Tooltip title="X">
                 <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
-                  <TwitterSquareFilled style={{ fontSize: 28, color: "#1DA1F2" }} />
+                  <TwitterOutlined style={{ fontSize: 28, color: "#000" }} />
                 </a>
               </Tooltip>
               <Tooltip title="Копіювати посилання">
