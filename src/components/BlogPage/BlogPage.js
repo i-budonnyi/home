@@ -158,6 +158,22 @@ const BlogPage = () => {
     }
   };
 
+  const handleDeleteComment = async (commentId, entryId) => {
+    try {
+      await axios.delete(`${API_COMMENT_URL}/${commentId}`, {
+        headers: { Authorization: `Bearer ${getAuthToken()}` }
+      });
+      setCommentsData(prev => ({
+        ...prev,
+        [entryId]: prev[entryId].filter(c => c.id !== commentId)
+      }));
+      message.success("Коментар видалено.");
+    } catch (err) {
+      console.error("[handleDeleteComment] ❌", err.response?.data || err.message);
+      message.error("Не вдалося видалити коментар.");
+    }
+  };
+
   const handleShare = (entry) => {
     setShareLink(`${window.location.origin}/post/${entry.id}`);
     setShareModalVisible(true);
@@ -182,9 +198,7 @@ const BlogPage = () => {
     fetchUserId();
     fetchAllEntries();
 
-    const socket = io(SOCKET_URL, {
-      transports: ['websocket'],
-    });
+    const socket = io(SOCKET_URL, { transports: ['websocket'] });
 
     socket.on("new_entry", entry => {
       setEntries(prev => [entry, ...prev]);
@@ -212,7 +226,7 @@ const BlogPage = () => {
   return (
     <Content style={{ padding: 20, maxWidth: 900, margin: "auto" }}>
       <Card style={{ marginBottom: 24, backgroundColor: "#f0f5ff", border: "1px solid #91d5ff" }}>
-        <Title level={4} style={{ marginBottom: 12 }}>💬 Коментарі як в Instagram</Title>
+        <Title level={4}>💬 Коментарі як в Instagram</Title>
         <ul style={{ paddingLeft: 20, marginBottom: 0 }}>
           <li>⚡ WebSocket оновлює їх в реальному часі</li>
           <li>🔁 Автоматична прокрутка до останнього коментаря</li>
@@ -300,13 +314,22 @@ const BlogPage = () => {
                   {commentsData[selectedEntry.id]?.length ? (
                     commentsData[selectedEntry.id].map(comment => (
                       <Card key={comment.id} size="small" style={{ backgroundColor: "#f9f9f9" }}>
-                        <Text strong>
-                          {comment.author_first_name || "Анонім"} {comment.author_last_name || ""}
-                        </Text><br />
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          {new Date(comment.createdAt).toLocaleString("uk-UA")}
-                        </Text><br />
-                        <Text>{comment.comment || comment.text}</Text>
+                        <Space style={{ justifyContent: "space-between", width: "100%" }}>
+                          <div>
+                            <Text strong>
+                              {comment.author_first_name || "Анонім"} {comment.author_last_name || ""}
+                            </Text><br />
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {new Date(comment.createdAt).toLocaleString("uk-UA")}
+                            </Text><br />
+                            <Text>{comment.comment || comment.text}</Text>
+                          </div>
+                          {comment.user_id === userId && (
+                            <Button danger type="link" onClick={() => handleDeleteComment(comment.id, selectedEntry.id)}>
+                              Видалити
+                            </Button>
+                          )}
+                        </Space>
                       </Card>
                     ))
                   ) : <Text type="secondary">Коментарів ще немає.</Text>}
