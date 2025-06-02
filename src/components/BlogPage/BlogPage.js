@@ -211,6 +211,16 @@ const BlogPage = () => {
 
   return (
     <Content style={{ padding: 20, maxWidth: 900, margin: "auto" }}>
+      <Card style={{ marginBottom: 24, backgroundColor: "#f0f5ff", border: "1px solid #91d5ff" }}>
+        <Title level={4} style={{ marginBottom: 12 }}>💬 Коментарі як в Instagram</Title>
+        <ul style={{ paddingLeft: 20, marginBottom: 0 }}>
+          <li>⚡ WebSocket оновлює їх в реальному часі</li>
+          <li>🔁 Автоматична прокрутка до останнього коментаря</li>
+          <li>❌ Можна видаляти свої коментарі</li>
+          <li>📎 Повний функціонал (лайки, підписки, share) збережено</li>
+        </ul>
+      </Card>
+
       {isLoading ? <Skeleton active /> : (
         <>
           <div style={{ textAlign: "center", marginBottom: 20 }}>
