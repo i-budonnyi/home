@@ -7,7 +7,7 @@ import {
 import {
   HeartOutlined, HeartFilled, SendOutlined,
   ShareAltOutlined, CopyOutlined, FacebookFilled,
-  TwitterOutlined
+  TwitterOutlined, CloseOutlined
 } from "@ant-design/icons";
 import { SendOutlined as TelegramIcon } from "@ant-design/icons";
 import axios from "axios";
@@ -143,12 +143,6 @@ const BlogPage = () => {
     const comment = newComment[entry.id]?.trim();
     if (!comment) return;
 
-    if (!socket || !socket.connected) {
-      console.error("❌ Socket не ініціалізовано");
-      message.error("Немає WebSocket-з'єднання");
-      return;
-    }
-
     try {
       const res = await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
@@ -165,6 +159,13 @@ const BlogPage = () => {
       }));
       setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
       setTimeout(() => commentsEndRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
+
+      if (socket && socket.connected) {
+        socket.emit("send_comment", {
+          entry_id: entry.id,
+          comment: added,
+        });
+      }
     } catch (err) {
       console.error("[handleCommentSubmit] ❌", err);
       message.error("Не вдалося додати коментар.");
@@ -211,18 +212,35 @@ const BlogPage = () => {
     fetchUserId();
     fetchAllEntries();
 
-    if (!socket) {
-      socket = io("https://backend-avtologistika.onrender.com");
+    if (!socket || !socket.connected) {
+      socket = io("https://backend-avtologistika.onrender.com", {
+        transports: ['websocket'],
+        reconnectionAttempts: 5,
+        timeout: 10000
+      });
+
+      socket.on("connect", () => {
+        console.log("✅ WebSocket connected");
+      });
+
+      socket.on("connect_error", (err) => {
+        console.error("❌ WebSocket connect error:", err);
+      });
+
+      socket.on("new_comment", ({ entry_id, comment }) => {
+        setCommentsData((prev) => ({
+          ...prev,
+          [entry_id]: [...(prev[entry_id] || []), comment]
+        }));
+      });
     }
 
-    socket.on("new_comment", ({ entry_id, comment }) => {
-      setCommentsData((prev) => ({
-        ...prev,
-        [entry_id]: [...(prev[entry_id] || []), comment]
-      }));
-    });
-
-    return () => socket?.disconnect();
+    return () => {
+      if (socket) {
+        socket.disconnect();
+        socket = null;
+      }
+    };
   }, [fetchUserId, fetchAllEntries, fetchLikes]);
 
   const getTagColor = (type) => {
@@ -279,7 +297,6 @@ const BlogPage = () => {
               ))}
           </Space>
 
-          {/* Modal для запису */}
           <Modal open={modalVisible} title={selectedEntry?.title} onCancel={() => setModalVisible(false)} footer={null}>
             {selectedEntry && (
               <>
@@ -336,7 +353,6 @@ const BlogPage = () => {
             )}
           </Modal>
 
-          {/* Modal для поділитися */}
           <Modal title="Поділитися" open={shareVisible} onCancel={() => setShareVisible(false)} footer={null}>
             <Space>
               <Tooltip title="Telegram">
