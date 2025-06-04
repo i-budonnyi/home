@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   Layout, Card, Space, Typography, Skeleton, Button, Tag, Input,
   Divider, message, Modal, Tooltip
@@ -6,10 +6,11 @@ import {
 import {
   HeartOutlined, HeartFilled, SendOutlined,
   ShareAltOutlined, CopyOutlined, FacebookFilled,
-  TwitterOutlined
+  TwitterOutlined, CloseOutlined
 } from "@ant-design/icons";
 import { SendOutlined as TelegramIcon } from "@ant-design/icons";
 import axios from "axios";
+import io from "socket.io-client";
 
 const { Content } = Layout;
 const { Title, Text } = Typography;
@@ -21,6 +22,8 @@ const API_PROBLEMS_URL = `${API_BASE}/problems`;
 const API_LIKE_URL = `${API_BASE}/likeRoutes`;
 const API_COMMENT_URL = `${API_BASE}/commentRoutes`;
 
+let socket; // ✅ Глобальна змінна для ініціалізації
+
 const BlogPage = () => {
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,10 +32,11 @@ const BlogPage = () => {
   const [newComment, setNewComment] = useState({});
   const [userId, setUserId] = useState(null);
   const [filteredType, setFilteredType] = useState("all");
-  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [shareVisible, setShareVisible] = useState(false);
   const [shareLink, setShareLink] = useState("");
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const commentsEndRef = useRef(null);
 
   const getAuthToken = () => localStorage.getItem("token");
 
@@ -50,36 +54,41 @@ const BlogPage = () => {
 
   const fetchLikes = useCallback(async (entry) => {
     try {
-      const res = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
+      const res = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`, {
+        headers: { Authorization: `Bearer ${getAuthToken()}` }
+      });
       setLikesData(prev => ({
         ...prev,
         [entry.id]: {
           likesCount: res.data.likesCount || 0,
           userLiked: res.data.likedBy?.some(u => u.user_id === userId)
-        },
+        }
       }));
     } catch (err) {
       console.error("❌ Error fetching likes:", err);
     }
   }, [userId]);
 
-  const fetchComments = async (entry) => {
+  const fetchComments = useCallback(async (entry) => {
     try {
-      const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`);
+      const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
+        headers: { Authorization: `Bearer ${getAuthToken()}` }
+      });
       setCommentsData(prev => ({
         ...prev,
-        [entry.id]: res.data.comments || [],
+        [entry.id]: res.data.comments || []
       }));
     } catch (err) {
       console.error(`[fetchComments] ❌ Entry ID ${entry.id}:`, err.response?.data || err.message);
     }
-  };
+  }, []);
 
   const fetchAllEntries = useCallback(async () => {
     try {
+      const headers = { Authorization: `Bearer ${getAuthToken()}` };
       const [blogsRes, problemsRes] = await Promise.all([
-        axios.get(`${API_BLOG_URL}/entries`),
-        axios.get(`${API_PROBLEMS_URL}`),
+        axios.get(`${API_BLOG_URL}/entries`, { headers }),
+        axios.get(`${API_PROBLEMS_URL}`, { headers }),
       ]);
 
       const blogs = blogsRes.data?.blogs?.map(b => ({
@@ -105,6 +114,7 @@ const BlogPage = () => {
 
       const all = [...blogs, ...ideas, ...problems];
       setEntries(all);
+
       all.forEach(entry => {
         fetchLikes(entry);
         fetchComments(entry);
@@ -114,7 +124,7 @@ const BlogPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchLikes]);
+  }, [fetchLikes, fetchComments]);
 
   const toggleLike = async (entry) => {
     try {
@@ -135,16 +145,13 @@ const BlogPage = () => {
     const comment = newComment[entry.id]?.trim();
     if (!comment) return;
 
-    const token = getAuthToken();
-    const entryType = entry.entryType.toLowerCase();
-
     try {
       const res = await axios.post(`${API_COMMENT_URL}/add`, {
         entry_id: entry.id,
-        entry_type: entryType,
+        entry_type: entry.entryType,
         comment
       }, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${getAuthToken()}` }
       });
 
       const added = res.data?.comment || res.data;
@@ -153,6 +160,7 @@ const BlogPage = () => {
         [entry.id]: [...(prev[entry.id] || []), added]
       }));
       setNewComment(prev => ({ ...prev, [entry.id]: "" }));
+      setTimeout(() => commentsEndRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
     } catch (err) {
       console.error("[handleCommentSubmit] ❌", err.response?.data || err.message);
       message.error("Не вдалося додати коментар.");
@@ -177,7 +185,7 @@ const BlogPage = () => {
 
   const handleShare = (entry) => {
     setShareLink(`${window.location.origin}/post/${entry.id}`);
-    setShareModalVisible(true);
+    setShareVisible(true);
   };
 
   const copyToClipboard = async () => {
@@ -198,7 +206,16 @@ const BlogPage = () => {
   useEffect(() => {
     fetchUserId();
     fetchAllEntries();
-  }, [fetchUserId, fetchAllEntries]);
+
+    socket = io("https://backend-avtologistika.onrender.com");
+    socket.on("new_comment", ({ entry_id, comment }) => {
+      setCommentsData(prev => ({
+        ...prev,
+        [entry_id]: [...(prev[entry_id] || []), comment]
+      }));
+    });
+    return () => socket.disconnect();
+  }, [fetchUserId, fetchAllEntries, fetchLikes]);
 
   const getTagColor = (type) => {
     if (type === "blog") return "blue";
@@ -243,19 +260,13 @@ const BlogPage = () => {
                   <Button
                     type="text"
                     icon={<SendOutlined />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openModal(entry);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); openModal(entry); }}
                   >
                     Коментарі
                   </Button>
                   <Button
                     type="link"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openModal(entry);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); openModal(entry); }}
                   >
                     Детальніше
                   </Button>
@@ -264,22 +275,14 @@ const BlogPage = () => {
             ))}
           </Space>
 
-          <Modal
-            open={modalVisible}
-            title={selectedEntry?.title}
-            onCancel={() => setModalVisible(false)}
-            footer={null}
-            centered
-            width={600}
-          >
+          {/* Modal */}
+          <Modal open={modalVisible} title={selectedEntry?.title} onCancel={() => setModalVisible(false)} footer={null}>
             {selectedEntry && (
               <>
                 <Tag color={getTagColor(selectedEntry.entryType)}>{selectedEntry.entryType.toUpperCase()}</Tag>
                 <Text strong>Автор: {selectedEntry.authorname || "Невідомий"}</Text><br />
                 {selectedEntry.createdAt && !isNaN(Date.parse(selectedEntry.createdAt)) && (
-                  <Text type="secondary">
-                    Опубліковано: {new Date(selectedEntry.createdAt).toLocaleDateString("uk-UA")}
-                  </Text>
+                  <Text type="secondary">Опубліковано: {new Date(selectedEntry.createdAt).toLocaleDateString("uk-UA")}</Text>
                 )}
                 <Divider />
                 <Text>{selectedEntry.description || "Без опису"}</Text>
@@ -295,28 +298,25 @@ const BlogPage = () => {
                 <Divider />
                 <Title level={5}>Коментарі:</Title>
                 <Space direction="vertical" style={{ width: "100%" }}>
-                  {commentsData[selectedEntry.id]?.length ? (
-                    commentsData[selectedEntry.id].map(comment => (
-                      <Card key={comment.id} size="small" style={{ backgroundColor: "#f9f9f9" }}>
-                        <Space style={{ justifyContent: "space-between", width: "100%" }}>
-                          <div>
-                            <Text strong>
-                              {comment.author_first_name || "Анонім"} {comment.author_last_name || ""}
-                            </Text><br />
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              {new Date(comment.createdAt).toLocaleString("uk-UA")}
-                            </Text><br />
-                            <Text>{comment.comment || comment.text}</Text>
-                          </div>
-                          {comment.user_id === userId && (
-                            <Button danger type="link" onClick={() => handleDeleteComment(comment.id, selectedEntry.id)}>
-                              Видалити
-                            </Button>
-                          )}
-                        </Space>
-                      </Card>
-                    ))
-                  ) : <Text type="secondary">Коментарів ще немає.</Text>}
+                  {commentsData[selectedEntry.id]?.map(comment => (
+                    <Card key={comment.id} size="small" style={{ backgroundColor: "#f9f9f9" }}>
+                      <Space style={{ justifyContent: "space-between", width: "100%" }}>
+                        <div>
+                          <Text strong>{comment.author_first_name || "Анонім"} {comment.author_last_name || ""}</Text><br />
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            {new Date(comment.createdAt).toLocaleString("uk-UA")}
+                          </Text><br />
+                          <Text>{comment.comment || comment.text}</Text>
+                        </div>
+                        {comment.user_id === userId && (
+                          <Button danger type="link" onClick={() => handleDeleteComment(comment.id, selectedEntry.id)}>
+                            Видалити
+                          </Button>
+                        )}
+                      </Space>
+                    </Card>
+                  ))}
+                  <div ref={commentsEndRef} />
                 </Space>
                 <Divider />
                 <Text strong>Додати коментар:</Text>
@@ -330,7 +330,8 @@ const BlogPage = () => {
             )}
           </Modal>
 
-          <Modal title="Поділитися" open={shareModalVisible} onCancel={() => setShareModalVisible(false)} footer={null}>
+          {/* Share Modal */}
+          <Modal title="Поділитися" open={shareVisible} onCancel={() => setShareVisible(false)} footer={null}>
             <Space>
               <Tooltip title="Telegram">
                 <a href={`https://t.me/share/url?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
@@ -344,7 +345,7 @@ const BlogPage = () => {
               </Tooltip>
               <Tooltip title="X (Twitter)">
                 <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
-                  <TwitterOutlined style={{ fontSize: 28, color: "#000" }} />
+                  <TwitterOutlined style={{ fontSize: 28 }} />
                 </a>
               </Tooltip>
               <Tooltip title="Копіювати посилання">
