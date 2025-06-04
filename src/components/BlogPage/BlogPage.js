@@ -22,7 +22,7 @@ const API_PROBLEMS_URL = `${API_BASE}/problems`;
 const API_LIKE_URL = `${API_BASE}/likeRoutes`;
 const API_COMMENT_URL = `${API_BASE}/commentRoutes`;
 
-let socket; // ✅ Глобальна змінна для ініціалізації
+let socket;
 
 const BlogPage = () => {
   const [entries, setEntries] = useState([]);
@@ -94,27 +94,23 @@ const BlogPage = () => {
       const blogs = blogsRes.data?.blogs?.map(b => ({
         ...b,
         entryType: "blog",
-        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`,
-        createdAt: b.createdAt
+        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim(),
       })) || [];
 
       const ideas = blogsRes.data?.ideas?.map(i => ({
         ...i,
         entryType: "idea",
-        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`,
-        createdAt: i.createdAt
+        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim(),
       })) || [];
 
       const problems = problemsRes.data?.map(p => ({
         ...p,
         entryType: "problem",
-        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`,
-        createdAt: p.createdAt
+        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim(),
       })) || [];
 
       const all = [...blogs, ...ideas, ...problems];
       setEntries(all);
-
       all.forEach(entry => {
         fetchLikes(entry);
         fetchComments(entry);
@@ -206,7 +202,6 @@ const BlogPage = () => {
   useEffect(() => {
     fetchUserId();
     fetchAllEntries();
-
     socket = io("https://backend-avtologistika.onrender.com");
     socket.on("new_comment", ({ entry_id, comment }) => {
       setCommentsData(prev => ({
@@ -217,12 +212,8 @@ const BlogPage = () => {
     return () => socket.disconnect();
   }, [fetchUserId, fetchAllEntries, fetchLikes]);
 
-  const getTagColor = (type) => {
-    if (type === "blog") return "blue";
-    if (type === "idea") return "green";
-    if (type === "problem") return "gold";
-    return "default";
-  };
+  const getTagColor = (type) =>
+    type === "blog" ? "blue" : type === "idea" ? "green" : type === "problem" ? "gold" : "default";
 
   return (
     <Content style={{ padding: 20, maxWidth: 900, margin: "auto" }}>
@@ -248,26 +239,18 @@ const BlogPage = () => {
               <Card key={entry.id} hoverable onClick={() => openModal(entry)}>
                 <Title level={4}>{entry.title}</Title>
                 <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
-                {entry.createdAt && !isNaN(Date.parse(entry.createdAt)) && (
-                  <Text type="secondary">
-                    Опубліковано: {new Date(entry.createdAt).toLocaleDateString("uk-UA")}
-                  </Text>
-                )}
+                <Text type="secondary">
+                  Опубліковано: {new Date(entry.createdAt).toLocaleDateString("uk-UA")}
+                </Text>
                 <br />
-                <Text>{entry.description?.slice(0, 150) || "Без опису..."}</Text><br />
+                <Text>{entry.description?.slice(0, 150) || "Без опису…"}</Text>
+                <br />
                 <Space>
                   <Text type="secondary">❤️ {likesData[entry.id]?.likesCount || 0}</Text>
-                  <Button
-                    type="text"
-                    icon={<SendOutlined />}
-                    onClick={(e) => { e.stopPropagation(); openModal(entry); }}
-                  >
+                  <Button type="text" icon={<SendOutlined />} onClick={(e) => { e.stopPropagation(); openModal(entry); }}>
                     Коментарі
                   </Button>
-                  <Button
-                    type="link"
-                    onClick={(e) => { e.stopPropagation(); openModal(entry); }}
-                  >
+                  <Button type="link" onClick={(e) => { e.stopPropagation(); openModal(entry); }}>
                     Детальніше
                   </Button>
                 </Space>
@@ -275,15 +258,12 @@ const BlogPage = () => {
             ))}
           </Space>
 
-          {/* Modal */}
           <Modal open={modalVisible} title={selectedEntry?.title} onCancel={() => setModalVisible(false)} footer={null}>
             {selectedEntry && (
               <>
                 <Tag color={getTagColor(selectedEntry.entryType)}>{selectedEntry.entryType.toUpperCase()}</Tag>
                 <Text strong>Автор: {selectedEntry.authorname || "Невідомий"}</Text><br />
-                {selectedEntry.createdAt && !isNaN(Date.parse(selectedEntry.createdAt)) && (
-                  <Text type="secondary">Опубліковано: {new Date(selectedEntry.createdAt).toLocaleDateString("uk-UA")}</Text>
-                )}
+                <Text type="secondary">Опубліковано: {new Date(selectedEntry.createdAt).toLocaleDateString("uk-UA")}</Text>
                 <Divider />
                 <Text>{selectedEntry.description || "Без опису"}</Text>
                 <Divider />
@@ -330,7 +310,6 @@ const BlogPage = () => {
             )}
           </Modal>
 
-          {/* Share Modal */}
           <Modal title="Поділитися" open={shareVisible} onCancel={() => setShareVisible(false)} footer={null}>
             <Space>
               <Tooltip title="Telegram">
