@@ -161,11 +161,11 @@ const BlogPage = () => {
       setTimeout(() => commentsEndRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
 
       if (socket && socket.connected) {
-        socket.emit("send_comment", {
-          entry_id: entry.id,
-          comment: added,
-        });
-      }
+        socket.emit("new_comment", {
+  entry_id: entry.id,
+  comment: added,
+});
+
     } catch (err) {
       console.error("[handleCommentSubmit] ❌", err);
       message.error("Не вдалося додати коментар.");
