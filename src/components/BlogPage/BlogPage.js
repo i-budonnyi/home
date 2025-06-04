@@ -6,7 +6,7 @@ import {
 import {
   HeartOutlined, HeartFilled, SendOutlined,
   ShareAltOutlined, CopyOutlined, FacebookFilled,
-  TwitterOutlined, CloseOutlined
+  TwitterOutlined
 } from "@ant-design/icons";
 import { SendOutlined as TelegramIcon } from "@ant-design/icons";
 import axios from "axios";
