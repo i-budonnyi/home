@@ -160,12 +160,12 @@ const BlogPage = () => {
       setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
       setTimeout(() => commentsEndRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
 
-      if (socket && socket.connected) {
-        socket.emit("new_comment", {
-  entry_id: entry.id,
-  comment: added,
-});
-
+ if (socket && socket.connected) {
+  socket.emit("new_comment", {
+    entry_id: entry.id,
+    comment: added,
+  });
+}
     } catch (err) {
       console.error("[handleCommentSubmit] ❌", err);
       message.error("Не вдалося додати коментар.");
