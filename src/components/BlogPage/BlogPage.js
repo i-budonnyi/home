@@ -152,7 +152,11 @@ const BlogPage = () => {
         headers: { Authorization: `Bearer ${getAuthToken()}` }
       });
 
-      const added = res.data?.comment || res.data;
+      const added = res.data?.comment;
+      if (!added) throw new Error("Сервер не повернув коментар");
+
+      console.log("✅ Коментар додано:", added);
+
       setCommentsData((prev) => ({
         ...prev,
         [entry.id]: [...(prev[entry.id] || []), added],
@@ -160,14 +164,15 @@ const BlogPage = () => {
       setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
       setTimeout(() => commentsEndRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
 
- if (socket && socket.connected) {
-  socket.emit("new_comment", {
-    entry_id: entry.id,
-    comment: added,
-  });
-}
+      if (socket && socket.connected) {
+        socket.emit("new_comment", {
+          entry_id: entry.id,
+          comment: added,
+        });
+      }
     } catch (err) {
       console.error("[handleCommentSubmit] ❌", err);
+      console.log("↪️ Сервер відповів:", err?.response?.data);
       message.error("Не вдалося додати коментар.");
     }
   };
