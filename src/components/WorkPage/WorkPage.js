@@ -64,15 +64,22 @@ const WorkerPage = () => {
   useEffect(() => {
     if (!userData?.id || !token) return;
 
-    const socket = io(SOCKET_URL, { transports: ["websocket"] });
+    console.log("📡 Ініціалізація WebSocket...");
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket"],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      timeout: 7000,
+    });
 
     socket.on("connect", () => {
       console.log("🟢 WebSocket connected:", socket.id);
+      console.log("📤 Реєстрація користувача з ID:", userData.id);
       socket.emit("register", userData.id);
     });
 
     socket.on("notification", (data) => {
-      console.log("🔔 Notification received:", data);
+      console.log("🔔 Отримано сповіщення:", data);
       const formatted = {
         ...data,
         is_read: false,
@@ -82,11 +89,34 @@ const WorkerPage = () => {
       setNotifications(prev => [formatted, ...prev]);
     });
 
-    socket.on("disconnect", () => {
-      console.warn("🔴 WebSocket disconnected");
+    socket.on("connect_error", (err) => {
+      console.error("❌ Помилка WebSocket:", err.message);
     });
 
-    return () => socket.disconnect();
+    socket.on("connect_timeout", () => {
+      console.error("⏱ WebSocket timeout");
+    });
+
+    socket.on("reconnect_attempt", (attempt) => {
+      console.log("🔁 Спроба перепідключення:", attempt);
+    });
+
+    socket.on("reconnect", (attempt) => {
+      console.log("✅ Перепідключено після спроби:", attempt);
+    });
+
+    socket.on("reconnect_failed", () => {
+      console.error("🚫 Не вдалося перепідключитися до WebSocket");
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.warn("🔴 WebSocket відключено. Причина:", reason);
+    });
+
+    return () => {
+      console.log("📴 Socket буде відключено (очищення)");
+      socket.disconnect();
+    };
   }, [userData?.id, token]);
 
   const markAllAsRead = async () => {
