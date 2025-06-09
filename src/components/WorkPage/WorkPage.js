@@ -53,6 +53,22 @@ const WorkerPage = () => {
     }
   }, [navigate, token]);
 
+  const fetchPastNotifications = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/notificationRoutes/user/${userData.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const formatted = res.data.map(n => ({
+        ...n,
+        message: sanitizeText(n.message),
+        is_read: n.is_read ?? false,
+      }));
+      setNotifications(formatted.reverse());
+    } catch (err) {
+      console.error("❗️Помилка отримання історії:", err.message);
+    }
+  }, [userData?.id, token]);
+
   useEffect(() => {
     if (!token) {
       navigate("/login");
@@ -60,6 +76,12 @@ const WorkerPage = () => {
       fetchUserProfile();
     }
   }, [token, navigate, fetchUserProfile]);
+
+  useEffect(() => {
+    if (userData?.id) {
+      fetchPastNotifications();
+    }
+  }, [userData?.id, fetchPastNotifications]);
 
   useEffect(() => {
     if (!userData?.id || !token) return;
@@ -71,12 +93,7 @@ const WorkerPage = () => {
       timeout: 7000,
     });
 
-    socket.on("connect", () => {
-      console.log("🟢 WebSocket connected:", socket.id);
-      socket.emit("register", userData.id);
-    });
-
-    socket.on("notification", (data) => {
+    const handleNotification = (data) => {
       const formatted = {
         ...data,
         is_read: false,
@@ -84,7 +101,15 @@ const WorkerPage = () => {
         timestamp: new Date().toISOString(),
       };
       setNotifications(prev => [formatted, ...prev]);
+    };
+
+    socket.on("connect", () => {
+      console.log("🟢 WebSocket connected:", socket.id);
+      socket.emit("register", userData.id);
     });
+
+    socket.on("notification", handleNotification);
+    socket.on("globalNotification", handleNotification);
 
     socket.on("connect_error", (err) => console.error("❌ Socket error:", err.message));
     socket.on("connect_timeout", () => console.error("⏱ WebSocket timeout"));
