@@ -73,7 +73,13 @@ const WorkerPage = () => {
 
     socket.on("notification", (data) => {
       console.log("🔔 Notification received:", data);
-      setNotifications(prev => [data, ...prev]);
+      const formatted = {
+        ...data,
+        is_read: false,
+        message: sanitizeText(data.message || "Нове сповіщення"),
+        timestamp: new Date().toISOString(),
+      };
+      setNotifications(prev => [formatted, ...prev]);
     });
 
     socket.on("disconnect", () => {
