@@ -94,11 +94,10 @@ const SubmitIdeaPage = () => {
     try {
       setIsSubmitting(true);
       const payload = {
-        title: values.title,
-        description: values.description,
-        ambassador_id: values.ambassadorId || null,
-        user_id: userId,
-      };
+  title: values.title,
+  description: values.description,
+  ambassador_id: values.ambassadorId || null,
+};
 
       const res = await fetch(`${API_BASE}`, {
         method: "POST",
