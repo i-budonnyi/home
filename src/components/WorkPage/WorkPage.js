@@ -119,20 +119,8 @@ const WorkerPage = () => {
     };
   }, [userData?.id, token]);
 
-  const markAllAsRead = async () => {
-    const unread = notifications.filter(n => !n.is_read);
-    try {
-      await Promise.all(
-        unread.map(n =>
-          axios.patch(`${API_BASE}/notifications/${n.id}/read`, {}, {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-        )
-      );
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-    } catch (err) {
-      console.error("❌ markAllAsRead:", err.message || err);
-    }
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
   };
 
   const toggleTheme = () => {
