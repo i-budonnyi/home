@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_PM_URL = "https://idea-backend.onrender.com/api/projectManagerRoutes";
-const API_JURY_URL = "https://idea-backend.onrender.com/api/juryDecisions";
+const API_PM_URL = "https://backend-avtologistika.onrender.com/api/projectManagerRoutes";
+const API_JURY_URL = "https://backend-avtologistika.onrender.com/api/juryDecisions";
 
 const PMProjectsPage = () => {
   const [pm, setPM] = useState(null);
@@ -19,49 +19,46 @@ const PMProjectsPage = () => {
       return;
     }
 
-    const fetchPMAndDecisions = async () => {
+    const fetchData = async () => {
       try {
-        console.info("⏳ Завантаження даних Project Manager...");
+        console.info("🔄 Завантаження даних Project Manager...");
 
-        const pmResponse = await axios.get(`${API_PM_URL}/pm/me`, {
-          headers: { Authorization: `Bearer ${token}` },
+        const axiosInstance = axios.create({
+          baseURL: "https://backend-avtologistika.onrender.com/api",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 10000,
         });
 
+        const pmResponse = await axiosInstance.get("/projectManagerRoutes/pm/me");
         const pmData = pmResponse.data;
-        if (pmData?.pm_id) {
-          localStorage.setItem("pmId", pmData.pm_id);
-          setPM(pmData);
-          console.log(`✅ Отримано PM: ${pmData.first_name} ${pmData.last_name}`);
-        } else {
-          throw new Error("❌ PM не знайдено. Ви не маєте відповідної ролі.");
-        }
 
-        console.info("⏳ Завантаження схвалених рішень журі...");
-        const decisionsResponse = await axios.get(`${API_JURY_URL}/jury-decisions/approved`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        if (!pmData?.pm_id) throw new Error("❌ Користувач не є Project Manager.");
+        localStorage.setItem("pmId", pmData.pm_id);
+        setPM(pmData);
+        console.log(`✅ PM: ${pmData.first_name} ${pmData.last_name}`);
 
+        const decisionsResponse = await axiosInstance.get("/juryDecisions/jury-decisions/approved");
         const decisions = decisionsResponse.data;
-        if (Array.isArray(decisions)) {
-          setApprovedDecisions(decisions);
-          console.log(`✅ Отримано ${decisions.length} схвалених рішень.`);
-        } else {
-          throw new Error("❌ Невірний формат списку рішень.");
-        }
+
+        if (!Array.isArray(decisions)) throw new Error("❌ Список рішень має некоректний формат.");
+        setApprovedDecisions(decisions);
+        console.log(`✅ Отримано ${decisions.length} рішень.`);
       } catch (err) {
-        console.error("❌ Помилка:", err.message);
-        setError(err.message || "Не вдалося отримати дані.");
+        console.error("❌ Помилка:", err.response?.data?.message || err.message);
+        setError(err.response?.data?.message || "Невідома помилка при завантаженні даних.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPMAndDecisions();
+    fetchData();
   }, [token]);
 
   if (loading) return <div className="text-center text-gray-500">⏳ Завантаження...</div>;
   if (error) return <div className="text-center text-red-500">{error}</div>;
-  if (!pm) return <div className="text-center text-gray-500">❌ Проєктного менеджера не знайдено</div>;
+  if (!pm) return <div className="text-center text-gray-500">❌ Дані PM не знайдено</div>;
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
