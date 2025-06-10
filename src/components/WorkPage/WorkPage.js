@@ -24,6 +24,7 @@ const WorkerPage = () => {
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
+  // ✅ Використовується в useEffect
   const fetchUserProfile = useCallback(async () => {
     try {
       const res = await fetch("https://backend-avtologistika.onrender.com/api/userRoutes/profile", {
@@ -48,76 +49,85 @@ const WorkerPage = () => {
     }
   }, [navigate, token]);
 
-useEffect(() => {
-  let socket;
-
-  if (!userData?.id) {
-    console.warn("⚠️ WebSocket init skipped: missing userData.id");
-    return;
-  }
-
-  const timeoutId = setTimeout(() => {
-    console.log("📡 Підключення WebSocket...");
-    socket = io(SOCKET_URL, {
-      transports: ["websocket"],
-      reconnection: true,
-    });
-
-    socket.on("connect", () => {
-      console.log("🟢 WebSocket CONNECTED", socket.id);
-      socket.emit("register", userData.id);
-      console.log("📤 register sent with ID:", userData.id);
-    });
-
-    socket.on("connect_error", (err) => {
-      console.error("🔌 WebSocket CONNECT ERROR:", err.message);
-    });
-
-    socket.on("reconnect_error", (err) => {
-      console.error("🔄 RECONNECT ERROR:", err.message);
-    });
-
-    socket.on("disconnect", (reason) => {
-      console.warn("🔴 WebSocket DISCONNECTED:", reason);
-    });
-
-    socket.on("reconnect_attempt", (attempt) => {
-      console.log("🔁 Reconnect attempt:", attempt);
-    });
-
-    socket.on("reconnect", (attempt) => {
-      console.log("✅ Reconnected after attempt:", attempt);
-    });
-
-    socket.on("notification", (data) => {
-      console.log("📩 Received notification:", data);
-      setNotifications(prev => [{
-        ...data,
-        is_read: false,
-        message: sanitizeText(data.message || "Нове сповіщення"),
-        timestamp: new Date().toISOString(),
-      }, ...prev]);
-    });
-
-    socket.on("globalNotification", (data) => {
-      console.log("🌍 Received global notification:", data);
-      setNotifications(prev => [{
-        ...data,
-        is_read: false,
-        message: sanitizeText(data.message || "Глобальне сповіщення"),
-        timestamp: new Date().toISOString(),
-      }, ...prev]);
-    });
-  }, 200); // 200 мс затримка для гарантії наявності userData.id
-
-  return () => {
-    clearTimeout(timeoutId);
-    if (socket) {
-      console.log("🔌 Disconnecting WebSocket");
-      socket.disconnect();
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+    } else {
+      fetchUserProfile(); // ✅ використовуємо функцію
     }
-  };
-}, [userData?.id]);
+  }, [token, navigate, fetchUserProfile]);
+
+  useEffect(() => {
+    let socket;
+
+    if (!userData?.id) {
+      console.warn("⚠️ WebSocket init skipped: missing userData.id");
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      console.log("📡 Підключення WebSocket...");
+      socket = io(SOCKET_URL, {
+        transports: ["websocket"],
+        reconnection: true,
+      });
+
+      socket.on("connect", () => {
+        console.log("🟢 WebSocket CONNECTED", socket.id);
+        socket.emit("register", userData.id);
+        console.log("📤 register sent with ID:", userData.id);
+      });
+
+      socket.on("connect_error", (err) => {
+        console.error("🔌 WebSocket CONNECT ERROR:", err.message);
+      });
+
+      socket.on("reconnect_error", (err) => {
+        console.error("🔄 RECONNECT ERROR:", err.message);
+      });
+
+      socket.on("disconnect", (reason) => {
+        console.warn("🔴 WebSocket DISCONNECTED:", reason);
+      });
+
+      socket.on("reconnect_attempt", (attempt) => {
+        console.log("🔁 Reconnect attempt:", attempt);
+      });
+
+      socket.on("reconnect", (attempt) => {
+        console.log("✅ Reconnected after attempt:", attempt);
+      });
+
+      socket.on("notification", (data) => {
+        console.log("📩 Received notification:", data);
+        setNotifications(prev => [{
+          ...data,
+          is_read: false,
+          message: sanitizeText(data.message || "Нове сповіщення"),
+          timestamp: new Date().toISOString(),
+        }, ...prev]);
+      });
+
+      socket.on("globalNotification", (data) => {
+        console.log("🌍 Received global notification:", data);
+        setNotifications(prev => [{
+          ...data,
+          is_read: false,
+          message: sanitizeText(data.message || "Глобальне сповіщення"),
+          timestamp: new Date().toISOString(),
+        }, ...prev]);
+      });
+    }, 200);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (socket) {
+        console.log("🔌 Disconnecting WebSocket");
+        socket.disconnect();
+      }
+    };
+  }, [userData?.id]);
+
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
   };
