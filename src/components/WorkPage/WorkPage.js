@@ -19,7 +19,7 @@ const WorkerPage = () => {
   const [userData, setUserData] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [isCheckingRole, setIsCheckingRole] = useState(true);
-  const [error, setError] = useState(null);
+  const [error] = useState(null); // якщо хочеш тимчасово залишити
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
