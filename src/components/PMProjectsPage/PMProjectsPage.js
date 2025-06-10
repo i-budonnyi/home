@@ -1,8 +1,13 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { Spin, Typography, List, Card, message } from "antd";
+import io from "socket.io-client";
 
-const API_PM_URL = "https://backend-avtologistika.onrender.com/api/projectManagerRoutes";
-const API_JURY_URL = "https://backend-avtologistika.onrender.com/api/juryDecisions";
+const { Title, Text } = Typography;
+
+const API_PM_URL = "https://idea-backend.onrender.com/api/projectManagerRoutes";
+const API_JURY_URL = "https://idea-backend.onrender.com/api/juryDecisions";
+const SOCKET_URL = "https://idea-backend.onrender.com";
 
 const PMProjectsPage = () => {
   const [pm, setPM] = useState(null);
@@ -19,71 +24,85 @@ const PMProjectsPage = () => {
       return;
     }
 
-    const fetchData = async () => {
+    const fetchPMAndDecisions = async () => {
       try {
-        console.info("🔄 Завантаження даних Project Manager...");
-
-        const axiosInstance = axios.create({
-          baseURL: "https://backend-avtologistika.onrender.com/api",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          timeout: 10000,
+        console.log("⏳ Отримуємо дані Project Manager...");
+        const pmResponse = await axios.get(`${API_PM_URL}/pm/me`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("✅ Project Manager:", pmResponse.data);
+        setPM(pmResponse.data);
 
-        const pmResponse = await axiosInstance.get("/projectManagerRoutes/pm/me");
-        const pmData = pmResponse.data;
-
-        if (!pmData?.pm_id) throw new Error("❌ Користувач не є Project Manager.");
-        localStorage.setItem("pmId", pmData.pm_id);
-        setPM(pmData);
-        console.log(`✅ PM: ${pmData.first_name} ${pmData.last_name}`);
-
-        const decisionsResponse = await axiosInstance.get("/juryDecisions/jury-decisions/approved");
-        const decisions = decisionsResponse.data;
-
-        if (!Array.isArray(decisions)) throw new Error("❌ Список рішень має некоректний формат.");
-        setApprovedDecisions(decisions);
-        console.log(`✅ Отримано ${decisions.length} рішень.`);
+        const decisionsResponse = await axios.get(`${API_JURY_URL}/approved`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log("✅ Approved Decisions:", decisionsResponse.data);
+        setApprovedDecisions(decisionsResponse.data);
       } catch (err) {
-        console.error("❌ Помилка:", err.response?.data?.message || err.message);
-        setError(err.response?.data?.message || "Невідома помилка при завантаженні даних.");
+        console.error("❌ Помилка при завантаженні:", err);
+        setError("Сталася помилка при завантаженні даних.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchPMAndDecisions();
+
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket"],
+    });
+
+    socket.on("connect", () => {
+      console.log("🔌 WebSocket з'єднання встановлено:", socket.id);
+    });
+
+    socket.on("newApprovedDecision", (newDecision) => {
+      console.log("📢 Отримано нове рішення:", newDecision);
+      setApprovedDecisions((prev) => [newDecision, ...prev]);
+      message.success("✅ Додано нове рішення!");
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error("🚫 Помилка WebSocket з'єднання:", err);
+    });
+
+    return () => {
+      socket.disconnect();
+      console.log("🛑 WebSocket з'єднання закрито");
+    };
   }, [token]);
 
-  if (loading) return <div className="text-center text-gray-500">⏳ Завантаження...</div>;
-  if (error) return <div className="text-center text-red-500">{error}</div>;
-  if (!pm) return <div className="text-center text-gray-500">❌ Дані PM не знайдено</div>;
+  if (loading) {
+    return <Spin tip="Завантаження..." fullscreen />;
+  }
+
+  if (error) {
+    return <div style={{ padding: 20, color: "red" }}>{error}</div>;
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      <h1 className="text-2xl font-bold mb-4">👨‍💼 Інформація про проєктного менеджера</h1>
-      <div className="border p-4 rounded-md shadow-md bg-gray-50">
-        <p><strong>Ім'я:</strong> {pm.first_name} {pm.last_name}</p>
-        <p><strong>Email:</strong> {pm.email}</p>
-        <p><strong>Телефон:</strong> {pm.phone}</p>
-      </div>
-
-      <h2 className="text-xl font-semibold mt-6">✅ Схвалені рішення журі</h2>
-      {approvedDecisions.length > 0 ? (
-        <ul className="mt-4 space-y-4">
-          {approvedDecisions.map((decision) => (
-            <li key={decision.id || decision.project_id} className="border p-4 rounded-md shadow-md bg-gray-50">
-              <p><strong>Проєкт ID:</strong> {decision.project_id}</p>
-              <p><strong>Рішення:</strong> {decision.decision}</p>
-              <p><strong>Сума бонусу:</strong> {decision.bonus_amount ?? '—'} грн</p>
-              <p><strong>Дата:</strong> {decision.decision_date ? new Date(decision.decision_date).toLocaleDateString() : '—'}</p>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="mt-4 text-gray-500">❌ Немає схвалених рішень</p>
+    <div style={{ padding: 24 }}>
+      <Title level={2}>📋 Проєкти Project Manager</Title>
+      {pm && (
+        <Card style={{ marginBottom: 24 }}>
+          <Text strong>Ім'я:</Text> {pm.first_name} {pm.last_name} <br />
+          <Text strong>Email:</Text> {pm.email}
+        </Card>
       )}
+
+      <Title level={4}>✅ Підтверджені рішення журі</Title>
+      <List
+        grid={{ gutter: 16, column: 1 }}
+        dataSource={approvedDecisions}
+        renderItem={(item) => (
+          <List.Item>
+            <Card title={item.idea_title}>
+              <p><strong>Опис:</strong> {item.description}</p>
+              <p><strong>Дата:</strong> {new Date(item.created_at).toLocaleString()}</p>
+            </Card>
+          </List.Item>
+        )}
+      />
     </div>
   );
 };
