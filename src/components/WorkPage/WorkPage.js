@@ -19,12 +19,11 @@ const WorkerPage = () => {
   const [userData, setUserData] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [isCheckingRole, setIsCheckingRole] = useState(true);
-  const [error] = useState(null); // якщо хочеш тимчасово залишити
+  const [error] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
-  // ⬇️ Завантаження профілю (один раз)
   const fetchUserProfile = useCallback(async () => {
     try {
       const res = await fetch("https://backend-avtologistika.onrender.com/api/userRoutes/profile", {
@@ -41,6 +40,7 @@ const WorkerPage = () => {
         role: user.role?.toLowerCase() || "worker",
       });
     } catch (err) {
+      console.error("❌ Fetch profile error:", err.message);
       localStorage.removeItem("token");
       navigate("/login");
     } finally {
@@ -56,35 +56,66 @@ const WorkerPage = () => {
     }
   }, [token, navigate, fetchUserProfile]);
 
-  // ⬇️ WebSocket підключення
   useEffect(() => {
-    if (!userData?.id) return;
+    if (!userData?.id) {
+      console.warn("⚠️ WebSocket init skipped: missing userData.id");
+      return;
+    }
+
+    console.log("📡 Підключення WebSocket...");
     const socket = io(SOCKET_URL, {
       transports: ["websocket"],
       reconnection: true,
     });
 
     socket.on("connect", () => {
-      console.log("🟢 WebSocket connected:", socket.id);
+      console.log("🟢 WebSocket CONNECTED", socket.id);
       socket.emit("register", userData.id);
+      console.log("📤 register sent with ID:", userData.id);
     });
 
-    const handleNotification = (data) => {
-      const formatted = {
+    socket.on("connect_error", (err) => {
+      console.error("🔌 WebSocket CONNECT ERROR:", err.message);
+    });
+
+    socket.on("reconnect_error", (err) => {
+      console.error("🔄 RECONNECT ERROR:", err.message);
+    });
+
+    socket.on("disconnect", (reason) => {
+      console.warn("🔴 WebSocket DISCONNECTED:", reason);
+    });
+
+    socket.on("reconnect_attempt", (attempt) => {
+      console.log("🔁 Reconnect attempt:", attempt);
+    });
+
+    socket.on("reconnect", (attempt) => {
+      console.log("✅ Reconnected after attempt:", attempt);
+    });
+
+    socket.on("notification", (data) => {
+      console.log("📩 Received notification:", data);
+      setNotifications(prev => [{
         ...data,
         is_read: false,
         message: sanitizeText(data.message || "Нове сповіщення"),
         timestamp: new Date().toISOString(),
-      };
-      setNotifications(prev => [formatted, ...prev]);
-    };
+      }, ...prev]);
+    });
 
-    socket.on("notification", handleNotification);
-    socket.on("globalNotification", handleNotification);
-
-    socket.on("disconnect", () => console.warn("🔴 Socket disconnected"));
+    socket.on("globalNotification", (data) => {
+      console.log("🌍 Received global notification:", data);
+      setNotifications(prev => [{
+        ...data,
+        is_read: false,
+        message: sanitizeText(data.message || "Глобальне сповіщення"),
+        timestamp: new Date().toISOString(),
+      }, ...prev]);
+    });
 
     return () => {
+      console.log("🔌 Disconnecting WebSocket");
       socket.disconnect();
     };
   }, [userData?.id]);
