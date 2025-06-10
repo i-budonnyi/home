@@ -4,8 +4,8 @@ import { Typography, Spin, Alert, List, Card, Divider } from "antd";
 
 const { Title, Text } = Typography;
 
-const API_PM = "https://idea-backend.onrender.com/api/projectManagerRoutes";
-const API_JURY = "https://idea-backend.onrender.com/api/juryDecisions";
+const API_PM = "https://backend-avtologistika.onrender.com/api/projectManagerRoutes";
+const API_JURY = "https://backend-avtologistika.onrender.com/api/juryDecisions";
 
 const PMProjectsPage = () => {
   const [pm, setPM] = useState(null);
