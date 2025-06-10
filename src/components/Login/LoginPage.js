@@ -32,21 +32,19 @@ const LoginPage = () => {
         throw new Error(data.message || "Помилка логіну");
       }
 
-      // Зберігаємо токен і користувача
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
 
-      // 🔐 Перевірка на конкретного адміністратора
       if (data.user?.email === "panasenko@avtologistika.com") {
         navigate("/admin");
         return;
       }
 
-      // Розподіл по ролях
       const redirects = {
         user: "/worker",
         worker: "/worker",
+        pm: "/pm", // додано роль "pm"
         project_manager: "/pm-projects",
         ambassador: "/ambassadors",
         jury_secretary: "/jury-secretary",
@@ -83,7 +81,11 @@ const LoginPage = () => {
           style={styles.input}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button style={styles.button} onClick={handleLogin} disabled={isLoading}>
+        <button
+          style={{ ...styles.button, opacity: isLoading ? 0.7 : 1 }}
+          onClick={handleLogin}
+          disabled={isLoading}
+        >
           {isLoading ? "Завантаження..." : "Увійти"}
         </button>
         {error && <p style={styles.error}>{error}</p>}
@@ -100,30 +102,32 @@ const styles = {
     alignItems: "center",
     backgroundColor: "#f2f2f2",
     fontFamily: "Segoe UI, sans-serif",
+    padding: "20px",
   },
   box: {
     backgroundColor: "#fff",
-    padding: "30px 40px",
+    padding: "30px",
     borderRadius: "12px",
     boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
     width: "100%",
     maxWidth: "400px",
-    textAlign: "center",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: "15px",
   },
   title: {
-    marginBottom: "20px",
+    textAlign: "center",
+    marginBottom: "10px",
     color: "#333",
   },
   input: {
-    width: "100%",
     padding: "12px",
-    marginBottom: "12px",
     fontSize: "16px",
     borderRadius: "8px",
     border: "1px solid #ccc",
   },
   button: {
-    width: "100%",
     padding: "12px",
     backgroundColor: "#007bff",
     color: "white",
@@ -131,12 +135,11 @@ const styles = {
     borderRadius: "8px",
     fontSize: "16px",
     cursor: "pointer",
-    marginTop: "10px",
   },
   error: {
     color: "red",
-    marginTop: "12px",
     fontWeight: "bold",
+    textAlign: "center",
   },
 };
 
