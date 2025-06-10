@@ -48,22 +48,17 @@ const WorkerPage = () => {
     }
   }, [navigate, token]);
 
-  useEffect(() => {
-    if (!token) {
-      navigate("/login");
-    } else {
-      fetchUserProfile();
-    }
-  }, [token, navigate, fetchUserProfile]);
+useEffect(() => {
+  let socket;
 
-  useEffect(() => {
-    if (!userData?.id) {
-      console.warn("⚠️ WebSocket init skipped: missing userData.id");
-      return;
-    }
+  if (!userData?.id) {
+    console.warn("⚠️ WebSocket init skipped: missing userData.id");
+    return;
+  }
 
+  const timeoutId = setTimeout(() => {
     console.log("📡 Підключення WebSocket...");
-    const socket = io(SOCKET_URL, {
+    socket = io(SOCKET_URL, {
       transports: ["websocket"],
       reconnection: true,
     });
@@ -113,13 +108,16 @@ const WorkerPage = () => {
         timestamp: new Date().toISOString(),
       }, ...prev]);
     });
+  }, 200); // 200 мс затримка для гарантії наявності userData.id
 
-    return () => {
+  return () => {
+    clearTimeout(timeoutId);
+    if (socket) {
       console.log("🔌 Disconnecting WebSocket");
       socket.disconnect();
-    };
-  }, [userData?.id]);
-
+    }
+  };
+}, [userData?.id]);
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
   };
