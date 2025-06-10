@@ -54,6 +54,7 @@ const App = () => (
         <Route path="/applications/:ideaId" element={<Applications />} />
         <Route path="/jury-secretary" element={<JurySecretaryProfile />} />
         <Route path="/jury" element={<JuryVotingPage />} />
+		<Route path="/pm" element={<PMProjectsPage />} /> {/* 🔧 Додано */}
         <Route path="/pm-projects" element={<PMProjectsPage />} />
       </Routes>
       <Footer />
