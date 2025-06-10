@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Spin, Typography, List, Card, message } from "antd";
-import io from "socket.io-client";
+import { Spin, Typography, List, Card } from "antd";
 
 const { Title, Text } = Typography;
 
 const API_PM_URL = "https://idea-backend.onrender.com/api/projectManagerRoutes";
 const API_JURY_URL = "https://idea-backend.onrender.com/api/juryDecisions";
-const SOCKET_URL = "https://idea-backend.onrender.com";
 
 const PMProjectsPage = () => {
   const [pm, setPM] = useState(null);
@@ -47,29 +45,6 @@ const PMProjectsPage = () => {
     };
 
     fetchPMAndDecisions();
-
-    const socket = io(SOCKET_URL, {
-      transports: ["websocket"],
-    });
-
-    socket.on("connect", () => {
-      console.log("🔌 WebSocket з'єднання встановлено:", socket.id);
-    });
-
-    socket.on("newApprovedDecision", (newDecision) => {
-      console.log("📢 Отримано нове рішення:", newDecision);
-      setApprovedDecisions((prev) => [newDecision, ...prev]);
-      message.success("✅ Додано нове рішення!");
-    });
-
-    socket.on("connect_error", (err) => {
-      console.error("🚫 Помилка WebSocket з'єднання:", err);
-    });
-
-    return () => {
-      socket.disconnect();
-      console.log("🛑 WebSocket з'єднання закрито");
-    };
   }, [token]);
 
   if (loading) {
