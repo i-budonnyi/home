@@ -6,8 +6,8 @@ const { Title, Text } = Typography;
 
 // 👇 Сервер сам заходить у routes/, тому назви шляху прямо як у router.get("/...")
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
-const API_PM = `${API_BASE}/pm/me`;
-const API_JURY = `${API_BASE}/jury-decisions/final`;
+const API_PM = `${API_BASE}/approvedProjectsRoutes/pm/me`;
+const API_JURY = `${API_BASE}/approvedProjectsRoutes/jury-decisions/final`;
 
 const PMProjectsPage = () => {
   const [pm, setPM] = useState(null);
