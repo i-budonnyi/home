@@ -5,7 +5,6 @@ import { Spin, Typography, List, Card } from "antd";
 const { Title, Text } = Typography;
 
 const API_PM_URL = "https://backend-avtologistika.onrender.com/api/projectManagerRoutes";
-const API_JURY_URL = "https://backend-avtologistika.onrender.com/api/juryDecisions";
 
 const PMProjectsPage = () => {
   const [pm, setPM] = useState(null);
@@ -31,10 +30,10 @@ const PMProjectsPage = () => {
         console.log("✅ Project Manager:", pmResponse.data);
         setPM(pmResponse.data);
 
-        const decisionsResponse = await axios.get(`${API_JURY_URL}/approved`, {
+        const decisionsResponse = await axios.get(`${API_PM_URL}/jury-decisions/final`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log("✅ Approved Decisions:", decisionsResponse.data);
+        console.log("✅ Final Jury Decisions:", decisionsResponse.data);
         setApprovedDecisions(decisionsResponse.data);
       } catch (err) {
         console.error("❌ Помилка при завантаженні:", err);
@@ -65,7 +64,7 @@ const PMProjectsPage = () => {
         </Card>
       )}
 
-      <Title level={4}>✅ Підтверджені рішення журі</Title>
+      <Title level={4}>✅ Підсумкові рішення журі</Title>
       <List
         grid={{ gutter: 16, column: 1 }}
         dataSource={approvedDecisions}
