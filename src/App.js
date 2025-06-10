@@ -12,7 +12,7 @@ import SubmitIdeaPage from './components/SubmitIdeaPage';
 import Subscriptions from './components/Subscriptions';
 import IdeasPlatform from './components/IdeasPlatform';
 import UpdateProfilePage from './components/UpdateProfilePage';
-import EditProfilePage from './components/EditProfilePage/EditProfilePage'; // ✅ додано
+import EditProfilePage from './components/EditProfilePage/EditProfilePage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Logout from './components/Logout';
@@ -25,10 +25,15 @@ import JuryVotingPage from './components/JuryVotingPage/JuryVotingPage';
 import PMProjectsPage from './components/PMProjectsPage/PMProjectsPage';
 import { UserProvider } from './components/context/UserContext';
 
+import NotificationClient from './NotificationClient'; // ✅ Імпорт NotificationClient
+
+const userId = localStorage.getItem("userId"); // або отримай через UserContext, якщо треба
+
 const App = () => (
   <BrowserRouter>
     <UserProvider>
       <Header />
+      {userId && <NotificationClient userId={userId} />} {/* ✅ Відображення NotificationClient */}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -36,7 +41,7 @@ const App = () => (
         <Route path="/worker" element={<WorkPage />} />
         <Route path="/profile-settings" element={<ProfileSettingsPage />} />
         <Route path="/update-profile" element={<UpdateProfilePage />} />
-        <Route path="/edit-profile" element={<EditProfilePage />} /> {/* ✅ новий маршрут */}
+        <Route path="/edit-profile" element={<EditProfilePage />} />
         <Route path="/projects" element={<MyProjectsPage />} />
         <Route path="/submit-problem" element={<SubmitProblemPage />} />
         <Route path="/submit-idea" element={<SubmitIdeaPage />} />

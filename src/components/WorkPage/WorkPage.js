@@ -8,13 +8,11 @@ import {
   MessageOutlined, BulbOutlined, FileTextOutlined, ProjectOutlined,
   StarOutlined, SunOutlined, MoonOutlined, PhoneOutlined, MailOutlined
 } from "@ant-design/icons";
-import axios from "axios";
 import io from "socket.io-client";
 
 const { Content, Sider, Header } = Layout;
 const { Title, Text } = Typography;
 
-const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const SOCKET_URL = "https://backend-avtologistika.onrender.com";
 
 const WorkerPage = () => {
@@ -23,16 +21,17 @@ const WorkerPage = () => {
   const [isCheckingRole, setIsCheckingRole] = useState(true);
   const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
-
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
+  // ⬇️ Завантаження профілю (один раз)
   const fetchUserProfile = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE}/userRoutes/profile`, {
+      const res = await fetch("https://backend-avtologistika.onrender.com/api/userRoutes/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const user = res.data;
+      if (!res.ok) throw new Error("401");
+      const user = await res.json();
       setUserData({
         id: user.id,
         firstName: user.first_name,
@@ -42,32 +41,12 @@ const WorkerPage = () => {
         role: user.role?.toLowerCase() || "worker",
       });
     } catch (err) {
-      if (err.response?.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-      } else {
-        setError(err.response?.data?.message || "Сталася помилка");
-      }
+      localStorage.removeItem("token");
+      navigate("/login");
     } finally {
       setIsCheckingRole(false);
     }
   }, [navigate, token]);
-
-  const fetchPastNotifications = useCallback(async () => {
-    try {
-      const res = await axios.get(`${API_BASE}/notificationRoutes/user/${userData.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const formatted = res.data.map(n => ({
-        ...n,
-        message: sanitizeText(n.message),
-        is_read: n.is_read ?? false,
-      }));
-      setNotifications(formatted.reverse());
-    } catch (err) {
-      console.error("❗️Помилка отримання історії:", err.message);
-    }
-  }, [userData?.id, token]);
 
   useEffect(() => {
     if (!token) {
@@ -77,20 +56,17 @@ const WorkerPage = () => {
     }
   }, [token, navigate, fetchUserProfile]);
 
+  // ⬇️ WebSocket підключення
   useEffect(() => {
-    if (userData?.id) {
-      fetchPastNotifications();
-    }
-  }, [userData?.id, fetchPastNotifications]);
-
-  useEffect(() => {
-    if (!userData?.id || !token) return;
-
+    if (!userData?.id) return;
     const socket = io(SOCKET_URL, {
       transports: ["websocket"],
       reconnection: true,
-      reconnectionAttempts: 5,
-      timeout: 7000,
+    });
+
+    socket.on("connect", () => {
+      console.log("🟢 WebSocket connected:", socket.id);
+      socket.emit("register", userData.id);
     });
 
     const handleNotification = (data) => {
@@ -103,25 +79,15 @@ const WorkerPage = () => {
       setNotifications(prev => [formatted, ...prev]);
     };
 
-    socket.on("connect", () => {
-      console.log("🟢 WebSocket connected:", socket.id);
-      socket.emit("register", userData.id);
-    });
-
     socket.on("notification", handleNotification);
     socket.on("globalNotification", handleNotification);
 
-    socket.on("connect_error", (err) => console.error("❌ Socket error:", err.message));
-    socket.on("connect_timeout", () => console.error("⏱ WebSocket timeout"));
-    socket.on("reconnect_attempt", (attempt) => console.log("🔁 Retry:", attempt));
-    socket.on("reconnect", (attempt) => console.log("✅ Reconnected:", attempt));
-    socket.on("reconnect_failed", () => console.error("🚫 Reconnect failed"));
-    socket.on("disconnect", (reason) => console.warn("🔴 Disconnected:", reason));
+    socket.on("disconnect", () => console.warn("🔴 Socket disconnected"));
 
     return () => {
       socket.disconnect();
     };
-  }, [userData?.id, token]);
+  }, [userData?.id]);
 
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
