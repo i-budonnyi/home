@@ -1,4 +1,3 @@
-// src/pages/PMProjectsPage.jsx
 import React, { useEffect, useState, useCallback, Fragment } from "react";
 import axios from "axios";
 import { Typography, Spin, Alert, List, Card, Divider } from "antd";
@@ -6,14 +5,15 @@ import { Typography, Spin, Alert, List, Card, Divider } from "antd";
 const { Title, Text } = Typography;
 
 /* ------------------------------------------------------------------ */
-/* 🛣️  API END-POINTS
+/* 🛣️ API END-POINTS */
 /* ------------------------------------------------------------------ */
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
-const API_PM_ME = `${API_BASE}/projectManagerRoutes/pm/me`; // ✅ виправлено URL
+const API_PM_ME = `${API_BASE}/projectManagerRoutes/pm/me`;
 const API_JURY = `${API_BASE}/approvedProjectsRoutes/jury-decisions/final`;
+const API_USERS = `${API_BASE}/projectInvitations/users`;
 
 /* ------------------------------------------------------------------ */
-/* 🔧  Axios instance – adds the token automatically & logs requests
+/* 🔧 Axios instance – adds token and logs requests */
 /* ------------------------------------------------------------------ */
 const buildAxios = (token) => {
   const instance = axios.create({
@@ -22,10 +22,7 @@ const buildAxios = (token) => {
   });
 
   instance.interceptors.request.use((cfg) => {
-    console.groupCollapsed(
-      `%c📤 [${cfg.method?.toUpperCase()}] ${cfg.url}`,
-      "color:#00b7ff;font-weight:bold;"
-    );
+    console.groupCollapsed(`%c📤 [${cfg.method?.toUpperCase()}] ${cfg.url}`, "color:#00b7ff;font-weight:bold;");
     console.log("Request config ⤵️", cfg);
     console.groupEnd();
     return cfg;
@@ -33,10 +30,7 @@ const buildAxios = (token) => {
 
   instance.interceptors.response.use(
     (res) => {
-      console.groupCollapsed(
-        `%c✅ [${res.config.url}] → ${res.status}`,
-        "color:#00c853;font-weight:bold;"
-      );
+      console.groupCollapsed(`%c✅ [${res.config.url}] → ${res.status}`, "color:#00c853;font-weight:bold;");
       console.log("Response data ⤵️", res.data);
       console.groupEnd();
       return res;
@@ -56,13 +50,14 @@ const buildAxios = (token) => {
 };
 
 /* ------------------------------------------------------------------ */
-/* 📄  React component
+/* 📄 React component */
 /* ------------------------------------------------------------------ */
 const PMProjectsPage = () => {
   const [pmData, setPMData] = useState(null);
   const [juryData, setJuryData] = useState([]);
-  const [loading, setLoading] = useState({ pm: true, jury: true });
-  const [errors, setErrors] = useState({ pm: null, jury: null });
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState({ pm: true, jury: true, users: false });
+  const [errors, setErrors] = useState({ pm: null, jury: null, users: null });
 
   const token = localStorage.getItem("token") ?? "";
   const http = useCallback(() => buildAxios(token), [token]);
@@ -72,8 +67,7 @@ const PMProjectsPage = () => {
       const { status } = err.response;
       if (status === 401) return "❌ Not authorised";
       if (status === 404) return `🔍 ${subject} not found`;
-      if (status >= 500 && status < 600)
-        return `⚙️ Server error (${subject})`;
+      if (status >= 500 && status < 600) return `⚙️ Server error (${subject})`;
       return `HTTP ${status} (${subject})`;
     }
     if (err.code === "ECONNABORTED") return "⏰ Request timed-out";
@@ -85,8 +79,9 @@ const PMProjectsPage = () => {
       setErrors({
         pm: "❌ User is not authorised",
         jury: "❌ User is not authorised",
+        users: "❌ User is not authorised",
       });
-      setLoading({ pm: false, jury: false });
+      setLoading({ pm: false, jury: false, users: false });
       return;
     }
 
@@ -96,29 +91,39 @@ const PMProjectsPage = () => {
     Promise.allSettled([fetchPM, fetchJury]).then(([pmRes, juryRes]) => {
       if (pmRes.status === "fulfilled") {
         setPMData(pmRes.value.data);
+
+        if (pmRes.value.data?.role === "project_manager") {
+          console.log("🧭 PM confirmed. Завантажуємо список користувачів…");
+          setLoading(prev => ({ ...prev, users: true }));
+
+          http()
+            .get(API_USERS)
+            .then((res) => {
+              console.log("📦 Users loaded:", res.data);
+              setUsers(res.data);
+            })
+            .catch((err) => {
+              console.error("❌ Failed to load users:", err);
+              setErrors(prev => ({ ...prev, users: humanErr(err, "users") }));
+            })
+            .finally(() => setLoading(prev => ({ ...prev, users: false })));
+        }
+
       } else {
-        setErrors((prev) => ({
-          ...prev,
-          pm: humanErr(pmRes.reason, "PM"),
-        }));
+        setErrors(prev => ({ ...prev, pm: humanErr(pmRes.reason, "PM") }));
       }
 
       if (juryRes.status === "fulfilled") {
-        setJuryData(
-          Array.isArray(juryRes.value.data) ? juryRes.value.data : []
-        );
+        setJuryData(Array.isArray(juryRes.value.data) ? juryRes.value.data : []);
       } else {
-        setErrors((prev) => ({
-          ...prev,
-          jury: humanErr(juryRes.reason, "jury decisions"),
-        }));
+        setErrors(prev => ({ ...prev, jury: humanErr(juryRes.reason, "jury decisions") }));
       }
 
-      setLoading({ pm: false, jury: false });
+      setLoading(prev => ({ ...prev, pm: false, jury: false }));
     });
   }, [http, token]);
 
-  const allLoaded = !loading.pm && !loading.jury;
+  const allLoaded = !loading.pm && !loading.jury && !loading.users;
   const totalError = errors.pm && errors.jury;
 
   return (
@@ -142,18 +147,10 @@ const PMProjectsPage = () => {
       ) : (
         pmData && (
           <Card style={{ marginBottom: 32 }}>
-            <p>
-              <Text strong>Ім’я:</Text> {pmData.first_name} {pmData.last_name}
-            </p>
-            <p>
-              <Text strong>Email:</Text> {pmData.email}
-            </p>
-            <p>
-              <Text strong>Телефон:</Text> {pmData.phone}
-            </p>
-            <p>
-              <Text strong>Роль:</Text> {pmData.role}
-            </p>
+            <p><Text strong>Ім’я:</Text> {pmData.first_name} {pmData.last_name}</p>
+            <p><Text strong>Email:</Text> {pmData.email}</p>
+            <p><Text strong>Телефон:</Text> {pmData.phone}</p>
+            <p><Text strong>Роль:</Text> {pmData.role}</p>
           </Card>
         )
       )}
@@ -173,27 +170,12 @@ const PMProjectsPage = () => {
             <List.Item>
               <Card style={{ width: "100%" }}>
                 <Fragment>
-                  <p>
-                    <Text strong>Проєкт:</Text> {item.project_id}
-                  </p>
-                  <p>
-                    <Text strong>Автор:</Text> {item.author_first_name}{" "}
-                    {item.author_last_name}
-                  </p>
-                  <p>
-                    <Text strong>Член журі:</Text> {item.jury_first_name}{" "}
-                    {item.jury_last_name}
-                  </p>
-                  <p>
-                    <Text strong>Рішення:</Text> {item.final_decision}
-                  </p>
-                  <p>
-                    <Text strong>Коментар:</Text> {item.decision_text}
-                  </p>
-                  <p>
-                    <Text strong>Дата:</Text>{" "}
-                    {new Date(item.decision_date).toLocaleDateString("uk-UA")}
-                  </p>
+                  <p><Text strong>Проєкт:</Text> {item.project_id}</p>
+                  <p><Text strong>Автор:</Text> {item.author_first_name} {item.author_last_name}</p>
+                  <p><Text strong>Член журі:</Text> {item.jury_first_name} {item.jury_last_name}</p>
+                  <p><Text strong>Рішення:</Text> {item.final_decision}</p>
+                  <p><Text strong>Коментар:</Text> {item.decision_text}</p>
+                  <p><Text strong>Дата:</Text> {new Date(item.decision_date).toLocaleDateString("uk-UA")}</p>
                 </Fragment>
               </Card>
             </List.Item>
@@ -201,6 +183,28 @@ const PMProjectsPage = () => {
         />
       ) : (
         <Alert type="info" showIcon message="Немає фінальних рішень" />
+      )}
+
+      {pmData?.role === "project_manager" && (
+        <>
+          <Divider />
+          <Title level={4}>👥 Зареєстровані користувачі</Title>
+          {errors.users ? (
+            <Alert type="error" message={errors.users} showIcon />
+          ) : loading.users ? (
+            <Spin tip="Loading users..." />
+          ) : (
+            <List
+              bordered
+              dataSource={users}
+              renderItem={(user) => (
+                <List.Item>
+                  {user.first_name} {user.last_name} — {user.email}
+                </List.Item>
+              )}
+            />
+          )}
+        </>
       )}
 
       {allLoaded && (errors.pm || errors.jury) && !totalError && (
