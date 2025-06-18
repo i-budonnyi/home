@@ -47,14 +47,20 @@ const Subscriptions = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (response.status === 200 && response.data.subscriptions) {
+      console.log("🔄 Отримано відповіді:", response.data);
+
+      if (response.status === 200 && Array.isArray(response.data.subscriptions)) {
         setSubscriptions(response.data.subscriptions);
       } else {
-        throw new Error("❌ Не вдалося отримати підписки.");
+        throw new Error("❌ Невірна структура відповіді від сервера.");
       }
     } catch (err) {
       console.error("❌ ПОМИЛКА:", err);
-      setError(err.response?.data?.message || err.message || "Сталася помилка.");
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Сталася невідома помилка на сервері."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -96,9 +102,7 @@ const Subscriptions = () => {
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
         <Header style={{ background: "transparent", padding: "0 24px" }} />
-
         <Content style={{ padding: "60px 20px 20px", maxWidth: "900px", margin: "0 auto" }}>
-          {/* 🔽 Перемикач теми і Назад */}
           <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 24 }}>
             <div
               onClick={toggleTheme}
@@ -112,7 +116,6 @@ const Subscriptions = () => {
             </Button>
           </div>
 
-          {/* Заголовок */}
           <Title
             level={3}
             style={{
@@ -127,6 +130,8 @@ const Subscriptions = () => {
           {error && <Alert message={error} type="error" showIcon />}
           {isLoading ? (
             <Skeleton active />
+          ) : subscriptions.length === 0 ? (
+            <Alert message="Підписок не знайдено." type="info" showIcon />
           ) : (
             <List
               grid={{ gutter: 20, column: 1 }}
