@@ -18,7 +18,6 @@ import { useNavigate } from "react-router-dom";
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 
-// 🔗 Актуальний API endpoint
 const API_SUBSCRIPTIONS_URL =
   "https://backend-avtologistika.onrender.com/api/subscriptionRoutes/user-subscriptions";
 
@@ -56,21 +55,20 @@ const Subscriptions = () => {
         },
       });
 
-      if (response.status === 200 && Array.isArray(response.data.subscriptions)) {
+      if (
+        response.status === 200 &&
+        Array.isArray(response.data.subscriptions)
+      ) {
         setSubscriptions(response.data.subscriptions);
       } else {
-        throw new Error("❌ Структура відповіді не відповідає очікуваній.");
+        throw new Error("Структура відповіді не відповідає очікуваній.");
       }
     } catch (err) {
-      if (err.response) {
-        if (err.response.status === 401 || err.response.status === 403) {
-          setError("Доступ заборонено. Увійдіть повторно.");
-        } else {
-          setError(err.response.data?.message || "Помилка на сервері.");
-        }
-      } else {
-        setError(err.message || "Невідома помилка.");
-      }
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Сталася невідома помилка."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -81,9 +79,7 @@ const Subscriptions = () => {
   }, [fetchUserSubscriptions]);
 
   const getStatusColor = (status) => {
-    if (!status) return "default";
-    const s = status.toLowerCase();
-
+    const s = (status || "").toLowerCase();
     switch (s) {
       case "pending":
       case "очікує":
@@ -132,14 +128,7 @@ const Subscriptions = () => {
             </Button>
           </div>
 
-          <Title
-            level={3}
-            style={{
-              textAlign: "center",
-              marginBottom: 40,
-              color: themeMode.token.colorTextBase,
-            }}
-          >
+          <Title level={3} style={{ textAlign: "center", marginBottom: 40, color: themeMode.token.colorTextBase }}>
             Мої підписки
           </Title>
 
@@ -188,7 +177,7 @@ const Subscriptions = () => {
                       Автор:{" "}
                       {sub.author_first_name && sub.author_last_name
                         ? `${sub.author_first_name} ${sub.author_last_name}`
-                        : sub.author || "Невідомий"}
+                        : "Невідомий"}
                     </Text>
                   </Card>
                 </List.Item>
