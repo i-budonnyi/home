@@ -32,11 +32,7 @@ const Subscriptions = () => {
 
   const navigate = useNavigate();
 
-  const getAuthToken = () => {
-    const token = localStorage.getItem("token");
-    console.log("🔑 JWT Token з localStorage:", token || "❌ Відсутній");
-    return token;
-  };
+  const getAuthToken = () => localStorage.getItem("token");
 
   const toggleTheme = () => {
     const newTheme = isDarkMode ? "light" : "dark";
@@ -56,8 +52,8 @@ const Subscriptions = () => {
       const response = await axios.get(API_SUBSCRIPTIONS_URL, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       });
 
       if (response.status === 200 && Array.isArray(response.data.subscriptions)) {
@@ -86,9 +82,9 @@ const Subscriptions = () => {
 
   const getStatusColor = (status) => {
     if (!status) return "default";
-    const normalized = status.toLowerCase();
+    const s = status.toLowerCase();
 
-    switch (normalized) {
+    switch (s) {
       case "pending":
       case "очікує":
         return "orange";
@@ -179,14 +175,14 @@ const Subscriptions = () => {
                       {sub.description || "Без опису"}
                     </Text>
                     <br />
-                    <Tag
-                      color={getStatusColor(sub.status)}
-                      style={{ marginTop: "10px", fontSize: "14px" }}
-                    >
-                      {sub.status
-                        ? sub.status.charAt(0).toUpperCase() + sub.status.slice(1)
-                        : "Статус відсутній"}
-                    </Tag>
+                    {sub.status && (
+                      <Tag
+                        color={getStatusColor(sub.status)}
+                        style={{ marginTop: "10px", fontSize: "14px" }}
+                      >
+                        {sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
+                      </Tag>
+                    )}
                     <br />
                     <Text type="secondary" style={{ fontSize: "14px" }}>
                       Автор:{" "}
