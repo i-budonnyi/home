@@ -33,17 +33,48 @@ const HomePage = () => {
     sections.forEach((section) => observer.observe(section));
   }, []);
 
+  const themeBackground = darkMode ? "#121212" : "#f7f7f9";
+  const textColor = darkMode ? "#ffffff" : "#1a1a1a";
+
   return (
-    <div
-      style={{
-        fontFamily: "Arial, sans-serif",
-        backgroundColor: darkMode ? "#121212" : "#f0f4f8",
-        color: darkMode ? "#ffffff" : "#333",
-        transition: "all 0.3s ease",
-      }}
-    >
-      <div style={{ position: "relative", height: "100vh", overflow: "hidden" }}>
-        {/* 🎥 Video background */}
+    <div style={{ fontFamily: "Arial, sans-serif", backgroundColor: themeBackground, color: textColor }}>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "20px 40px",
+        }}
+      >
+        <h2 style={{ fontWeight: "bold" }}>IdeaHub</h2>
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          style={{
+            padding: "8px 16px",
+            borderRadius: "20px",
+            backgroundColor: darkMode ? "#444" : "#eee",
+            color: darkMode ? "#fff" : "#000",
+            border: "none",
+            cursor: "pointer",
+          }}
+        >
+          {darkMode ? "Світла тема" : "Темна тема"}
+        </button>
+      </header>
+
+      {/* Hero Section */}
+      <div
+        style={{
+          position: "relative",
+          minHeight: "90vh",
+          overflow: "hidden",
+          padding: "60px 40px",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "60px",
+          alignItems: "center",
+        }}
+      >
         <video
           autoPlay
           muted
@@ -51,10 +82,13 @@ const HomePage = () => {
           playsInline
           style={{
             position: "absolute",
+            top: 0,
+            left: 0,
             width: "100%",
             height: "100%",
             objectFit: "cover",
             zIndex: -2,
+            filter: darkMode ? "brightness(0.4)" : "brightness(0.7)",
           }}
         >
           <source
@@ -63,92 +97,17 @@ const HomePage = () => {
           />
         </video>
 
-        {/* 🟫 Gradient overlay */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background: "linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.6))",
-            zIndex: -1,
-          }}
-        />
-
-        {/* Decorative SVG */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage:
-              "url('https://www.heropatterns.com/static/svg/hexagons.svg')",
-            opacity: 0.05,
-            backgroundRepeat: "repeat",
-            zIndex: -1,
-          }}
-        />
-
-        {/* Toggle theme */}
-        <div
-          style={{
-            position: "absolute",
-            top: 20,
-            right: 20,
-            zIndex: 2,
-          }}
-        >
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            style={{
-              padding: "8px 16px",
-              borderRadius: "20px",
-              backgroundColor: darkMode ? "#444" : "#eee",
-              color: darkMode ? "#fff" : "#000",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            {darkMode ? "Світла тема" : "Темна тема"}
-          </button>
-        </div>
-
-        {/* HERO */}
-        <div
-          className="fade-in"
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "100%",
-            padding: "0 10%",
-            gap: "40px",
-            zIndex: 1,
-          }}
-        >
-          <div style={{ flex: "1 1 400px" }}>
-            <h1
-              style={{
-                fontSize: "2.8em",
-                fontWeight: "bold",
-                color: darkMode ? "#ffffff" : "#ffffff",
-              }}
-            >
-              Ідеї, що рухають <span style={{ color: "#59c1ff" }}>IdeaHub</span>
-            </h1>
-            <p
-              style={{
-                fontSize: "1.2em",
-                lineHeight: "1.6",
-                margin: "20px 0",
-                maxWidth: "600px",
-                color: darkMode ? "#ccc" : "#eaeaea",
-              }}
-            >
-              Ваша думка має значення — діліться своїми ідеями, проблемами та рішеннями, щоб зробити логістичні процеси кращими!
-            </p>
+        <div>
+          <h1 style={{ fontSize: "3em", fontWeight: 800, lineHeight: 1.2, color: darkMode ? "#fff" : "#003366" }}>
+            Ідеї, що рухають <span style={{ color: "#007bff" }}>IdeaHub</span>
+          </h1>
+          <p style={{ fontSize: "1.2em", maxWidth: "550px", lineHeight: "1.7", margin: "20px 0", color: darkMode ? "#ccc" : "#333" }}>
+            Ваша думка має значення — діліться своїми ідеями, проблемами та рішеннями, щоб зробити логістичні процеси кращими!
+          </p>
+          <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
             <button
               style={{
-                padding: "12px 24px",
+                padding: "14px 28px",
                 fontSize: "1em",
                 borderRadius: "30px",
                 backgroundColor: "#007bff",
@@ -159,32 +118,39 @@ const HomePage = () => {
             >
               Подати ідею
             </button>
-          </div>
-
-          <div style={{ flex: "1 1 400px", textAlign: "center" }}>
-            <img
-              src="https://images.unsplash.com/photo-1600180758890-d53f3215c38a?auto=format&fit=crop&w=800&q=80"
-              alt="Logistics"
+            <button
               style={{
-                maxWidth: "100%",
-                borderRadius: "16px",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+                padding: "14px 28px",
+                fontSize: "1em",
+                borderRadius: "30px",
+                backgroundColor: darkMode ? "#444" : "#ddd",
+                color: darkMode ? "#fff" : "#333",
+                border: "none",
+                cursor: "pointer",
               }}
-            />
+            >
+              Дізнатись більше
+            </button>
           </div>
+        </div>
+
+        <div style={{ textAlign: "center" }}>
+          <img
+            src="https://images.unsplash.com/photo-1600180758890-d53f3215c38a?auto=format&fit=crop&w=800&q=80"
+            alt="Logistics"
+            style={{
+              maxWidth: "100%",
+              borderRadius: "20px",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+            }}
+          />
+          <p style={{ marginTop: "10px", fontWeight: "500", color: darkMode ? "#aaa" : "#555" }}>70,000+ переглядів</p>
         </div>
       </div>
 
-      {/* ARTICLES */}
-      <section
-        className="fade-in"
-        style={{
-          backgroundColor: darkMode ? "#1e1e1e" : "#ffffff",
-          padding: "60px 20px",
-          textAlign: "center",
-        }}
-      >
-        <h2 style={{ fontSize: "2em", fontWeight: "bold", color: darkMode ? "#fff" : "#004085" }}>
+      {/* Article Section */}
+      <section style={{ padding: "60px 30px", backgroundColor: darkMode ? "#1e1e1e" : "#fff" }}>
+        <h2 style={{ textAlign: "center", fontSize: "2em", fontWeight: "bold", color: darkMode ? "#fff" : "#004085" }}>
           Цікаві Статті
         </h2>
         <div
@@ -192,8 +158,8 @@ const HomePage = () => {
             display: "flex",
             flexWrap: "wrap",
             justifyContent: "center",
-            gap: "20px",
-            marginTop: "30px",
+            gap: "30px",
+            marginTop: "40px",
           }}
         >
           {articles.map((article, index) => (
@@ -203,14 +169,12 @@ const HomePage = () => {
                 backgroundColor: darkMode ? "#2a2a2a" : "#ffffff",
                 color: darkMode ? "#f0f0f0" : "#333",
                 padding: "20px",
-                borderRadius: "12px",
+                borderRadius: "16px",
                 width: "300px",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                textAlign: "left",
-                transition: "all 0.3s ease",
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
               }}
             >
-              <h3 style={{ fontSize: "1.4em", marginBottom: "10px" }}>{article.title}</h3>
+              <h3 style={{ fontSize: "1.3em", fontWeight: "600", marginBottom: "10px" }}>{article.title}</h3>
               <p style={{ fontSize: "1em", lineHeight: "1.6" }}>{article.content}</p>
             </div>
           ))}
@@ -228,9 +192,9 @@ const HomePage = () => {
           transform: translateY(0);
         }
         @media (max-width: 768px) {
-          .fade-in {
-            flex-direction: column !important;
-            text-align: center !important;
+          header {
+            flex-direction: column;
+            gap: 10px;
           }
         }
       `}</style>
