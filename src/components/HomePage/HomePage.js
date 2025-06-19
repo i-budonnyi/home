@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const articles = [
   {
@@ -21,42 +21,29 @@ const articles = [
 const HomePage = () => {
   const [darkMode, setDarkMode] = useState(false);
 
-  const themeStyles = {
-    backgroundColor: darkMode ? "#121212" : "#f0f4f8",
-    color: darkMode ? "#ffffff" : "#333",
-  };
-
-  const sectionBg = darkMode ? "#1e1e1e" : "#ffffff";
-  const textColor = darkMode ? "#ffffff" : "#004085";
+  useEffect(() => {
+    const sections = document.querySelectorAll(".fade-in");
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+        }
+      });
+    });
+    sections.forEach((section) => observer.observe(section));
+  }, []);
 
   return (
     <div
       style={{
-        minHeight: "100vh",
         fontFamily: "Arial, sans-serif",
-        ...themeStyles,
+        backgroundColor: darkMode ? "#121212" : "#f0f4f8",
+        color: darkMode ? "#ffffff" : "#333",
         transition: "all 0.3s ease",
-        position: "relative",
       }}
     >
-      {/* Decorative Background Lines */}
-      <img
-        src="https://www.heropatterns.com/static/media/hexagons.9d7487bb.svg"
-        alt="pattern"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          zIndex: 0,
-          opacity: 0.05,
-          pointerEvents: "none",
-          objectFit: "cover",
-        }}
-      />
-
-      <div style={{ position: "relative", height: "100vh", overflow: "hidden", zIndex: 1 }}>
+      {/* 🎥 Video Background */}
+      <div style={{ position: "relative", height: "100vh", overflow: "hidden" }}>
         <video
           autoPlay
           muted
@@ -67,7 +54,7 @@ const HomePage = () => {
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            zIndex: -1,
+            zIndex: -2,
             filter: darkMode ? "brightness(0.5)" : "brightness(0.7)",
           }}
         >
@@ -77,20 +64,37 @@ const HomePage = () => {
           />
         </video>
 
+        {/* Decorative SVG Grid */}
         <div
           style={{
-            position: "relative",
-            textAlign: "center",
-            padding: "60px 20px",
+            position: "absolute",
+            inset: 0,
+            backgroundImage:
+              "url('https://www.heropatterns.com/static/svg/hexagons.svg')",
+            opacity: 0.06,
+            backgroundRepeat: "repeat",
+            zIndex: -1,
+          }}
+        />
+
+        {/* Header + Toggle */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "20px",
+            position: "absolute",
+            width: "100%",
+            top: 0,
+            zIndex: 2,
           }}
         >
+          <h2 style={{ margin: 0 }}>🚚 Avtologistika</h2>
           <button
             onClick={() => setDarkMode(!darkMode)}
             style={{
-              position: "absolute",
-              top: 20,
-              right: 20,
-              padding: "10px 20px",
+              padding: "8px 16px",
               borderRadius: "20px",
               backgroundColor: darkMode ? "#444" : "#eee",
               color: darkMode ? "#fff" : "#000",
@@ -100,50 +104,89 @@ const HomePage = () => {
           >
             {darkMode ? "Світла тема" : "Темна тема"}
           </button>
+        </div>
 
-          <h1 style={{ fontSize: "3em", fontWeight: "bold", color: textColor }}>
-            Ідеї, що рухають автологістику
-          </h1>
-          <p
-            style={{
-              fontSize: "1.2em",
-              lineHeight: "1.6",
-              maxWidth: "700px",
-              margin: "20px auto",
-              color: darkMode ? "#ccc" : "#333",
-            }}
-          >
-            Ваша думка має значення — діліться своїми ідеями, проблемами та
-            рішеннями, щоб зробити логістичні процеси кращими!
-          </p>
-          <button
-            style={{
-              marginTop: "20px",
-              padding: "12px 24px",
-              fontSize: "1em",
-              borderRadius: "30px",
-              backgroundColor: "#007bff",
-              color: "white",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            Подати ідею
-          </button>
+        {/* Hero Section */}
+        <div
+          className="fade-in"
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100%",
+            padding: "0 10%",
+            zIndex: 1,
+          }}
+        >
+          <div style={{ flex: 1, zIndex: 2 }}>
+            <h1
+              style={{
+                fontSize: "3em",
+                fontWeight: "bold",
+                color: darkMode ? "#ffffff" : "#004085",
+              }}
+            >
+              Ідеї, що рухають автологістику
+            </h1>
+            <p
+              style={{
+                fontSize: "1.2em",
+                maxWidth: "600px",
+                lineHeight: "1.6",
+                color: darkMode ? "#ccc" : "#333",
+              }}
+            >
+              Ваша думка має значення — діліться своїми ідеями, проблемами та
+              рішеннями, щоб зробити логістичні процеси кращими!
+            </p>
+            <button
+              style={{
+                marginTop: "20px",
+                padding: "12px 24px",
+                fontSize: "1em",
+                borderRadius: "30px",
+                backgroundColor: "#007bff",
+                color: "white",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              Подати ідею
+            </button>
+          </div>
+
+          {/* Side Image */}
+          <div style={{ flex: 1, textAlign: "right" }}>
+            <img
+              src="https://source.unsplash.com/600x400/?logistics,truck"
+              alt="Logistics illustration"
+              style={{
+                maxWidth: "100%",
+                borderRadius: "16px",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
+              }}
+            />
+          </div>
         </div>
       </div>
 
+      {/* Article Section */}
       <section
+        className="fade-in"
         style={{
-          backgroundColor: sectionBg,
-          padding: "40px 20px",
+          backgroundColor: darkMode ? "#1e1e1e" : "#ffffff",
+          padding: "60px 20px",
           textAlign: "center",
-          transition: "all 0.3s ease",
-          zIndex: 2,
-          position: "relative",
         }}
       >
-        <h2 style={{ fontSize: "2em", fontWeight: "bold", color: textColor }}>
+        <h2
+          style={{
+            fontSize: "2em",
+            fontWeight: "bold",
+            color: darkMode ? "#ffffff" : "#004085",
+          }}
+        >
           Цікаві Статті
         </h2>
         <div
@@ -162,14 +205,14 @@ const HomePage = () => {
                 backgroundColor: darkMode ? "#2a2a2a" : "#ffffff",
                 color: darkMode ? "#f0f0f0" : "#333",
                 padding: "20px",
-                borderRadius: "8px",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                borderRadius: "12px",
                 width: "300px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                 textAlign: "left",
                 transition: "all 0.3s ease",
               }}
             >
-              <h3 style={{ fontSize: "1.5em", marginBottom: "10px" }}>
+              <h3 style={{ fontSize: "1.4em", marginBottom: "10px" }}>
                 {article.title}
               </h3>
               <p style={{ fontSize: "1em", lineHeight: "1.6" }}>{article.content}</p>
@@ -177,6 +220,26 @@ const HomePage = () => {
           ))}
         </div>
       </section>
+
+      {/* Styles for animation */}
+      <style>{`
+        .fade-in {
+          opacity: 0;
+          transform: translateY(20px);
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+          .fade-in {
+            flex-direction: column !important;
+            text-align: center !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
