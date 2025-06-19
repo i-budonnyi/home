@@ -18,7 +18,7 @@ import { useNavigate } from "react-router-dom";
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 
-// 🔗 Актуальний API endpoint (залежно від бекенд-шляху)
+// 🔗 Актуальний API endpoint
 const API_SUBSCRIPTIONS_URL =
   "https://backend-avtologistika.onrender.com/api/subscriptionRoutes/user-subscriptions";
 
@@ -47,15 +47,12 @@ const Subscriptions = () => {
   const fetchUserSubscriptions = useCallback(async () => {
     const token = getAuthToken();
     if (!token) {
-      console.warn("⛔ Токен відсутній. Скасовано запит.");
       setError("Необхідно увійти в систему.");
       setIsLoading(false);
       return;
     }
 
     try {
-      console.log("📡 Відправляємо GET запит на:", API_SUBSCRIPTIONS_URL);
-
       const response = await axios.get(API_SUBSCRIPTIONS_URL, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -63,22 +60,13 @@ const Subscriptions = () => {
         }
       });
 
-      console.log("✅ Отримано відповідь:", response);
-
       if (response.status === 200 && Array.isArray(response.data.subscriptions)) {
         setSubscriptions(response.data.subscriptions);
       } else {
         throw new Error("❌ Структура відповіді не відповідає очікуваній.");
       }
     } catch (err) {
-      console.error("❌ ПОМИЛКА при отриманні підписок:", err);
-
       if (err.response) {
-        console.warn("📥 Сервер відповів з помилкою:", {
-          status: err.response.status,
-          data: err.response.data,
-        });
-
         if (err.response.status === 401 || err.response.status === 403) {
           setError("Доступ заборонено. Увійдіть повторно.");
         } else {
@@ -97,12 +85,18 @@ const Subscriptions = () => {
   }, [fetchUserSubscriptions]);
 
   const getStatusColor = (status) => {
-    switch (status) {
+    if (!status) return "default";
+    const normalized = status.toLowerCase();
+
+    switch (normalized) {
       case "pending":
+      case "очікує":
         return "orange";
       case "approved":
+      case "затверджено":
         return "green";
       case "rejected":
+      case "відхилено":
         return "red";
       case "до_секретаря":
         return "purple";
@@ -189,7 +183,9 @@ const Subscriptions = () => {
                       color={getStatusColor(sub.status)}
                       style={{ marginTop: "10px", fontSize: "14px" }}
                     >
-                      {sub.status ? sub.status.toUpperCase() : "НЕ ВКАЗАНО"}
+                      {sub.status
+                        ? sub.status.charAt(0).toUpperCase() + sub.status.slice(1)
+                        : "Статус відсутній"}
                     </Tag>
                     <br />
                     <Text type="secondary" style={{ fontSize: "14px" }}>
