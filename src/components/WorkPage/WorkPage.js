@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -24,7 +25,6 @@ const WorkerPage = () => {
   const token = localStorage.getItem("token");
   const navigate = useNavigate();
 
-  // ✅ Використовується в useEffect
   const fetchUserProfile = useCallback(async () => {
     try {
       const res = await fetch("https://backend-avtologistika.onrender.com/api/userRoutes/profile", {
@@ -53,7 +53,7 @@ const WorkerPage = () => {
     if (!token) {
       navigate("/login");
     } else {
-      fetchUserProfile(); // ✅ використовуємо функцію
+      fetchUserProfile();
     }
   }, [token, navigate, fetchUserProfile]);
 
@@ -179,7 +179,6 @@ const WorkerPage = () => {
             ]}
           />
         </Sider>
-
         <Layout>
           <Header style={{ background: "transparent", height: 20, padding: 0 }} />
           <Content style={{ padding: "40px", background: themeMode.token.colorBgLayout }}>
