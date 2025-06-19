@@ -42,8 +42,8 @@ const HomePage = () => {
         transition: "all 0.3s ease",
       }}
     >
-      {/* 🎥 Video Background */}
       <div style={{ position: "relative", height: "100vh", overflow: "hidden" }}>
+        {/* 🎥 Video background */}
         <video
           autoPlay
           muted
@@ -55,42 +55,46 @@ const HomePage = () => {
             height: "100%",
             objectFit: "cover",
             zIndex: -2,
-            filter: darkMode ? "brightness(0.5)" : "brightness(0.7)",
           }}
         >
           <source
-            src="https://cdn.coverr.co/videos/coverr-driving-through-the-snow-8235/1080p.mp4"
+            src="https://cdn.coverr.co/videos/coverr-aerial-shot-of-a-truck-on-a-highway-5261/1080p.mp4"
             type="video/mp4"
           />
         </video>
 
-        {/* Decorative SVG Grid */}
+        {/* 🟫 Gradient overlay */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.6))",
+            zIndex: -1,
+          }}
+        />
+
+        {/* Decorative SVG */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             backgroundImage:
               "url('https://www.heropatterns.com/static/svg/hexagons.svg')",
-            opacity: 0.06,
+            opacity: 0.05,
             backgroundRepeat: "repeat",
             zIndex: -1,
           }}
         />
 
-        {/* Header + Toggle */}
+        {/* Toggle theme */}
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "20px",
             position: "absolute",
-            width: "100%",
-            top: 0,
+            top: 20,
+            right: 20,
             zIndex: 2,
           }}
         >
-          <h2 style={{ margin: 0 }}>🚚 Avtologistika</h2>
           <button
             onClick={() => setDarkMode(!darkMode)}
             style={{
@@ -106,43 +110,44 @@ const HomePage = () => {
           </button>
         </div>
 
-        {/* Hero Section */}
+        {/* HERO */}
         <div
           className="fade-in"
           style={{
             display: "flex",
             flexDirection: "row",
+            flexWrap: "wrap",
             alignItems: "center",
             justifyContent: "center",
             height: "100%",
             padding: "0 10%",
+            gap: "40px",
             zIndex: 1,
           }}
         >
-          <div style={{ flex: 1, zIndex: 2 }}>
+          <div style={{ flex: "1 1 400px" }}>
             <h1
               style={{
-                fontSize: "3em",
+                fontSize: "2.8em",
                 fontWeight: "bold",
-                color: darkMode ? "#ffffff" : "#004085",
+                color: darkMode ? "#ffffff" : "#ffffff",
               }}
             >
-              Ідеї, що рухають автологістику
+              Ідеї, що рухають <span style={{ color: "#59c1ff" }}>IdeaHub</span>
             </h1>
             <p
               style={{
                 fontSize: "1.2em",
-                maxWidth: "600px",
                 lineHeight: "1.6",
-                color: darkMode ? "#ccc" : "#333",
+                margin: "20px 0",
+                maxWidth: "600px",
+                color: darkMode ? "#ccc" : "#eaeaea",
               }}
             >
-              Ваша думка має значення — діліться своїми ідеями, проблемами та
-              рішеннями, щоб зробити логістичні процеси кращими!
+              Ваша думка має значення — діліться своїми ідеями, проблемами та рішеннями, щоб зробити логістичні процеси кращими!
             </p>
             <button
               style={{
-                marginTop: "20px",
                 padding: "12px 24px",
                 fontSize: "1em",
                 borderRadius: "30px",
@@ -156,11 +161,10 @@ const HomePage = () => {
             </button>
           </div>
 
-          {/* Side Image */}
-          <div style={{ flex: 1, textAlign: "right" }}>
+          <div style={{ flex: "1 1 400px", textAlign: "center" }}>
             <img
-              src="https://source.unsplash.com/600x400/?logistics,truck"
-              alt="Logistics illustration"
+              src="https://images.unsplash.com/photo-1600180758890-d53f3215c38a?auto=format&fit=crop&w=800&q=80"
+              alt="Logistics"
               style={{
                 maxWidth: "100%",
                 borderRadius: "16px",
@@ -171,7 +175,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Article Section */}
+      {/* ARTICLES */}
       <section
         className="fade-in"
         style={{
@@ -180,13 +184,7 @@ const HomePage = () => {
           textAlign: "center",
         }}
       >
-        <h2
-          style={{
-            fontSize: "2em",
-            fontWeight: "bold",
-            color: darkMode ? "#ffffff" : "#004085",
-          }}
-        >
+        <h2 style={{ fontSize: "2em", fontWeight: "bold", color: darkMode ? "#fff" : "#004085" }}>
           Цікаві Статті
         </h2>
         <div
@@ -195,7 +193,7 @@ const HomePage = () => {
             flexWrap: "wrap",
             justifyContent: "center",
             gap: "20px",
-            marginTop: "20px",
+            marginTop: "30px",
           }}
         >
           {articles.map((article, index) => (
@@ -207,21 +205,18 @@ const HomePage = () => {
                 padding: "20px",
                 borderRadius: "12px",
                 width: "300px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
                 textAlign: "left",
                 transition: "all 0.3s ease",
               }}
             >
-              <h3 style={{ fontSize: "1.4em", marginBottom: "10px" }}>
-                {article.title}
-              </h3>
+              <h3 style={{ fontSize: "1.4em", marginBottom: "10px" }}>{article.title}</h3>
               <p style={{ fontSize: "1em", lineHeight: "1.6" }}>{article.content}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Styles for animation */}
       <style>{`
         .fade-in {
           opacity: 0;
@@ -232,7 +227,6 @@ const HomePage = () => {
           opacity: 1;
           transform: translateY(0);
         }
-
         @media (max-width: 768px) {
           .fade-in {
             flex-direction: column !important;
