@@ -20,7 +20,7 @@ const { Header, Content } = Layout;
 
 // ✅ ОНОВЛЕНО: без "subscriptionRoutes"
 const API_SUBSCRIPTIONS_URL =
-  "https://backend-avtologistika.onrender.com/api/user-subscriptions";
+  "https://backend-avtologistika.onrender.com/api/subscriptionRoutes";
 
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
