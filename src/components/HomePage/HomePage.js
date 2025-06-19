@@ -36,9 +36,27 @@ const HomePage = () => {
         fontFamily: "Arial, sans-serif",
         ...themeStyles,
         transition: "all 0.3s ease",
+        position: "relative",
       }}
     >
-      <div style={{ position: "relative", height: "100vh", overflow: "hidden" }}>
+      {/* Decorative Background Lines */}
+      <img
+        src="https://www.heropatterns.com/static/media/hexagons.9d7487bb.svg"
+        alt="pattern"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          zIndex: 0,
+          opacity: 0.05,
+          pointerEvents: "none",
+          objectFit: "cover",
+        }}
+      />
+
+      <div style={{ position: "relative", height: "100vh", overflow: "hidden", zIndex: 1 }}>
         <video
           autoPlay
           muted
@@ -62,7 +80,6 @@ const HomePage = () => {
         <div
           style={{
             position: "relative",
-            zIndex: 1,
             textAlign: "center",
             padding: "60px 20px",
           }}
@@ -122,6 +139,8 @@ const HomePage = () => {
           padding: "40px 20px",
           textAlign: "center",
           transition: "all 0.3s ease",
+          zIndex: 2,
+          position: "relative",
         }}
       >
         <h2 style={{ fontSize: "2em", fontWeight: "bold", color: textColor }}>
