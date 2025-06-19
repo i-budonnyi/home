@@ -18,8 +18,9 @@ import { useNavigate } from "react-router-dom";
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 
+// ✅ ОНОВЛЕНО: без "subscriptionRoutes"
 const API_SUBSCRIPTIONS_URL =
-  "https://backend-avtologistika.onrender.com/api/subscriptionRoutes/user-subscriptions";
+  "https://backend-avtologistika.onrender.com/api/user-subscriptions";
 
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -58,8 +59,8 @@ const Subscriptions = () => {
       console.error("❌ ПОМИЛКА:", err);
       setError(
         err.response?.data?.message ||
-          err.message ||
-          "Сталася невідома помилка на сервері."
+        err.message ||
+        "Сталася невідома помилка на сервері."
       );
     } finally {
       setIsLoading(false);
