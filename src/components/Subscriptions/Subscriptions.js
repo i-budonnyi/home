@@ -18,9 +18,9 @@ import { useNavigate } from "react-router-dom";
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 
-// ✅ ОНОВЛЕНО: без "subscriptionRoutes"
+// 🔗 Актуальний API endpoint (залежно від бекенд-шляху)
 const API_SUBSCRIPTIONS_URL =
-  "https://backend-avtologistika.onrender.com/user-subscriptions";
+  "https://backend-avtologistika.onrender.com/api/subscriptionRoutes/user-subscriptions";
 
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -31,7 +31,12 @@ const Subscriptions = () => {
   );
 
   const navigate = useNavigate();
-  const getAuthToken = () => localStorage.getItem("token");
+
+  const getAuthToken = () => {
+    const token = localStorage.getItem("token");
+    console.log("🔑 JWT Token з localStorage:", token || "❌ Відсутній");
+    return token;
+  };
 
   const toggleTheme = () => {
     const newTheme = isDarkMode ? "light" : "dark";
@@ -40,28 +45,48 @@ const Subscriptions = () => {
   };
 
   const fetchUserSubscriptions = useCallback(async () => {
+    const token = getAuthToken();
+    if (!token) {
+      console.warn("⛔ Токен відсутній. Скасовано запит.");
+      setError("Необхідно увійти в систему.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const token = getAuthToken();
-      if (!token) throw new Error("⛔ Необхідна авторизація.");
+      console.log("📡 Відправляємо GET запит на:", API_SUBSCRIPTIONS_URL);
 
       const response = await axios.get(API_SUBSCRIPTIONS_URL, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
       });
 
-      console.log("🔄 Отримано відповіді:", response.data);
+      console.log("✅ Отримано відповідь:", response);
 
       if (response.status === 200 && Array.isArray(response.data.subscriptions)) {
         setSubscriptions(response.data.subscriptions);
       } else {
-        throw new Error("❌ Невірна структура відповіді від сервера.");
+        throw new Error("❌ Структура відповіді не відповідає очікуваній.");
       }
     } catch (err) {
-      console.error("❌ ПОМИЛКА:", err);
-      setError(
-        err.response?.data?.message ||
-        err.message ||
-        "Сталася невідома помилка на сервері."
-      );
+      console.error("❌ ПОМИЛКА при отриманні підписок:", err);
+
+      if (err.response) {
+        console.warn("📥 Сервер відповів з помилкою:", {
+          status: err.response.status,
+          data: err.response.data,
+        });
+
+        if (err.response.status === 401 || err.response.status === 403) {
+          setError("Доступ заборонено. Увійдіть повторно.");
+        } else {
+          setError(err.response.data?.message || "Помилка на сервері.");
+        }
+      } else {
+        setError(err.message || "Невідома помилка.");
+      }
     } finally {
       setIsLoading(false);
     }
