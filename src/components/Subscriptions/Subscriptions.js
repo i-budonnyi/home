@@ -21,6 +21,15 @@ const { Header, Content } = Layout;
 const API_SUBSCRIPTIONS_URL =
   "https://backend-avtologistika.onrender.com/api/subscriptionRoutes/user-subscriptions";
 
+// 🧩 Декодування кракозябр типу Windows-1251 у UTF-8
+const decodeWindows1251 = (input) => {
+  try {
+    return decodeURIComponent(escape(input));
+  } catch {
+    return input;
+  }
+};
+
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,8 +75,8 @@ const Subscriptions = () => {
     } catch (err) {
       setError(
         err.response?.data?.message ||
-          err.message ||
-          "Сталася невідома помилка."
+        err.message ||
+        "Сталася невідома помилка."
       );
     } finally {
       setIsLoading(false);
@@ -147,7 +156,7 @@ const Subscriptions = () => {
                     hoverable
                     title={
                       <Title level={4} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>
-                        {sub.title?.trim() || "Без назви"}
+                        {decodeWindows1251(sub.title?.trim()) || "Без назви"}
                       </Title>
                     }
                     style={{
@@ -161,7 +170,7 @@ const Subscriptions = () => {
                     bordered={false}
                   >
                     <Text style={{ color: themeMode.token.colorTextBase }}>
-                      {sub.description?.trim() || "Без опису"}
+                      {decodeWindows1251(sub.description?.trim()) || "Без опису"}
                     </Text>
                     <br />
                     {sub.status && (
