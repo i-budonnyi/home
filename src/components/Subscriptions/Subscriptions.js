@@ -141,13 +141,13 @@ const Subscriptions = () => {
             <List
               grid={{ gutter: 20, column: 1 }}
               dataSource={subscriptions}
-              renderItem={(sub) => (
-                <List.Item>
+              renderItem={(sub, index) => (
+                <List.Item key={index}>
                   <Card
                     hoverable
                     title={
                       <Title level={4} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>
-                        {sub.title || "Без назви"}
+                        {sub.title?.trim() || "Без назви"}
                       </Title>
                     }
                     style={{
@@ -161,7 +161,7 @@ const Subscriptions = () => {
                     bordered={false}
                   >
                     <Text style={{ color: themeMode.token.colorTextBase }}>
-                      {sub.description || "Без опису"}
+                      {sub.description?.trim() || "Без опису"}
                     </Text>
                     <br />
                     {sub.status && (
