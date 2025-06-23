@@ -1,4 +1,4 @@
-// src/components/BlogPage/BlogPage.jsx
+заверши код // src/components/BlogPage/BlogPage.jsx
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   Layout, Card, Space, Typography, Skeleton, Button, Tag, Input,
@@ -18,10 +18,11 @@ const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
-const API_BLOG_URL = `${API_BASE}/blogRoutes`;
-const API_PROBLEMS_URL = `${API_BASE}/problems`;
-const API_LIKE_URL = `${API_BASE}/likeRoutes`;
-const API_COMMENT_URL = `${API_BASE}/commentRoutes`;
+const API_BLOG_URL = ${API_BASE}/blogRoutes;
+const API_PROBLEMS_URL = ${API_BASE}/problems;
+const API_LIKE_URL = ${API_BASE}/likeRoutes;
+const API_COMMENT_URL = ${API_BASE}/commentRoutes;
+const API_SUBSCRIPTION_URL = ${API_BASE}/subscriptionRoutes;
 
 let socket;
 
@@ -37,6 +38,7 @@ const BlogPage = () => {
   const [shareLink, setShareLink] = useState("");
   const [selectedEntry, setSelectedEntry] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [subscriptions, setSubscriptions] = useState([]);
   const commentsEndRef = useRef(null);
 
   const getAuthToken = () => localStorage.getItem("token");
@@ -53,10 +55,58 @@ const BlogPage = () => {
     }
   }, []);
 
+  const fetchSubscriptions = useCallback(async () => {
+    try {
+      const res = await axios.get(${API_SUBSCRIPTION_URL}/user-subscriptions, {
+        headers: { Authorization: Bearer ${getAuthToken()} }
+      });
+      setSubscriptions(res.data || []);
+    } catch (err) {
+      console.error("❌ fetchSubscriptions:", err);
+    }
+  }, []);
+
+  const isSubscribed = (entryId) => {
+    return subscriptions.some((s) => s.entry_id === entryId);
+  };
+
+  const handleSubscribe = async (entry) => {
+    try {
+      await axios.post(${API_SUBSCRIPTION_URL}/subscribe, {
+        entry_id: entry.id,
+        entry_type: entry.entryType
+      }, {
+        headers: { Authorization: Bearer ${getAuthToken()} }
+      });
+      message.success("Підписка оформлена!");
+      fetchSubscriptions();
+    } catch (err) {
+      console.error("[handleSubscribe] ❌", err);
+      message.error("Не вдалося підписатися.");
+    }
+  };
+
+  const handleUnsubscribe = async (entry) => {
+    try {
+      await axios.delete(${API_SUBSCRIPTION_URL}/unsubscribe, {
+        data: {
+          entry_id: entry.id,
+          entry_type: entry.entryType
+        },
+        headers: { Authorization: Bearer ${getAuthToken()} }
+      });
+      message.success("Підписку скасовано.");
+      fetchSubscriptions();
+    } catch (err) {
+      console.error("[handleUnsubscribe] ❌", err);
+      message.error("Не вдалося скасувати підписку.");
+    }
+  };
+
   const fetchLikes = useCallback(async (entry) => {
     try {
-      const res = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` }
+      const res = await axios.get(${API_LIKE_URL}/likes/${entry.id}, {
+        headers: { Authorization: Bearer ${getAuthToken()} }
       });
       setLikesData((prev) => ({
         ...prev,
@@ -72,42 +122,42 @@ const BlogPage = () => {
 
   const fetchComments = useCallback(async (entry) => {
     try {
-      const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` }
+      const res = await axios.get(${API_COMMENT_URL}/${entry.id}, {
+        headers: { Authorization: Bearer ${getAuthToken()} }
       });
       setCommentsData((prev) => ({
         ...prev,
         [entry.id]: res.data.comments || [],
       }));
     } catch (err) {
-      console.error(`[fetchComments] entryId=${entry.id}`, err);
+      console.error([fetchComments] entryId=${entry.id}, err);
     }
   }, []);
 
   const fetchAllEntries = useCallback(async () => {
     try {
-      const headers = { Authorization: `Bearer ${getAuthToken()}` };
+      const headers = { Authorization: Bearer ${getAuthToken()} };
       const [blogsRes, problemsRes] = await Promise.all([
-        axios.get(`${API_BLOG_URL}/entries`, { headers }),
+        axios.get(${API_BLOG_URL}/entries, { headers }),
         axios.get(API_PROBLEMS_URL, { headers }),
       ]);
 
       const blogs = blogsRes.data.blogs?.map((b) => ({
         ...b,
         entryType: "blog",
-        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim(),
+        authorname: ${b.author_first_name || ""} ${b.author_last_name || ""}.trim(),
       })) || [];
 
       const ideas = blogsRes.data.ideas?.map((i) => ({
         ...i,
         entryType: "idea",
-        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim(),
+        authorname: ${i.author_first_name || ""} ${i.author_last_name || ""}.trim(),
       })) || [];
 
       const problems = problemsRes.data?.map((p) => ({
         ...p,
         entryType: "problem",
-        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim(),
+        authorname: ${p.author_first_name || ""} ${p.author_last_name || ""}.trim(),
       })) || [];
 
       const all = [...blogs, ...ideas, ...problems];
@@ -126,11 +176,11 @@ const BlogPage = () => {
 
   const toggleLike = async (entry) => {
     try {
-      await axios.post(`${API_LIKE_URL}/toggle-like`, {
+      await axios.post(${API_LIKE_URL}/toggle-like, {
         entry_id: entry.id,
         entry_type: entry.entryType
       }, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` }
+        headers: { Authorization: Bearer ${getAuthToken()} }
       });
       fetchLikes(entry);
     } catch (err) {
@@ -144,18 +194,16 @@ const BlogPage = () => {
     if (!comment) return;
 
     try {
-      const res = await axios.post(`${API_COMMENT_URL}/add`, {
+      const res = await axios.post(${API_COMMENT_URL}/add, {
         entry_id: entry.id,
         entry_type: entry.entryType,
         comment
       }, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` }
+        headers: { Authorization: Bearer ${getAuthToken()} }
       });
 
       const added = res.data?.comment;
       if (!added) throw new Error("Сервер не повернув коментар");
-
-      console.log("✅ Коментар додано:", added);
 
       setCommentsData((prev) => ({
         ...prev,
@@ -172,15 +220,14 @@ const BlogPage = () => {
       }
     } catch (err) {
       console.error("[handleCommentSubmit] ❌", err);
-      console.log("↪️ Сервер відповів:", err?.response?.data);
       message.error("Не вдалося додати коментар.");
     }
   };
 
   const handleDeleteComment = async (commentId, entryId) => {
     try {
-      await axios.delete(`${API_COMMENT_URL}/${commentId}`, {
-        headers: { Authorization: `Bearer ${getAuthToken()}` }
+      await axios.delete(${API_COMMENT_URL}/${commentId}, {
+        headers: { Authorization: Bearer ${getAuthToken()} }
       });
       setCommentsData((prev) => ({
         ...prev,
@@ -194,7 +241,7 @@ const BlogPage = () => {
   };
 
   const handleShare = (entry) => {
-    setShareLink(`${window.location.origin}/post/${entry.id}`);
+    setShareLink(${window.location.origin}/post/${entry.id});
     setShareVisible(true);
   };
 
@@ -216,6 +263,7 @@ const BlogPage = () => {
   useEffect(() => {
     fetchUserId();
     fetchAllEntries();
+    fetchSubscriptions();
 
     if (!socket || !socket.connected) {
       socket = io("https://backend-avtologistika.onrender.com", {
@@ -246,7 +294,7 @@ const BlogPage = () => {
         socket = null;
       }
     };
-  }, [fetchUserId, fetchAllEntries, fetchLikes]);
+  }, [fetchUserId, fetchAllEntries, fetchLikes, fetchSubscriptions]);
 
   const getTagColor = (type) => {
     if (type === "blog") return "blue";
@@ -316,7 +364,15 @@ const BlogPage = () => {
                     {likesData[selectedEntry.id]?.userLiked ? <HeartFilled style={{ color: "red" }} /> : <HeartOutlined />}
                   </Button>
                   <Text>{likesData[selectedEntry.id]?.likesCount || 0} лайків</Text>
-                  <Button type="primary" onClick={() => message.success("Підписка оформлена!")}>Підписатися</Button>
+                  {isSubscribed(selectedEntry.id) ? (
+                    <Button danger onClick={() => handleUnsubscribe(selectedEntry)}>
+                      Відписатися
+                    </Button>
+                  ) : (
+                    <Button type="primary" onClick={() => handleSubscribe(selectedEntry)}>
+                      Підписатися
+                    </Button>
+                  )}
                   <Button type="text" icon={<ShareAltOutlined />} onClick={() => handleShare(selectedEntry)} />
                 </Space>
                 <Divider />
@@ -359,24 +415,39 @@ const BlogPage = () => {
           </Modal>
 
           <Modal title="Поділитися" open={shareVisible} onCancel={() => setShareVisible(false)} footer={null}>
-            <Space>
-              <Tooltip title="Telegram">
-                <a href={`https://t.me/share/url?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
-                  <TelegramIcon style={{ fontSize: 28, color: "#229ED9" }} />
-                </a>
-              </Tooltip>
+		              <Text strong>Посилання на запис:</Text>
+            <Input
+              value={shareLink}
+              addonAfter={
+                <Tooltip title="Скопіювати">
+                  <Button
+                    icon={<CopyOutlined />}
+                    onClick={copyToClipboard}
+                  />
+                </Tooltip>
+              }
+              readOnly
+            />
+            <Divider />
+            <Text strong>Поділитися у соцмережах:</Text>
+            <Space style={{ marginTop: 10 }}>
               <Tooltip title="Facebook">
-                <a href={`https://facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
-                  <FacebookFilled style={{ fontSize: 30, color: "#4267B2" }} />
-                </a>
+                <Button
+                  icon={<FacebookFilled />}
+                  onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`, "_blank")}
+                />
               </Tooltip>
-              <Tooltip title="X (Twitter)">
-                <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
-                  <TwitterOutlined style={{ fontSize: 28 }} />
-                </a>
+              <Tooltip title="Twitter">
+                <Button
+                  icon={<TwitterOutlined />}
+                  onClick={() => window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}`, "_blank")}
+                />
               </Tooltip>
-              <Tooltip title="Копіювати посилання">
-                <CopyOutlined style={{ fontSize: 24 }} onClick={copyToClipboard} />
+              <Tooltip title="Telegram">
+                <Button
+                  icon={<TelegramIcon />}
+                  onClick={() => window.open(`https://t.me/share/url?url=${encodeURIComponent(shareLink)}`, "_blank")}
+                />
               </Tooltip>
             </Space>
           </Modal>
