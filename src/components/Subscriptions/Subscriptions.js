@@ -169,7 +169,13 @@ const Subscriptions = () => {
                     }}
                     bordered={false}
                   >
-                    <Text style={{ color: themeMode.token.colorTextBase }}>
+                    <Text
+                      style={{
+                        color: themeMode.token.colorTextBase,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                      }}
+                    >
                       {decodeWindows1251(sub.description?.trim()) || "Без опису"}
                     </Text>
                     <br />
