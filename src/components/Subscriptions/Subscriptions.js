@@ -49,8 +49,9 @@ const Subscriptions = () => {
 
       console.log("🔄 Отримано відповіді:", response.data);
 
-      if (response.status === 200 && Array.isArray(response.data.subscriptions)) {
-        setSubscriptions(response.data.subscriptions);
+      // ✅ Підлаштовано під масив без ключа "subscriptions"
+      if (response.status === 200 && Array.isArray(response.data)) {
+        setSubscriptions(response.data);
       } else {
         throw new Error("❌ Невірна структура відповіді від сервера.");
       }
@@ -58,8 +59,8 @@ const Subscriptions = () => {
       console.error("❌ ПОМИЛКА:", err);
       setError(
         err.response?.data?.message ||
-          err.message ||
-          "Сталася невідома помилка на сервері."
+        err.message ||
+        "Сталася невідома помилка на сервері."
       );
     } finally {
       setIsLoading(false);
