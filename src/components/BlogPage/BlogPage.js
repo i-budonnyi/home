@@ -125,26 +125,26 @@ const BlogPage = () => {
   }, [fetchLikes, fetchComments]);
 
   const fetchSubscriptions = useCallback(async () => {
-  try {
-    const token = getAuthToken();
-    const res = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const list = res.data?.subscriptions || res.data || [];
-    const map = list.reduce((acc, sub) => {
-      acc[sub.blog_id || sub.idea_id || sub.problem_id || sub.entry_id] = true;
-      return acc;
-    }, {});
-    setSubscribedEntries(map);
-  } catch (err) {
-    console.error("❌ Підписки:", err.message);
-  }
-}, []);
+    try {
+      const token = getAuthToken();
+      const res = await axios.get(`${API_SUBSCRIBE_URL}/user-subscriptions`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const list = res.data?.subscriptions || res.data || [];
+      const map = list.reduce((acc, sub) => {
+        acc[sub.blog_id || sub.idea_id || sub.problem_id || sub.entry_id] = true;
+        return acc;
+      }, {});
+      setSubscribedEntries(map);
+    } catch (err) {
+      console.error("❌ Підписки:", err.message);
+    }
+  }, []);
 
   useEffect(() => {
     fetchAllEntries();
     fetchSubscriptions();
-  }, [fetchAllEntries, fetchSubscriptions]); // ✅ ESLint fix
+  }, [fetchAllEntries, fetchSubscriptions]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -163,7 +163,7 @@ const BlogPage = () => {
     try {
       const token = getAuthToken();
       await axios.post(`${API_LIKE_URL}/toggle-like`, {
-        entry_id: entry.id,
+        entry_id: Number(entry.id),
         entry_type: entry.entryType
       }, { headers: { Authorization: `Bearer ${token}` } });
       fetchLikes(entry);
@@ -178,7 +178,15 @@ const BlogPage = () => {
       const isSub = subscribedEntries[entry.id];
       const method = isSub ? "delete" : "post";
       const url = `${API_SUBSCRIBE_URL}/${isSub ? "unsubscribe" : "subscribe"}`;
-      await axios({ method, url, data: { entry_id: entry.id, entry_type: entry.entryType }, headers: { Authorization: `Bearer ${token}` } });
+      await axios({
+        method,
+        url,
+        data: {
+          entry_id: Number(entry.id),
+          entry_type: entry.entryType
+        },
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setSubscribedEntries(prev => ({ ...prev, [entry.id]: !isSub }));
       message.success(isSub ? "Відписано" : "Підписано");
     } catch {
@@ -192,7 +200,7 @@ const BlogPage = () => {
     try {
       const token = getAuthToken();
       await axios.post(`${API_COMMENT_URL}/add`, {
-        entry_id: entry.id,
+        entry_id: Number(entry.id),
         entry_type: entry.entryType,
         comment
       }, { headers: { Authorization: `Bearer ${token}` } });
