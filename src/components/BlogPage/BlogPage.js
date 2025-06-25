@@ -52,6 +52,44 @@ const BlogPage = () => {
       console.error("❌ Error decoding token:", error);
     }
   }, []);
+const toggleSubscription = async (entry) => {
+  const isSubscribed = subscribedEntries[entry.id];
+  const entryType = entry.entryType;
+
+  if (!entryType || !["blog", "idea", "problem"].includes(entryType)) {
+    console.error("❌ Некоректний entryType:", entryType);
+    message.error("Помилка: тип запису не вказано або неправильний.");
+    return;
+  }
+
+  const url = `${API_SUBSCRIPTION_URL}/${isSubscribed ? 'unsubscribe' : 'subscribe'}`;
+
+  try {
+    await axios({
+      method: isSubscribed ? "delete" : "post",
+      url,
+      data: { entry_id: entry.id, entry_type: entryType },
+      headers: { Authorization: `Bearer ${getAuthToken()}` }
+    });
+
+    // ✅ Оновлюємо стейт
+    const updatedSubs = {
+      ...subscribedEntries,
+      [entry.id]: !isSubscribed
+    };
+    setSubscribedEntries(updatedSubs);
+
+    // 🧠 Оновлюємо selectedEntry, щоб перерендерилась кнопка в модалці
+    if (selectedEntry && selectedEntry.id === entry.id) {
+      setSelectedEntry({ ...entry }); // форсує перерендер
+    }
+
+    message.success(isSubscribed ? "Відписано" : "Підписано");
+  } catch (err) {
+    console.error("❌ toggleSubscription:", err?.response?.data || err.message);
+    message.error("Не вдалося змінити підписку.");
+  }
+};
 
   const fetchLikes = useCallback(async (entry) => {
     try {
