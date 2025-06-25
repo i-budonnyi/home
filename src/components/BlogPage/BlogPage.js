@@ -1,11 +1,23 @@
+/* eslint-disable no-unused-vars */
 import React, { useEffect, useState, useCallback } from "react";
 import {
-  Layout, Card, Space, Typography, Skeleton, Button,
-  Tag, Input, Divider, message, Modal
+  Layout,
+  Card,
+  Space,
+  Typography,
+  Skeleton,
+  Button,
+  Tag,
+  Input,
+  Divider,
+  message,
+  Modal
 } from "antd";
 import {
-  HeartOutlined, HeartFilled,
-  UserAddOutlined, SendOutlined,
+  HeartOutlined,
+  HeartFilled,
+  UserAddOutlined,
+  SendOutlined,
   ShareAltOutlined,
   CopyOutlined
 } from "@ant-design/icons";
@@ -23,20 +35,24 @@ const API_COMMENT_URL = `${API_BASE}/commentRoutes`;
 const API_SUBSCRIBE_URL = `${API_BASE}/subscriptionRoutes`;
 
 const STATUS_TRANSLATION = {
-  "до_секретаря": "Амбасадор рекомендує секретарю",
-  "нове": "Нове",
-  "очікує": "Очікує",
-  "відхилено": "Відхилено",
-  "відхилено_з_переглядом": "Відхилено з переглядом",
-  "відхилено_на_доопрацювання": "Відхилено на доопрацювання"
+  до_секретаря: "Амбасадор рекомендує секретарю",
+  нове: "Нове",
+  очікує: "Очікує",
+  відхилено: "Відхилено",
+  відхилено_з_переглядом: "Відхилено з переглядом",
+  відхилено_на_доопрацювання: "Відхилено на доопрацювання"
 };
 
 const getTagColor = (type) => {
   switch (type) {
-    case "blog": return "blue";
-    case "idea": return "green";
-    case "problem": return "red";
-    default: return "default";
+    case "blog":
+      return "blue";
+    case "idea":
+      return "green";
+    case "problem":
+      return "red";
+    default:
+      return "default";
   }
 };
 
@@ -53,14 +69,17 @@ const BlogPage = () => {
 
   const getAuthToken = () => localStorage.getItem("token");
 
+  /* ---------- Лайки ---------- */
   const fetchLikes = useCallback(async (entry) => {
     try {
       const res = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
-      setLikesData(prev => ({
+      setLikesData((prev) => ({
         ...prev,
         [entry.id]: {
           likesCount: res.data.likesCount || 0,
-          userLiked: res.data.likedBy?.some(u => u.user_id === res.data.currentUserId),
+          userLiked: res.data.likedBy?.some(
+            (u) => u.user_id === res.data.currentUserId
+          )
         }
       }));
     } catch (err) {
@@ -68,13 +87,14 @@ const BlogPage = () => {
     }
   }, []);
 
+  /* ---------- Коментарі ---------- */
   const fetchComments = useCallback(async (entry) => {
     try {
       const token = getAuthToken();
       const res = await axios.get(`${API_COMMENT_URL}/${entry.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setCommentsData(prev => ({
+      setCommentsData((prev) => ({
         ...prev,
         [entry.id]: res.data.comments || []
       }));
@@ -83,6 +103,7 @@ const BlogPage = () => {
     }
   }, []);
 
+  /* ---------- Отримати всі записи ---------- */
   const fetchAllEntries = useCallback(async () => {
     try {
       const token = getAuthToken();
@@ -92,20 +113,35 @@ const BlogPage = () => {
         axios.get(`${API_PROBLEMS_URL}`, { headers })
       ]);
 
-      const blogs = blogsRes.data?.blogs?.map(b => ({
-        ...b, entryType: "blog",
-        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() || b.author_email || "Невідомий"
-      })) || [];
+      const blogs =
+        blogsRes.data?.blogs?.map((b) => ({
+          ...b,
+          entryType: "blog",
+          authorname:
+            `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() ||
+            b.author_email ||
+            "Невідомий"
+        })) || [];
 
-      const ideas = blogsRes.data?.ideas?.map(i => ({
-        ...i, entryType: "idea",
-        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() || i.author_email || "Невідомий"
-      })) || [];
+      const ideas =
+        blogsRes.data?.ideas?.map((i) => ({
+          ...i,
+          entryType: "idea",
+          authorname:
+            `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() ||
+            i.author_email ||
+            "Невідомий"
+        })) || [];
 
-      const problems = problemsRes.data?.map(p => ({
-        ...p, entryType: "problem",
-        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() || p.author_email || "Невідомий"
-      })) || [];
+      const problems =
+        problemsRes.data?.map((p) => ({
+          ...p,
+          entryType: "problem",
+          authorname:
+            `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() ||
+            p.author_email ||
+            "Невідомий"
+        })) || [];
 
       const all = [...blogs, ...ideas, ...problems].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
@@ -113,7 +149,7 @@ const BlogPage = () => {
 
       setEntries(all);
 
-      all.forEach(entry => {
+      all.forEach((entry) => {
         fetchLikes(entry);
         fetchComments(entry);
       });
@@ -124,6 +160,7 @@ const BlogPage = () => {
     }
   }, [fetchLikes, fetchComments]);
 
+  /* ---------- Підписки ---------- */
   const fetchSubscriptions = useCallback(async () => {
     try {
       const token = getAuthToken();
@@ -132,7 +169,9 @@ const BlogPage = () => {
       });
       const list = res.data?.subscriptions || res.data || [];
       const map = list.reduce((acc, sub) => {
-        acc[sub.blog_id || sub.idea_id || sub.problem_id || sub.entry_id] = true;
+        acc[
+          sub.blog_id || sub.idea_id || sub.problem_id || sub.entry_id
+        ] = true;
         return acc;
       }, {});
       setSubscribedEntries(map);
@@ -141,6 +180,7 @@ const BlogPage = () => {
     }
   }, []);
 
+  /* ---------- Хуки ---------- */
   useEffect(() => {
     fetchAllEntries();
     fetchSubscriptions();
@@ -159,13 +199,18 @@ const BlogPage = () => {
     }
   }, [entries]);
 
+  /* ---------- Дії ---------- */
   const toggleLike = async (entry) => {
     try {
       const token = getAuthToken();
-      await axios.post(`${API_LIKE_URL}/toggle-like`, {
-        entry_id: Number(entry.id),
-        entry_type: entry.entryType
-      }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(
+        `${API_LIKE_URL}/toggle-like`,
+        {
+          entry_id: Number(entry.id),
+          entry_type: entry.entryType
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       fetchLikes(entry);
     } catch {
       message.error("Не вдалося змінити лайк.");
@@ -173,12 +218,13 @@ const BlogPage = () => {
   };
 
   const handleSubscribe = async (entry) => {
+    const token = getAuthToken();
+    const isSub = subscribedEntries[entry.id];
+    const method = isSub ? "delete" : "post";
+    const url = `${API_SUBSCRIBE_URL}/${isSub ? "unsubscribe" : "subscribe"}`;
+
     try {
-      const token = getAuthToken();
-      const isSub = subscribedEntries[entry.id];
-      const method = isSub ? "delete" : "post";
-      const url = `${API_SUBSCRIBE_URL}/${isSub ? "unsubscribe" : "subscribe"}`;
-      await axios({
+      const res = await axios({
         method,
         url,
         data: {
@@ -187,9 +233,16 @@ const BlogPage = () => {
         },
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSubscribedEntries(prev => ({ ...prev, [entry.id]: !isSub }));
-      message.success(isSub ? "Відписано" : "Підписано");
-    } catch {
+
+      if (res.status >= 200 && res.status < 300) {
+        setSubscribedEntries((prev) => ({ ...prev, [entry.id]: !isSub }));
+        message.success(isSub ? "Відписано" : "Підписано");
+      } else {
+        console.warn("⚠️ Неочікуваний статус:", res.status, res.data);
+        message.error("Не вдалося змінити підписку.");
+      }
+    } catch (err) {
+      console.error("❌ Помилка запиту:", err.response?.data || err.message);
       message.error("Не вдалося змінити підписку.");
     }
   };
@@ -199,24 +252,31 @@ const BlogPage = () => {
     if (!comment) return;
     try {
       const token = getAuthToken();
-      await axios.post(`${API_COMMENT_URL}/add`, {
-        entry_id: Number(entry.id),
-        entry_type: entry.entryType,
-        comment
-      }, { headers: { Authorization: `Bearer ${token}` } });
-      setNewComment(prev => ({ ...prev, [entry.id]: "" }));
+      await axios.post(
+        `${API_COMMENT_URL}/add`,
+        {
+          entry_id: Number(entry.id),
+          entry_type: entry.entryType,
+          comment
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setNewComment((prev) => ({ ...prev, [entry.id]: "" }));
       fetchComments(entry);
     } catch {
       message.error("Не вдалося додати коментар.");
     }
   };
 
+  /* ---------- Допоміжні ---------- */
   const translateStatus = (status) =>
-    STATUS_TRANSLATION[status] || decodeURIComponent(status || "").replace(/_/g, " ");
+    STATUS_TRANSLATION[status] ||
+    decodeURIComponent(status || "").replace(/_/g, " ");
 
-  const filteredEntries = filteredType === "all"
-    ? entries
-    : entries.filter(e => e.entryType === filteredType);
+  const filteredEntries =
+    filteredType === "all"
+      ? entries
+      : entries.filter((e) => e.entryType === filteredType);
 
   const handleShare = (entry) => {
     const url = `${window.location.origin}/blog?entryType=${entry.entryType}&id=${entry.id}`;
@@ -226,13 +286,18 @@ const BlogPage = () => {
     });
   };
 
+  /* ---------- UI ---------- */
   return (
     <Content style={{ padding: 20, maxWidth: 900, margin: "80px auto 0" }}>
-      <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 20 }}>
+      <div
+        style={{ display: "flex", justifyContent: "flex-start", marginBottom: 20 }}
+      >
         <Button href="/worker">← Назад</Button>
       </div>
 
-      {isLoading ? <Skeleton active /> : (
+      {isLoading ? (
+        <Skeleton active />
+      ) : (
         <>
           <Space style={{ marginBottom: 20 }}>
             {["all", "blog", "idea", "problem"].map((type) => (
@@ -247,9 +312,11 @@ const BlogPage = () => {
           </Space>
 
           <Space direction="vertical" style={{ width: "100%" }}>
-            {filteredEntries.map(entry => (
+            {filteredEntries.map((entry) => (
               <Card key={entry.id} id={`entry-${entry.entryType}-${entry.id}`}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
                   <Title
                     level={4}
                     style={{ cursor: "pointer" }}
@@ -257,12 +324,17 @@ const BlogPage = () => {
                   >
                     {entry.title}
                   </Title>
-                  <Button icon={<UserAddOutlined />} onClick={() => handleSubscribe(entry)}>
+                  <Button
+                    icon={<UserAddOutlined />}
+                    onClick={() => handleSubscribe(entry)}
+                  >
                     {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
                   </Button>
                 </div>
 
-                <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
+                <Tag color={getTagColor(entry.entryType)}>
+                  {entry.entryType.toUpperCase()}
+                </Tag>
                 <Text strong>Автор: {entry.authorname}</Text>
                 {entry.status && (
                   <p style={{ marginTop: 8 }}>
@@ -273,10 +345,20 @@ const BlogPage = () => {
                 <Divider />
                 <Text>{entry.description || "Без опису"}</Text>
 
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    marginTop: 12
+                  }}
+                >
                   <Space>
                     <Button type="text" onClick={() => toggleLike(entry)}>
-                      {likesData[entry.id]?.userLiked ? <HeartFilled style={{ color: "red" }} /> : <HeartOutlined />}
+                      {likesData[entry.id]?.userLiked ? (
+                        <HeartFilled style={{ color: "red" }} />
+                      ) : (
+                        <HeartOutlined />
+                      )}
                     </Button>
                     <Text>{likesData[entry.id]?.likesCount || 0}</Text>
                   </Space>
@@ -287,15 +369,19 @@ const BlogPage = () => {
 
                 <Divider />
                 <Title level={5}>Коментарі:</Title>
-                {(commentsData[entry.id] || []).map(comment => (
+                {(commentsData[entry.id] || []).map((comment) => (
                   <Card key={comment.id} size="small" style={{ marginBottom: 8 }}>
-                    <Text strong>{`${comment.author_first_name || ""} ${comment.author_last_name || ""}`}</Text>
+                    <Text strong>{`${comment.author_first_name || ""} ${
+                      comment.author_last_name || ""
+                    }`}</Text>
                     <p>{comment.text}</p>
                   </Card>
                 ))}
                 <TextArea
                   value={newComment[entry.id] || ""}
-                  onChange={(e) => setNewComment({ ...newComment, [entry.id]: e.target.value })}
+                  onChange={(e) =>
+                    setNewComment({ ...newComment, [entry.id]: e.target.value })
+                  }
                   placeholder="Ваш коментар..."
                 />
                 <Button
@@ -312,42 +398,70 @@ const BlogPage = () => {
         </>
       )}
 
+      {/* ---------- Модалка поширення ---------- */}
       <Modal
         title="Поділитися постом"
         open={shareModal.visible}
         onCancel={() => setShareModal({ visible: false, url: "" })}
         footer={null}
       >
-        <p><b>Посилання:</b> {shareModal.url}</p>
+        <p>
+          <b>Посилання:</b> {shareModal.url}
+        </p>
         <Space wrap style={{ marginTop: 10 }}>
-          <Button icon={<CopyOutlined />} onClick={() => {
-            navigator.clipboard.writeText(shareModal.url);
-            message.success("Скопійовано!");
-          }}>
+          <Button
+            icon={<CopyOutlined />}
+            onClick={() => {
+              navigator.clipboard.writeText(shareModal.url);
+              message.success("Скопійовано!");
+            }}
+          >
             Копіювати
           </Button>
-          <Button href={`https://t.me/share/url?url=${encodeURIComponent(shareModal.url)}`} target="_blank">
+          <Button
+            href={`https://t.me/share/url?url=${encodeURIComponent(
+              shareModal.url
+            )}`}
+            target="_blank"
+          >
             Telegram
           </Button>
-          <Button href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareModal.url)}`} target="_blank">
+          <Button
+            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+              shareModal.url
+            )}`}
+            target="_blank"
+          >
             Facebook
           </Button>
-          <Button href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareModal.url)}`} target="_blank">
+          <Button
+            href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
+              shareModal.url
+            )}`}
+            target="_blank"
+          >
             Twitter
           </Button>
         </Space>
       </Modal>
 
+      {/* ---------- Модалка деталей ---------- */}
       <Modal
         title={selectedEntry?.title}
         open={!!selectedEntry}
         onCancel={() => setSelectedEntry(null)}
         footer={null}
       >
-        <Tag color={getTagColor(selectedEntry?.entryType)}>{selectedEntry?.entryType?.toUpperCase()}</Tag>
-        <p><b>Автор:</b> {selectedEntry?.authorname}</p>
+        <Tag color={getTagColor(selectedEntry?.entryType)}>
+          {selectedEntry?.entryType?.toUpperCase()}
+        </Tag>
+        <p>
+          <b>Автор:</b> {selectedEntry?.authorname}
+        </p>
         {selectedEntry?.status && (
-          <p><b>Статус:</b> {translateStatus(selectedEntry.status)}</p>
+          <p>
+            <b>Статус:</b> {translateStatus(selectedEntry.status)}
+          </p>
         )}
         <Divider />
         <p>{selectedEntry?.description || "Без опису"}</p>
