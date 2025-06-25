@@ -9,67 +9,104 @@ import {
   Alert,
   Tag,
   Button,
-  Dropdown,
-  Menu,
   ConfigProvider,
   theme,
-  message,
+  Space,
+  Select,
 } from "antd";
-import {
-  SunOutlined,
-  MoonOutlined,
-  FilterOutlined,
-  ReloadOutlined,
-} from "@ant-design/icons";
+import { SunOutlined, MoonOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
+const { Option } = Select;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const API_SUBSCRIPTIONS_URL = `${API_BASE}/subscriptionRoutes/user-subscriptions`;
 const API_STATUSES_URL = `${API_BASE}/statusRoutes/all-statuses`;
 
-/**
- * 🎫 Сторінка "Мої підписки"
- * - показує підписані записи (blog/idea/problem/post)
- * - дозволяє фільтрувати їх за статусом
- * - підтримує світлу/темну тему
- */
-export default function Subscriptions() {
+const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
-  const [filteredSubs, setFilteredSubs] = useState([]);
+  const [filteredSubscriptions, setFilteredSubscriptions] = useState([]);
   const [statuses, setStatuses] = useState([]);
-  const [activeStatus, setActiveStatus] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("усі");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(
-    localStorage.getItem("theme") === "dark"
-  );
+  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
 
   const navigate = useNavigate();
   const getAuthToken = () => localStorage.getItem("token");
 
-  /* ---------------- theme switch ---------------- */
   const toggleTheme = () => {
     const newTheme = isDarkMode ? "light" : "dark";
     setIsDarkMode(!isDarkMode);
     localStorage.setItem("theme", newTheme);
   };
 
-  /* ---------------- helpers ---------------- */
+  const fetchStatuses = async () => {
+    try {
+      const res = await axios.get(API_STATUSES_URL);
+      if (res.status === 200 && Array.isArray(res.data)) {
+        setStatuses(res.data);
+      }
+    } catch (err) {
+      console.warn("⚠️ Не вдалося отримати статуси:", err.message);
+    }
+  };
+
+  const fetchUserSubscriptions = useCallback(async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error("⛔ Необхідна авторизація.");
+
+      const response = await axios.get(API_SUBSCRIPTIONS_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data =
+        Array.isArray(response.data) ? response.data :
+        Array.isArray(response.data.subscriptions) ? response.data.subscriptions :
+        [];
+
+      setSubscriptions(data);
+      filterByStatus(data, selectedStatus);
+    } catch (err) {
+      console.error("❌ ПОМИЛКА:", err);
+      setError(
+        err.response?.data?.message ||
+        err.message ||
+        "Сталася невідома помилка на сервері."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedStatus]);
+
+  useEffect(() => {
+    fetchUserSubscriptions();
+    fetchStatuses();
+  }, [fetchUserSubscriptions]);
+
+  const filterByStatus = (data, status) => {
+    if (status === "усі") {
+      setFilteredSubscriptions(data);
+    } else {
+      setFilteredSubscriptions(data.filter((sub) => sub.status === status));
+    }
+  };
+
+  const handleStatusChange = (value) => {
+    setSelectedStatus(value);
+    filterByStatus(subscriptions, value);
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending":
-        return "orange";
-      case "approved":
-        return "green";
-      case "rejected":
-        return "red";
-      case "до_секретаря":
-        return "purple";
-      default:
-        return "blue";
+      case "pending": return "orange";
+      case "approved": return "green";
+      case "rejected": return "red";
+      case "до_секретаря": return "purple";
+      default: return "blue";
     }
   };
 
@@ -78,52 +115,6 @@ export default function Subscriptions() {
     navigate(`/${entry_type}/${entry_id}`);
   };
 
-  /* ---------------- API calls ---------------- */
-  const fetchStatuses = useCallback(async () => {
-    try {
-      const res = await axios.get(API_STATUSES_URL);
-      if (Array.isArray(res.data.statuses)) setStatuses(res.data.statuses);
-    } catch (err) {
-      console.error("❌ Статуси:", err.message);
-    }
-  }, []);
-
-  const fetchSubscriptions = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const token = getAuthToken();
-      if (!token) throw new Error("⛔ Необхідна авторизація.");
-      const res = await axios.get(API_SUBSCRIPTIONS_URL, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const list = Array.isArray(res.data) ? res.data : res.data.subscriptions;
-      if (!Array.isArray(list)) throw new Error("Невірна структура відповіді");
-      setSubscriptions(list);
-      setFilteredSubs(list);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  /* ---------------- effects ---------------- */
-  useEffect(() => {
-    fetchSubscriptions();
-    fetchStatuses();
-  }, [fetchSubscriptions, fetchStatuses]);
-
-  /* ---------------- filter logic ---------------- */
-  const applyStatusFilter = (status) => {
-    setActiveStatus(status);
-    if (status === "all") {
-      setFilteredSubs(subscriptions);
-    } else {
-      setFilteredSubs(subscriptions.filter((s) => s.status === status));
-    }
-  };
-
-  /* ---------------- UI theme token ---------------- */
   const themeMode = {
     algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
     token: {
@@ -137,19 +128,6 @@ export default function Subscriptions() {
     },
   };
 
-  /* ---------------- dropdown menu for statuses ---------------- */
-  const statusMenu = (
-    <Menu
-      onClick={({ key }) => applyStatusFilter(key)}
-      selectedKeys={[activeStatus]}
-      items={[
-        { label: "Усі", key: "all" },
-        ...statuses.map((st) => ({ label: st.toUpperCase(), key: st })),
-      ]}
-    />
-  );
-
-  /* ---------------- render ---------------- */
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
@@ -163,36 +141,54 @@ export default function Subscriptions() {
             >
               {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
             </div>
-            <Dropdown overlay={statusMenu} placement="bottomLeft">
-              <Button icon={<FilterOutlined />}>
-                {activeStatus === "all" ? "Фільтр статусу" : activeStatus.toUpperCase()}
-              </Button>
-            </Dropdown>
-            <Button icon={<ReloadOutlined />} onClick={fetchSubscriptions} />
             <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
               Назад
             </Button>
+            <Button icon={<ReloadOutlined />} onClick={fetchUserSubscriptions} />
+            <Select
+              value={selectedStatus}
+              onChange={handleStatusChange}
+              style={{ minWidth: 200 }}
+            >
+              <Option value="усі">Усі статуси</Option>
+              {statuses.map((status) => (
+                <Option key={status} value={status}>
+                  {status.toUpperCase()}
+                </Option>
+              ))}
+            </Select>
           </div>
 
-          <Title level={3} style={{ textAlign: "center", marginBottom: 40, color: themeMode.token.colorTextBase }}>
+          <Title
+            level={3}
+            style={{
+              textAlign: "center",
+              marginBottom: 40,
+              color: themeMode.token.colorTextBase,
+            }}
+          >
             Мої підписки
           </Title>
 
-          {error && <Alert message={error} type="error" showIcon />}        
+          {error && <Alert message={error} type="error" showIcon />}
           {isLoading ? (
             <Skeleton active />
-          ) : filteredSubs.length === 0 ? (
+          ) : filteredSubscriptions.length === 0 ? (
             <Alert message="Підписок не знайдено." type="info" showIcon />
           ) : (
             <List
               grid={{ gutter: 20, column: 1 }}
-              dataSource={filteredSubs}
+              dataSource={filteredSubscriptions}
               renderItem={(sub) => (
                 <List.Item>
                   <Card
                     hoverable
                     onClick={() => handleCardClick(sub.entry_type, sub.entry_id)}
-                    title={<Title level={4} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>{sub.title || "Без назви"}</Title>}
+                    title={
+                      <Title level={4} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>
+                        {sub.title || "Без назви"}
+                      </Title>
+                    }
                     style={{
                       width: "100%",
                       borderRadius: "12px",
@@ -208,12 +204,18 @@ export default function Subscriptions() {
                       {sub.description || "Без опису"}
                     </Text>
                     <br />
-                    <Tag color={getStatusColor(sub.status)} style={{ marginTop: 10, fontSize: 14 }}>
+                    <Tag
+                      color={getStatusColor(sub.status)}
+                      style={{ marginTop: "10px", fontSize: "14px" }}
+                    >
                       {sub.status ? sub.status.toUpperCase() : "НЕ ВКАЗАНО"}
                     </Tag>
                     <br />
-                    <Text type="secondary" style={{ fontSize: 14 }}>
-                      Автор: {sub.author_first_name && sub.author_last_name ? `${sub.author_first_name} ${sub.author_last_name}` : sub.author || "Невідомий"}
+                    <Text type="secondary" style={{ fontSize: "14px" }}>
+                      Автор:{" "}
+                      {sub.author_first_name && sub.author_last_name
+                        ? `${sub.author_first_name} ${sub.author_last_name}`
+                        : sub.author || "Невідомий"}
                     </Text>
                   </Card>
                 </List.Item>
@@ -224,6 +226,6 @@ export default function Subscriptions() {
       </Layout>
     </ConfigProvider>
   );
-}
+};
 
 export default Subscriptions;
