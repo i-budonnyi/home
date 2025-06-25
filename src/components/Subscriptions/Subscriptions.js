@@ -9,20 +9,38 @@ import {
   Alert,
   Tag,
   Button,
+  Dropdown,
+  Menu,
   ConfigProvider,
   theme,
+  message,
 } from "antd";
-import { SunOutlined, MoonOutlined } from "@ant-design/icons";
+import {
+  SunOutlined,
+  MoonOutlined,
+  FilterOutlined,
+  ReloadOutlined,
+} from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 
-const API_SUBSCRIPTIONS_URL =
-  "https://backend-avtologistika.onrender.com/api/subscriptionRoutes/user-subscriptions";
+const API_BASE = "https://backend-avtologistika.onrender.com/api";
+const API_SUBSCRIPTIONS_URL = `${API_BASE}/subscriptionRoutes/user-subscriptions`;
+const API_STATUSES_URL = `${API_BASE}/statusRoutes/all-statuses`;
 
-const Subscriptions = () => {
+/**
+ * 🎫 Сторінка "Мої підписки"
+ * - показує підписані записи (blog/idea/problem/post)
+ * - дозволяє фільтрувати їх за статусом
+ * - підтримує світлу/темну тему
+ */
+export default function Subscriptions() {
   const [subscriptions, setSubscriptions] = useState([]);
+  const [filteredSubs, setFilteredSubs] = useState([]);
+  const [statuses, setStatuses] = useState([]);
+  const [activeStatus, setActiveStatus] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDarkMode, setIsDarkMode] = useState(
@@ -32,45 +50,14 @@ const Subscriptions = () => {
   const navigate = useNavigate();
   const getAuthToken = () => localStorage.getItem("token");
 
+  /* ---------------- theme switch ---------------- */
   const toggleTheme = () => {
     const newTheme = isDarkMode ? "light" : "dark";
     setIsDarkMode(!isDarkMode);
     localStorage.setItem("theme", newTheme);
   };
 
-  const fetchUserSubscriptions = useCallback(async () => {
-    try {
-      const token = getAuthToken();
-      if (!token) throw new Error("⛔ Необхідна авторизація.");
-
-      const response = await axios.get(API_SUBSCRIPTIONS_URL, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      console.log("🔄 Отримано відповіді:", response.data);
-
-      // ✅ Підлаштовано під масив без ключа "subscriptions"
-      if (response.status === 200 && Array.isArray(response.data)) {
-        setSubscriptions(response.data);
-      } else {
-        throw new Error("❌ Невірна структура відповіді від сервера.");
-      }
-    } catch (err) {
-      console.error("❌ ПОМИЛКА:", err);
-      setError(
-        err.response?.data?.message ||
-        err.message ||
-        "Сталася невідома помилка на сервері."
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUserSubscriptions();
-  }, [fetchUserSubscriptions]);
-
+  /* ---------------- helpers ---------------- */
   const getStatusColor = (status) => {
     switch (status) {
       case "pending":
@@ -86,6 +73,57 @@ const Subscriptions = () => {
     }
   };
 
+  const handleCardClick = (entry_type, entry_id) => {
+    if (!entry_type || !entry_id) return;
+    navigate(`/${entry_type}/${entry_id}`);
+  };
+
+  /* ---------------- API calls ---------------- */
+  const fetchStatuses = useCallback(async () => {
+    try {
+      const res = await axios.get(API_STATUSES_URL);
+      if (Array.isArray(res.data.statuses)) setStatuses(res.data.statuses);
+    } catch (err) {
+      console.error("❌ Статуси:", err.message);
+    }
+  }, []);
+
+  const fetchSubscriptions = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const token = getAuthToken();
+      if (!token) throw new Error("⛔ Необхідна авторизація.");
+      const res = await axios.get(API_SUBSCRIPTIONS_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const list = Array.isArray(res.data) ? res.data : res.data.subscriptions;
+      if (!Array.isArray(list)) throw new Error("Невірна структура відповіді");
+      setSubscriptions(list);
+      setFilteredSubs(list);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /* ---------------- effects ---------------- */
+  useEffect(() => {
+    fetchSubscriptions();
+    fetchStatuses();
+  }, [fetchSubscriptions, fetchStatuses]);
+
+  /* ---------------- filter logic ---------------- */
+  const applyStatusFilter = (status) => {
+    setActiveStatus(status);
+    if (status === "all") {
+      setFilteredSubs(subscriptions);
+    } else {
+      setFilteredSubs(subscriptions.filter((s) => s.status === status));
+    }
+  };
+
+  /* ---------------- UI theme token ---------------- */
   const themeMode = {
     algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
     token: {
@@ -99,6 +137,19 @@ const Subscriptions = () => {
     },
   };
 
+  /* ---------------- dropdown menu for statuses ---------------- */
+  const statusMenu = (
+    <Menu
+      onClick={({ key }) => applyStatusFilter(key)}
+      selectedKeys={[activeStatus]}
+      items={[
+        { label: "Усі", key: "all" },
+        ...statuses.map((st) => ({ label: st.toUpperCase(), key: st })),
+      ]}
+    />
+  );
+
+  /* ---------------- render ---------------- */
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
@@ -112,43 +163,40 @@ const Subscriptions = () => {
             >
               {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
             </div>
+            <Dropdown overlay={statusMenu} placement="bottomLeft">
+              <Button icon={<FilterOutlined />}>
+                {activeStatus === "all" ? "Фільтр статусу" : activeStatus.toUpperCase()}
+              </Button>
+            </Dropdown>
+            <Button icon={<ReloadOutlined />} onClick={fetchSubscriptions} />
             <Button type="link" onClick={() => navigate("/worker")} style={{ fontSize: 16 }}>
               Назад
             </Button>
           </div>
 
-          <Title
-            level={3}
-            style={{
-              textAlign: "center",
-              marginBottom: 40,
-              color: themeMode.token.colorTextBase,
-            }}
-          >
+          <Title level={3} style={{ textAlign: "center", marginBottom: 40, color: themeMode.token.colorTextBase }}>
             Мої підписки
           </Title>
 
-          {error && <Alert message={error} type="error" showIcon />}
+          {error && <Alert message={error} type="error" showIcon />}        
           {isLoading ? (
             <Skeleton active />
-          ) : subscriptions.length === 0 ? (
+          ) : filteredSubs.length === 0 ? (
             <Alert message="Підписок не знайдено." type="info" showIcon />
           ) : (
             <List
               grid={{ gutter: 20, column: 1 }}
-              dataSource={subscriptions}
+              dataSource={filteredSubs}
               renderItem={(sub) => (
                 <List.Item>
                   <Card
                     hoverable
-                    title={
-                      <Title level={4} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>
-                        {sub.title || "Без назви"}
-                      </Title>
-                    }
+                    onClick={() => handleCardClick(sub.entry_type, sub.entry_id)}
+                    title={<Title level={4} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>{sub.title || "Без назви"}</Title>}
                     style={{
                       width: "100%",
                       borderRadius: "12px",
+                      cursor: "pointer",
                       boxShadow: isDarkMode
                         ? "0 4px 12px rgba(0,0,0,0.4)"
                         : "0 4px 10px rgba(0,0,0,0.1)",
@@ -160,18 +208,12 @@ const Subscriptions = () => {
                       {sub.description || "Без опису"}
                     </Text>
                     <br />
-                    <Tag
-                      color={getStatusColor(sub.status)}
-                      style={{ marginTop: "10px", fontSize: "14px" }}
-                    >
+                    <Tag color={getStatusColor(sub.status)} style={{ marginTop: 10, fontSize: 14 }}>
                       {sub.status ? sub.status.toUpperCase() : "НЕ ВКАЗАНО"}
                     </Tag>
                     <br />
-                    <Text type="secondary" style={{ fontSize: "14px" }}>
-                      Автор:{" "}
-                      {sub.author_first_name && sub.author_last_name
-                        ? `${sub.author_first_name} ${sub.author_last_name}`
-                        : sub.author || "Невідомий"}
+                    <Text type="secondary" style={{ fontSize: 14 }}>
+                      Автор: {sub.author_first_name && sub.author_last_name ? `${sub.author_first_name} ${sub.author_last_name}` : sub.author || "Невідомий"}
                     </Text>
                   </Card>
                 </List.Item>
@@ -182,6 +224,6 @@ const Subscriptions = () => {
       </Layout>
     </ConfigProvider>
   );
-};
+}
 
 export default Subscriptions;
