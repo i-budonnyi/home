@@ -152,27 +152,30 @@ const BlogPage = () => {
         axios.get(`${API_BLOG_URL}/entries`, { headers }),
         axios.get(API_PROBLEMS_URL, { headers })
       ]);
+const blogs = (bRes.data.blogs || []).map(b => ({
+  ...b,
+  id: b.id,
+  entryType: "blog",
+  authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim(),
+  createdAt: b.created_at // ✅ Виправлено
+}));
 
-      const blogs = (bRes.data.blogs || []).map(b => ({
-        ...b,
-        id: b.id,                   // ID з таблиці blogs
-        entryType: "blog",
-        authorname: `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim()
-      }));
+const ideas = (bRes.data.ideas || []).map(i => ({
+  ...i,
+  id: i.id,
+  entryType: "idea",
+  authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim(),
+  createdAt: i.created_at // ✅ Виправлено
+}));
 
-      const ideas = (bRes.data.ideas || []).map(i => ({
-        ...i,
-        id: i.id,                   // ID з таблиці ideas
-        entryType: "idea",
-        authorname: `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim()
-      }));
+const problems = (pRes.data || []).map(p => ({
+  ...p,
+  id: p.id,
+  entryType: "problem",
+  authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim(),
+  createdAt: p.created_at // ✅ Виправлено
+}));
 
-      const problems = (pRes.data || []).map(p => ({
-        ...p,
-        id: p.id,                   // ID з таблиці problems
-        entryType: "problem",
-        authorname: `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim()
-      }));
 
       const all = [...blogs, ...ideas, ...problems];
       setEntries(all);
