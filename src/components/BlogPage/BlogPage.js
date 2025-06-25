@@ -143,7 +143,7 @@ const BlogPage = () => {
   useEffect(() => {
     fetchAllEntries();
     fetchSubscriptions();
-  }, [fetchAllEntries, fetchSubscriptions]);
+  }, [fetchAllEntries, fetchSubscriptions]); // ✅ ESLint fix
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
