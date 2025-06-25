@@ -87,8 +87,8 @@ const Applications = () => {
     if (type === "idea" && idea_id) payload.idea_id = idea_id;
 
     try {
-      console.info("➡️ POST", "/applications", payload);
-      const { status, data } = await axiosApi.post("/applications", payload); // ✅ виправлено тут
+      console.info("➡️ POST", "/api/applicationRoutes", payload);
+      const { status, data } = await axiosApi.post("/api/applicationRoutes", payload);
 
       console.info("⬅️ response", status, data);
 
