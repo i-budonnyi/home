@@ -28,7 +28,7 @@ const SubmitIdeaPage = () => {
   const getUserId = () => {
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      return user?.id || null;
+      return user?.id || user?.user_id || null;
     } catch {
       return null;
     }
@@ -94,10 +94,11 @@ const SubmitIdeaPage = () => {
     try {
       setIsSubmitting(true);
       const payload = {
-  title: values.title,
-  description: values.description,
-  ambassador_id: values.ambassadorId || null,
-};
+        title: values.title,
+        description: values.description,
+        ambassador_id: values.ambassadorId || null,
+        author_id: userId, // ✅ Додаємо сюди ID користувача
+      };
 
       const res = await fetch(`${API_BASE}`, {
         method: "POST",
@@ -115,7 +116,7 @@ const SubmitIdeaPage = () => {
       form.resetFields();
     } catch (err) {
       console.error("❌ Помилка подання:", err);
-      setMessage("❌ Помилка подання ідеї.");
+      setMessage(`❌ Помилка подання ідеї: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
