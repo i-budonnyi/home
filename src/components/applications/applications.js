@@ -17,9 +17,7 @@ const { Title } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
-const PROD_API = "https://backend-avtologistika.onrender.com";
-const DEV_API = "http://localhost:5000";
-const API_BASE = window.location.hostname === "localhost" ? DEV_API : PROD_API;
+const API_BASE = "https://backend-avtologistika.onrender.com";
 const getAxios = () => {
   const token = localStorage.getItem("token") || "";
   return axios.create({
@@ -144,7 +142,9 @@ const Applications = () => {
         <Form.Item label="Тип заявки">
           <Select
             value={application.type}
-            onChange={(value) => setApplication({ ...application, type: value })}
+            onChange={(value) =>
+              setApplication({ ...application, type: value })
+            }
           >
             <Option value="idea">Ідея</Option>
             <Option value="problem">Проблема</Option>
