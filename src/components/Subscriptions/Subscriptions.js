@@ -22,7 +22,7 @@ const { Option } = Select;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const API_SUBSCRIPTIONS_URL = `${API_BASE}/subscriptionRoutes/user-subscriptions`;
-const API_STATUSES_URL = `${API_BASE}/statusRoutes/get-statuses`; // ✅ виправлено
+const API_STATUSES_URL = `${API_BASE}/statusRoutes/get-statuses`; // ✅ випрлено
 
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
