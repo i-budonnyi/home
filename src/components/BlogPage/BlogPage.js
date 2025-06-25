@@ -60,15 +60,13 @@ const BlogPage = () => {
       const res = await axios.get(`${API_SUBSCRIPTION_URL}/user-subscriptions`, {
         headers: { Authorization: `Bearer ${getAuthToken()}` }
       });
-
-      const subscriptions = res.data?.subscriptions || [];
       const map = {};
-      subscriptions.forEach((s) => {
-        map[s.entry_id] = true;
-      });
+      for (const sub of res.data) {
+        map[sub.entry_id] = true;
+      }
       setSubscribedEntries(map);
     } catch (err) {
-      console.error("❌ fetchSubscriptions:", err);
+      console.error("[fetchSubscriptions] ❌", err?.response?.data || err.message);
     }
   }, []);
 
@@ -82,7 +80,7 @@ const BlogPage = () => {
       return;
     }
 
-    const url = `${API_SUBSCRIPTION_URL}/${isSubscribed ? "unsubscribe" : "subscribe"}`;
+    const url = `${API_SUBSCRIPTION_URL}/${isSubscribed ? 'unsubscribe' : 'subscribe'}`;
 
     try {
       await axios({
@@ -300,7 +298,7 @@ const BlogPage = () => {
         socket = null;
       }
     };
-  }, [fetchUserId, fetchAllEntries, fetchLikes]);
+  }, [fetchUserId, fetchAllEntries, fetchSubscriptions]);
 
   const getTagColor = (type) => {
     if (type === "blog") return "blue";
@@ -313,21 +311,128 @@ const BlogPage = () => {
     <Content style={{ padding: 20, maxWidth: 900, margin: "auto" }}>
       {isLoading ? <Skeleton active /> : (
         <>
-          {/* фільтри + список */}
-          {/* ... */}
-          {/* ❗ У MODAL додаємо змінну кнопку */}
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <Title level={5}>Фільтрувати за типом:</Title>
+            <Space>
+              {["all", "blog", "idea", "problem"].map((type) => (
+                <Button
+                  key={type}
+                  type={filteredType === type ? "primary" : "default"}
+                  onClick={() => setFilteredType(type)}
+                >
+                  {type === "all" ? "Усі" : type.charAt(0).toUpperCase() + type.slice(1)}
+                </Button>
+              ))}
+            </Space>
+          </div>
+
+          <Space direction="vertical" size="large" style={{ width: "100%" }}>
+            {entries
+              .filter((e) => filteredType === "all" || e.entryType === filteredType)
+              .map((entry) => (
+                <Card key={entry.id} hoverable onClick={() => openModal(entry)}>
+                  <Title level={4}>{entry.title}</Title>
+                  <Tag color={getTagColor(entry.entryType)}>{entry.entryType.toUpperCase()}</Tag>
+                  {entry.createdAt && (
+                    <Text type="secondary">
+                      Опубліковано: {new Date(entry.createdAt).toLocaleDateString("uk-UA")}
+                    </Text>
+                  )}
+                  <br />
+                  <Text>{entry.description?.slice(0, 150) || "Без опису…"}</Text>
+                  <br />
+                  <Space>
+                    <Text type="secondary">❤️ {likesData[entry.id]?.likesCount || 0}</Text>
+                    <Button type="text" icon={<SendOutlined />} onClick={(e) => { e.stopPropagation(); openModal(entry); }}>
+                      Коментарі
+                    </Button>
+                    <Button type="link" onClick={(e) => { e.stopPropagation(); openModal(entry); }}>
+                      Детальніше
+                    </Button>
+                  </Space>
+                </Card>
+              ))}
+          </Space>
+
           <Modal open={modalVisible} title={selectedEntry?.title} onCancel={() => setModalVisible(false)} footer={null}>
             {selectedEntry && (
               <>
-                {/* інші кнопки */}
-                <Button
-                  type="primary"
-                  onClick={() => toggleSubscription(selectedEntry)}
-                >
-                  {subscribedEntries[selectedEntry.id] ? "Відписатися" : "Підписатися"}
+                <Tag color={getTagColor(selectedEntry.entryType)}>{selectedEntry.entryType.toUpperCase()}</Tag>
+                <Text strong>Автор: {selectedEntry.authorname || "Невідомий"}</Text><br />
+                <Text type="secondary">Опубліковано: {new Date(selectedEntry.createdAt).toLocaleDateString("uk-UA")}</Text>
+                <Divider />
+                <Text>{selectedEntry.description || "Без опису"}</Text>
+                <Divider />
+                <Space wrap>
+                  <Button type="text" onClick={() => toggleLike(selectedEntry)}>
+                    {likesData[selectedEntry.id]?.userLiked ? <HeartFilled style={{ color: "red" }} /> : <HeartOutlined />}
+                  </Button>
+                  <Text>{likesData[selectedEntry.id]?.likesCount || 0} лайків</Text>
+                  <Button type="primary" onClick={() => toggleSubscription(selectedEntry)}>
+                    {subscribedEntries[selectedEntry.id] ? "Відписатися" : "Підписатися"}
+                  </Button>
+                  <Button type="text" icon={<ShareAltOutlined />} onClick={() => handleShare(selectedEntry)} />
+                </Space>
+                <Divider />
+                <Title level={5}>Коментарі:</Title>
+                <Space direction="vertical" style={{ width: "100%" }}>
+                  {commentsData[selectedEntry.id]?.map((comment) => (
+                    <Card key={comment.id} size="small" style={{ backgroundColor: "#f9f9f9" }}>
+                      <Space style={{ justifyContent: "space-between", width: "100%" }}>
+                        <div>
+                          <Text strong>{comment.author_first_name || "Анонім"} {comment.author_last_name || ""}</Text><br />
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            {new Date(comment.createdAt).toLocaleString("uk-UA")}
+                          </Text><br />
+                          <Text>{comment.comment || comment.text}</Text>
+                        </div>
+                        {comment.user_id === userId && (
+                          <Button danger type="link" onClick={() => handleDeleteComment(comment.id, selectedEntry.id)}>
+                            Видалити
+                          </Button>
+                        )}
+                      </Space>
+                    </Card>
+                  ))}
+                  <div ref={commentsEndRef} />
+                </Space>
+                <Divider />
+                <Text strong>Додати коментар:</Text>
+                <TextArea
+                  rows={2}
+                  value={newComment[selectedEntry.id] || ""}
+                  onChange={(e) =>
+                    setNewComment((prev) => ({ ...prev, [selectedEntry.id]: e.target.value }))
+                  }
+                />
+                <Button type="primary" icon={<SendOutlined />} onClick={() => handleCommentSubmit(selectedEntry)}>
+                  Відправити
                 </Button>
               </>
             )}
+          </Modal>
+
+          <Modal title="Поділитися" open={shareVisible} onCancel={() => setShareVisible(false)} footer={null}>
+            <Space>
+              <Tooltip title="Telegram">
+                <a href={`https://t.me/share/url?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
+                  <TelegramIcon style={{ fontSize: 28, color: "#229ED9" }} />
+                </a>
+              </Tooltip>
+              <Tooltip title="Facebook">
+                <a href={`https://facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
+                  <FacebookFilled style={{ fontSize: 30, color: "#4267B2" }} />
+                </a>
+              </Tooltip>
+              <Tooltip title="X (Twitter)">
+                <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareLink)}`} target="_blank" rel="noreferrer">
+                  <TwitterOutlined style={{ fontSize: 28 }} />
+                </a>
+              </Tooltip>
+              <Tooltip title="Копіювати посилання">
+                <CopyOutlined style={{ fontSize: 24 }} onClick={copyToClipboard} />
+              </Tooltip>
+            </Space>
           </Modal>
         </>
       )}
