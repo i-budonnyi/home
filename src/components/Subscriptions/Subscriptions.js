@@ -22,7 +22,7 @@ const { Option } = Select;
 
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const API_SUBSCRIPTIONS_URL = `${API_BASE}/subscriptionRoutes/user-subscriptions`;
-const API_STATUSES_URL = `${API_BASE}/statusRoutes/get-statuses`; // ✅ випрлено
+const API_STATUSES_URL = `${API_BASE}/statusRoutes/get-statuses`;
 
 const Subscriptions = () => {
   const [subscriptions, setSubscriptions] = useState([]);
@@ -31,7 +31,9 @@ const Subscriptions = () => {
   const [selectedStatus, setSelectedStatus] = useState("усі");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(localStorage.getItem("theme") === "dark");
+  const [isDarkMode, setIsDarkMode] = useState(
+    localStorage.getItem("theme") === "dark"
+  );
 
   const navigate = useNavigate();
   const getAuthToken = () => localStorage.getItem("token");
@@ -44,9 +46,12 @@ const Subscriptions = () => {
 
   const fetchStatuses = async () => {
     try {
-      const res = await axios.get(API_STATUSES_URL);
+      const res = await axios.get(`${API_STATUSES_URL}?nocache=${Date.now()}`);
       if (res.status === 200 && Array.isArray(res.data)) {
-        setStatuses(res.data);
+        const cleaned = res.data.filter(
+          (s) => typeof s === "string" && s.trim() !== ""
+        );
+        setStatuses(cleaned);
       }
     } catch (err) {
       console.warn("⚠️ Не вдалося отримати статуси:", err.message);
@@ -87,7 +92,7 @@ const Subscriptions = () => {
   }, [fetchUserSubscriptions]);
 
   const filterByStatus = (data, status) => {
-    if (status === "усі") {
+    if (status.toLowerCase() === "усі") {
       setFilteredSubscriptions(data);
     } else {
       setFilteredSubscriptions(data.filter((sub) => sub.status === status));
@@ -152,7 +157,7 @@ const Subscriptions = () => {
               <Option value="усі">Усі статуси</Option>
               {statuses.map((status) => (
                 <Option key={status} value={status}>
-                  {status.toUpperCase()}
+                  {status.toString().toUpperCase()}
                 </Option>
               ))}
             </Select>
