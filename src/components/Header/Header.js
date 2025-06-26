@@ -57,13 +57,12 @@ const Header = () => {
   if (!isLoaded) return null;
 
   const textColor = theme === 'dark' ? '#ffffff' : '#000000';
-  const glowColor = theme === 'dark' ? '#00e0ff' : '#0080ff';
 
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@700&display=swap" rel="stylesheet" />
 
-      {/* LED Смуга */}
+      {/* LED Смуга зверху */}
       <div className="led-strip" />
 
       <header style={{ ...headerStyle, color: textColor }}>
@@ -99,11 +98,11 @@ const Header = () => {
             left: 0;
             width: 100%;
             height: 4px;
-            background: linear-gradient(90deg, #00f0ff, #0078ff);
+            background: linear-gradient(90deg, #ffffff, #cccccc);
             box-shadow:
-              0 0 8px rgba(0, 224, 255, 0.8),
-              0 0 16px rgba(0, 120, 255, 0.5),
-              0 0 24px rgba(0, 120, 255, 0.3);
+              0 0 8px rgba(255, 255, 255, 0.6),
+              0 0 16px rgba(255, 255, 255, 0.4),
+              0 0 24px rgba(255, 255, 255, 0.2);
             z-index: 9999;
             animation: steadyGlow 2s ease-in-out infinite alternate;
             pointer-events: none;
@@ -117,11 +116,11 @@ const Header = () => {
           .led-glow {
             position: relative;
             text-shadow:
-              0 0 6px ${glowColor},
-              0 0 12px ${glowColor},
-              0 0 20px ${glowColor},
-              0 0 32px ${glowColor};
-            filter: drop-shadow(0 0 6px ${glowColor});
+              0 0 6px #ffffff,
+              0 0 12px #ffffff,
+              0 0 20px #ffffff,
+              0 0 32px rgba(255, 255, 255, 0.6);
+            filter: drop-shadow(0 0 6px #ffffff);
           }
         `}
       </style>
