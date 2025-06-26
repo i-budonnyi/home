@@ -21,6 +21,7 @@ import {
   ShareAltOutlined,
   CopyOutlined
 } from "@ant-design/icons";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 
 const { Content } = Layout;
@@ -67,6 +68,7 @@ const BlogPage = () => {
   const [shareModal, setShareModal] = useState({ visible: false, url: "" });
   const [selectedEntry, setSelectedEntry] = useState(null);
 
+  const location = useLocation();
   const getAuthToken = () => localStorage.getItem("token");
 
   /* ---------- Лайки ---------- */
@@ -186,18 +188,22 @@ const BlogPage = () => {
     fetchSubscriptions();
   }, [fetchAllEntries, fetchSubscriptions]);
 
+  /* ---------- Обробка переходу з location.state ---------- */
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const type = params.get("entryType");
-    const id = params.get("id");
-    if (type && id) {
-      setFilteredType(type);
+    if (
+      location.state &&
+      location.state.entryType &&
+      location.state.entryId &&
+      entries.length
+    ) {
+      const { entryType, entryId } = location.state;
+      setFilteredType(entryType);
       setTimeout(() => {
-        const el = document.getElementById(`entry-${type}-${id}`);
+        const el = document.getElementById(`entry-${entryType}-${entryId}`);
         if (el) el.scrollIntoView({ behavior: "smooth" });
-      }, 500);
+      }, 400);
     }
-  }, [entries]);
+  }, [entries, location.state]);
 
   /* ---------- Дії ---------- */
   const toggleLike = async (entry) => {

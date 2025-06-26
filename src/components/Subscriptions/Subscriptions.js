@@ -116,7 +116,14 @@ const Subscriptions = () => {
 
   const handleCardClick = (entry_type, entry_id) => {
     if (!entry_type || !entry_id) return;
-    navigate(`/${entry_type}/${entry_id}`);
+    navigate("/", {
+      state: {
+        openEntry: {
+          id: entry_id,
+          type: entry_type,
+        },
+      },
+    });
   };
 
   const themeMode = {
