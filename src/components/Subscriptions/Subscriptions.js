@@ -115,18 +115,19 @@ const Subscriptions = () => {
     }
   };
 
-  const handleDetailsClick = (entry_type, entry_id) => {
-    if (!entry_type || !entry_id) return;
-    navigate("/blog", {
-      state: {
-        openEntry: {
-          id: entry_id,
-          type: entry_type,
-          timestamp: Date.now(), // 👈 це змушує useEffect в BlogPage реагувати навіть при повторному кліку
-        },
-      },
-    });
-  };
+// 🔁 замінюємо тільки handleDetailsClick
+const handleDetailsClick = (entry_type, entry_id) => {
+  if (!entry_type || !entry_id) return;
+  navigate("/blog", {
+    state: {
+      entryType: entry_type,
+      entryId: entry_id,
+      timestamp: Date.now(),
+    },
+  });
+};
+...
+
 
   const themeMode = {
     algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,

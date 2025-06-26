@@ -194,9 +194,16 @@ const BlogPage = () => {
       setTimeout(() => {
         const el = document.getElementById(`entry-${entryType}-${entryId}`);
         if (el) {
-          el.scrollIntoView({ behavior: "smooth" });
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
           el.style.boxShadow = "0 0 10px 2px #1890ff";
           setTimeout(() => (el.style.boxShadow = ""), 2000);
+
+          const foundEntry = entries.find(
+            (e) => e.entryType === entryType && e.id === entryId
+          );
+          if (foundEntry) {
+            setSelectedEntry(foundEntry);
+          }
         }
       }, 400);
     }
@@ -287,9 +294,11 @@ const BlogPage = () => {
 
   const handleDetails = (entry) => {
     navigate("/blog", {
+      replace: true,
       state: {
         entryType: entry.entryType,
-        entryId: entry.id
+        entryId: entry.id,
+        timestamp: Date.now()
       }
     });
   };
@@ -321,10 +330,7 @@ const BlogPage = () => {
               <Card key={entry.id} id={`entry-${entry.entryType}-${entry.id}`}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <Title level={4} style={{ margin: 0 }}>{entry.title}</Title>
-                  <Button
-                    icon={<UserAddOutlined />}
-                    onClick={() => handleSubscribe(entry)}
-                  >
+                  <Button icon={<UserAddOutlined />} onClick={() => handleSubscribe(entry)}>
                     {subscribedEntries[entry.id] ? "Відписатися" : "Підписатися"}
                   </Button>
                 </div>
@@ -359,11 +365,7 @@ const BlogPage = () => {
                 </div>
 
                 <Divider />
-                <Button
-                  icon={<EyeOutlined />}
-                  type="link"
-                  onClick={() => handleDetails(entry)}
-                >
+                <Button icon={<EyeOutlined />} type="link" onClick={() => handleDetails(entry)}>
                   Детальніше
                 </Button>
 
@@ -371,9 +373,7 @@ const BlogPage = () => {
                 <Title level={5}>Коментарі:</Title>
                 {(commentsData[entry.id] || []).map((comment) => (
                   <Card key={comment.id} size="small" style={{ marginBottom: 8 }}>
-                    <Text strong>{`${comment.author_first_name || ""} ${
-                      comment.author_last_name || ""
-                    }`}</Text>
+                    <Text strong>{`${comment.author_first_name || ""} ${comment.author_last_name || ""}`}</Text>
                     <p>{comment.text}</p>
                   </Card>
                 ))}
