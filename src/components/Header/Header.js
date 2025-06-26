@@ -54,36 +54,35 @@ const Header = () => {
     return () => observer.disconnect();
   }, []);
 
-  const textColor = theme === 'dark' ? '#ffffff' : '#000000';
-
   if (!isLoaded) return null;
 
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@700&display=swap" rel="stylesheet" />
-      <header style={{ ...headerStyle, color: textColor }}>
-        {/* LED-полоска */}
-        <div className="led-strip" />
 
+      {/* LED Смуга зверху */}
+      <div className="led-strip" />
+
+      <header style={headerStyle}>
         <div
-          style={{ ...leftStyle, color: textColor, fontFamily: 'Roboto Slab, serif' }}
+          style={{ ...leftStyle, fontFamily: 'Roboto Slab, serif' }}
           onClick={() => navigate('/')}
-          className="logo-text"
+          className="led-glow"
         >
           Avtologistika
         </div>
         <div style={rightStyle}>
           {userName ? (
             <>
-              <span style={{ ...nameStyle, color: textColor }} onClick={() => navigate('/worker')}>
+              <span className="led-glow" style={nameStyle} onClick={() => navigate('/worker')}>
                 {userName}
               </span>
-              <button style={{ ...linkStyle, color: textColor }} onClick={handleLogout}>Вийти</button>
+              <button className="led-glow" style={linkStyle} onClick={handleLogout}>Вийти</button>
             </>
           ) : (
             <>
-              <button style={{ ...linkStyle, color: textColor }} onClick={() => navigate('/login')}>Вхід</button>
-              <button style={{ ...linkStyle, color: textColor }} onClick={() => navigate('/register')}>Реєстрація</button>
+              <button className="led-glow" style={linkStyle} onClick={() => navigate('/login')}>Вхід</button>
+              <button className="led-glow" style={linkStyle} onClick={() => navigate('/register')}>Реєстрація</button>
             </>
           )}
         </div>
@@ -91,38 +90,42 @@ const Header = () => {
 
       <style>
         {`
-          .logo-text {
-            animation: fadeInLogo 1s ease-in-out;
-            font-weight: bold;
-            font-size: 20px;
-          }
-
-          @keyframes fadeInLogo {
-            0% { opacity: 0; transform: translateY(-10px); }
-            100% { opacity: 1; transform: translateY(0); }
-          }
-
           .led-strip {
-            position: absolute;
+            position: fixed;
             top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 160px;
-            height: 5px;
-            border-radius: 6px;
-            background: radial-gradient(circle, #00f0ff, #0078ff);
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #00f0ff, #0078ff);
             box-shadow:
               0 0 8px rgba(0, 224, 255, 0.8),
-              0 0 16px rgba(0, 224, 255, 0.5),
-              0 0 24px rgba(0, 224, 255, 0.3);
-            z-index: 1;
-            animation: glow 2s ease-in-out infinite alternate;
+              0 0 16px rgba(0, 120, 255, 0.5),
+              0 0 24px rgba(0, 120, 255, 0.3);
+            z-index: 9999;
+            animation: steadyGlow 2s ease-in-out infinite alternate;
             pointer-events: none;
           }
 
-          @keyframes glow {
-            from { opacity: 0.7; }
+          @keyframes steadyGlow {
+            from { opacity: 0.85; }
             to { opacity: 1; }
+          }
+
+          .led-glow {
+            position: relative;
+            color: #ffffff;
+            text-shadow:
+              0 0 6px #00f0ff,
+              0 0 12px #00c4ff,
+              0 0 20px #008cff,
+              0 0 32px rgba(0, 136, 255, 0.6);
+            filter: drop-shadow(0 0 6px #00e0ff);
+          }
+
+          @media (prefers-color-scheme: light) {
+            .led-glow {
+              color: #000000;
+            }
           }
         `}
       </style>
@@ -132,7 +135,7 @@ const Header = () => {
 
 const headerStyle = {
   position: 'fixed',
-  top: 0,
+  top: 4,
   left: 0,
   right: 0,
   zIndex: 1000,
@@ -144,25 +147,26 @@ const headerStyle = {
   backgroundColor: 'transparent',
   backdropFilter: 'blur(8px)',
   WebkitBackdropFilter: 'blur(8px)',
-  transition: 'color 0.3s ease',
 };
 
 const leftStyle = {
-  fontSize: '16px',
-  fontWeight: 500,
+  fontSize: '18px',
+  fontWeight: 600,
   cursor: 'pointer',
 };
 
 const rightStyle = {
   display: 'flex',
   alignItems: 'center',
-  gap: '10px',
+  gap: '12px',
 };
 
 const nameStyle = {
   cursor: 'pointer',
   textDecoration: 'underline',
   fontSize: '14px',
+  background: 'none',
+  border: 'none',
 };
 
 const linkStyle = {
