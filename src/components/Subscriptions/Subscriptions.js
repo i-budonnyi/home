@@ -117,11 +117,12 @@ const Subscriptions = () => {
 
   const handleDetailsClick = (entry_type, entry_id) => {
     if (!entry_type || !entry_id) return;
-    navigate("/", {
+    navigate("/blog", {
       state: {
         openEntry: {
           id: entry_id,
           type: entry_type,
+          timestamp: Date.now(), // 👈 це змушує useEffect в BlogPage реагувати навіть при повторному кліку
         },
       },
     });
