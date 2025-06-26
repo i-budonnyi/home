@@ -185,7 +185,7 @@ const Subscriptions = () => {
           {isLoading ? (
             <Skeleton active />
           ) : filteredSubscriptions.length === 0 ? (
-            <Alert message="Підписок не знайдено." type="info" showIcon />
+            <Alert message="Підписок не знайено." type="info" showIcon />
           ) : (
             <List
               grid={{ gutter: 20, column: 1 }}
