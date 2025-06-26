@@ -15,11 +15,7 @@ import {
   Select,
   Space,
 } from "antd";
-import {
-  SunOutlined,
-  MoonOutlined,
-  ReloadOutlined,
-} from "@ant-design/icons";
+import { SunOutlined, MoonOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
@@ -29,18 +25,21 @@ const { Option } = Select;
 /* === API === */
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const API_SUBSCRIPTIONS_URL = `${API_BASE}/subscriptionRoutes/user-subscriptions`;
-const API_STATUSES_URL = `${API_BASE}/statusRoutes/get-statuses`;
+const API_STATUSES_URL      = `${API_BASE}/statusRoutes/get-statuses`;
+const API_IDEA_URL          = `${API_BASE}/ideaRoutes`;                 // ← нове!
 
 /* ---------- Компонент ---------- */
 const Subscriptions = () => {
-  const [subscriptions, setSubscriptions] = useState([]);
+  const [subscriptions,       setSubscriptions]       = useState([]);
   const [filteredSubscriptions, setFilteredSubscriptions] = useState([]);
-  const [statuses, setStatuses] = useState([]);
-  const [selectedStatus, setSelectedStatus] = useState("усі");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  /* тема */
+  const [statuses,       setStatuses]       = useState([]);
+  const [selectedStatus, setSelectedStatus] = useState("усі");
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [error,     setError]     = useState(null);
+
+  /* тема -------------------------------------------------------------- */
   const [isDarkMode, setIsDarkMode] = useState(
     localStorage.getItem("theme") === "dark"
   );
@@ -50,24 +49,32 @@ const Subscriptions = () => {
     localStorage.setItem("theme", newTheme);
   };
 
-  const navigate = useNavigate();
-  const getAuthToken = () => localStorage.getItem("token");
+  const navigate      = useNavigate();
+  const getAuthToken  = () => localStorage.getItem("token");
 
-  /* ---------- Отримуємо статуси та підписки ---------- */
+  /* ---------- 1. Отримуємо статус-довідник --------------------------- */
   const fetchStatuses = async () => {
     try {
-      const res = await axios.get(
-        `${API_STATUSES_URL}?nocache=${Date.now()}`
-      );
-      if (Array.isArray(res.data))
-        setStatuses(
-          res.data.filter((s) => typeof s === "string" && s.trim())
-        );
+      // 1️⃣ статичний довідник
+      const resStatic = await axios.get(`${API_STATUSES_URL}?nocache=${Date.now()}`);
+      const list1 = Array.isArray(resStatic.data)
+        ? resStatic.data.filter((s) => typeof s === "string" && s.trim())
+        : [];
+
+      // 2️⃣ статуси, реально використані в ідеях
+      const resIdeas  = await axios.get(API_IDEA_URL);          // ← GET /ideaRoutes
+      const list2 = Array.isArray(resIdeas.data)
+        ? [...new Set(resIdeas.data.map((i) => i.status).filter(Boolean))]
+        : [];
+
+      // Об’єднуємо та сортуємо
+      setStatuses([...new Set([...list1, ...list2])].sort());
     } catch (err) {
       console.warn("⚠️ Статуси:", err.message);
     }
   };
 
+  /* ---------- 2. Отримуємо підписки користувача ---------------------- */
   const fetchUserSubscriptions = useCallback(async () => {
     try {
       const token = getAuthToken();
@@ -77,86 +84,79 @@ const Subscriptions = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = Array.isArray(res.data)
-        ? res.data
-        : res.data.subscriptions || [];
+      const data = Array.isArray(res.data) ? res.data : res.data.subscriptions || [];
       setSubscriptions(data);
       filterByStatus(data, selectedStatus);
     } catch (err) {
-      console.error("❌ Запит підписок:", err);
+      console.error("❌ Підписки:", err);
       setError(
         err.response?.data?.message ||
-          err.message ||
-          "Сталася помилка на сервері"
+        err.message ||
+        "Сталася помилка на сервері"
       );
     } finally {
       setIsLoading(false);
     }
   }, [selectedStatus]);
 
+  /* --------------------------------------------------------------- */
   useEffect(() => {
     fetchStatuses();
     fetchUserSubscriptions();
   }, [fetchUserSubscriptions]);
 
-  /* ---------- Фільтр ---------- */
+  /* ---------- Фільтр ------------------------------------------- */
   const filterByStatus = (data, status) => {
     if (status.toLowerCase() === "усі") setFilteredSubscriptions(data);
     else setFilteredSubscriptions(data.filter((s) => s.status === status));
   };
-
   const handleStatusChange = (value) => {
     setSelectedStatus(value);
     filterByStatus(subscriptions, value);
   };
 
-  /* ---------- Допоміжні ---------- */
-  const translateStatus = (s) =>
-    (s || "")
+  /* ---------- Допоміжні ---------------------------------------- */
+  const translateStatus = (s = "") =>
+    s
       .replace(/до_секретаря/gi, "Амбасадор ➜ Секретар")
-      .replace(/pending/i, "Очікує")
-      .replace(/approved/i, "Схвалено")
-      .replace(/rejected/i, "Відхилено")
+      .replace(/pending/i,      "Очікує")
+      .replace(/approved/i,     "Схвалено")
+      .replace(/rejected/i,     "Відхилено")
       .toUpperCase();
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending":
-        return "orange";
-      case "approved":
-        return "green";
-      case "rejected":
-        return "red";
-      case "до_секретаря":
-        return "purple";
-      default:
-        return "blue";
+      case "pending":        return "orange";
+      case "approved":       return "green";
+      case "rejected":       return "red";
+      case "до_секретаря":   return "purple";
+      default:               return "blue";
     }
   };
 
-  /* ---------- Перехід до блогу ---------- */
-  const handleDetailsClick = (entry_type, entry_id) => {
-    if (!entry_type || !entry_id) return;
+  /* ---------- Перехід у блог ------------------------------------ */
+  const handleDetailsClick = (entryType, entryId) => {
+    if (!entryType || !entryId) return;
     navigate("/blog", {
-      state: { entryType: entry_type, entryId: entry_id, timestamp: Date.now() },
+      state: { entryType, entryId, timestamp: Date.now() },
     });
   };
 
-  /* ---------- Тема Ant Design ---------- */
+  /* ---------- Тема Ant Design ---------------------------------- */
   const themeMode = {
     algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
     token: {
-      colorPrimary: "#1E63F2",
-      borderRadius: 12,
-      fontFamily: "Roboto, sans-serif",
-      colorTextBase: isDarkMode ? "#E1E6EB" : "#1C1C1C",
+      colorPrimary:   "#1E63F2",
+      borderRadius:   12,
+      fontFamily:     "Roboto, sans-serif",
+      colorTextBase:  isDarkMode ? "#E1E6EB" : "#1C1C1C",
       colorBgContainer: isDarkMode ? "#1E1E1E" : "#FFFFFF",
-      colorBgLayout: isDarkMode ? "#121212" : "#F4F6F8",
-      colorBorder: isDarkMode ? "#2C313A" : "#DDE1E6",
+      colorBgLayout:    isDarkMode ? "#121212" : "#F4F6F8",
+      colorBorder:      isDarkMode ? "#2C313A" : "#DDE1E6",
     },
   };
 
-  /* ---------- UI ---------- */
+  /* ---------- UI ---------------------------------------------- */
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
