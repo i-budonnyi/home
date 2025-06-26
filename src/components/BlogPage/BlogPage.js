@@ -19,9 +19,10 @@ import {
   UserAddOutlined,
   SendOutlined,
   ShareAltOutlined,
-  CopyOutlined
+  CopyOutlined,
+  EyeOutlined
 } from "@ant-design/icons";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const { Content } = Layout;
@@ -69,9 +70,9 @@ const BlogPage = () => {
   const [selectedEntry, setSelectedEntry] = useState(null);
 
   const location = useLocation();
+  const navigate = useNavigate();
   const getAuthToken = () => localStorage.getItem("token");
 
-  /* ---------- Лайки ---------- */
   const fetchLikes = useCallback(async (entry) => {
     try {
       const res = await axios.get(`${API_LIKE_URL}/likes/${entry.id}`);
@@ -89,7 +90,6 @@ const BlogPage = () => {
     }
   }, []);
 
-  /* ---------- Коментарі ---------- */
   const fetchComments = useCallback(async (entry) => {
     try {
       const token = getAuthToken();
@@ -105,7 +105,6 @@ const BlogPage = () => {
     }
   }, []);
 
-  /* ---------- Отримати всі записи ---------- */
   const fetchAllEntries = useCallback(async () => {
     try {
       const token = getAuthToken();
@@ -115,35 +114,32 @@ const BlogPage = () => {
         axios.get(`${API_PROBLEMS_URL}`, { headers })
       ]);
 
-      const blogs =
-        blogsRes.data?.blogs?.map((b) => ({
-          ...b,
-          entryType: "blog",
-          authorname:
-            `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() ||
-            b.author_email ||
-            "Невідомий"
-        })) || [];
+      const blogs = blogsRes.data?.blogs?.map((b) => ({
+        ...b,
+        entryType: "blog",
+        authorname:
+          `${b.author_first_name || ""} ${b.author_last_name || ""}`.trim() ||
+          b.author_email ||
+          "Невідомий"
+      })) || [];
 
-      const ideas =
-        blogsRes.data?.ideas?.map((i) => ({
-          ...i,
-          entryType: "idea",
-          authorname:
-            `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() ||
-            i.author_email ||
-            "Невідомий"
-        })) || [];
+      const ideas = blogsRes.data?.ideas?.map((i) => ({
+        ...i,
+        entryType: "idea",
+        authorname:
+          `${i.author_first_name || ""} ${i.author_last_name || ""}`.trim() ||
+          i.author_email ||
+          "Невідомий"
+      })) || [];
 
-      const problems =
-        problemsRes.data?.map((p) => ({
-          ...p,
-          entryType: "problem",
-          authorname:
-            `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() ||
-            p.author_email ||
-            "Невідомий"
-        })) || [];
+      const problems = problemsRes.data?.map((p) => ({
+        ...p,
+        entryType: "problem",
+        authorname:
+          `${p.author_first_name || ""} ${p.author_last_name || ""}`.trim() ||
+          p.author_email ||
+          "Невідомий"
+      })) || [];
 
       const all = [...blogs, ...ideas, ...problems].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
@@ -162,7 +158,6 @@ const BlogPage = () => {
     }
   }, [fetchLikes, fetchComments]);
 
-  /* ---------- Підписки ---------- */
   const fetchSubscriptions = useCallback(async () => {
     try {
       const token = getAuthToken();
@@ -182,13 +177,11 @@ const BlogPage = () => {
     }
   }, []);
 
-  /* ---------- Хуки ---------- */
   useEffect(() => {
     fetchAllEntries();
     fetchSubscriptions();
   }, [fetchAllEntries, fetchSubscriptions]);
 
-  /* ---------- Обробка переходу з location.state ---------- */
   useEffect(() => {
     if (
       location.state &&
@@ -200,12 +193,15 @@ const BlogPage = () => {
       setFilteredType(entryType);
       setTimeout(() => {
         const el = document.getElementById(`entry-${entryType}-${entryId}`);
-        if (el) el.scrollIntoView({ behavior: "smooth" });
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+          el.style.boxShadow = "0 0 10px 2px #1890ff";
+          setTimeout(() => (el.style.boxShadow = ""), 2000);
+        }
       }, 400);
     }
   }, [entries, location.state]);
 
-  /* ---------- Дії ---------- */
   const toggleLike = async (entry) => {
     try {
       const token = getAuthToken();
@@ -244,11 +240,9 @@ const BlogPage = () => {
         setSubscribedEntries((prev) => ({ ...prev, [entry.id]: !isSub }));
         message.success(isSub ? "Відписано" : "Підписано");
       } else {
-        console.warn("⚠️ Неочікуваний статус:", res.status, res.data);
         message.error("Не вдалося змінити підписку.");
       }
     } catch (err) {
-      console.error("❌ Помилка запиту:", err.response?.data || err.message);
       message.error("Не вдалося змінити підписку.");
     }
   };
@@ -274,7 +268,6 @@ const BlogPage = () => {
     }
   };
 
-  /* ---------- Допоміжні ---------- */
   const translateStatus = (status) =>
     STATUS_TRANSLATION[status] ||
     decodeURIComponent(status || "").replace(/_/g, " ");
@@ -292,12 +285,18 @@ const BlogPage = () => {
     });
   };
 
-  /* ---------- UI ---------- */
+  const handleDetails = (entry) => {
+    navigate("/blog", {
+      state: {
+        entryType: entry.entryType,
+        entryId: entry.id
+      }
+    });
+  };
+
   return (
     <Content style={{ padding: 20, maxWidth: 900, margin: "80px auto 0" }}>
-      <div
-        style={{ display: "flex", justifyContent: "flex-start", marginBottom: 20 }}
-      >
+      <div style={{ display: "flex", justifyContent: "flex-start", marginBottom: 20 }}>
         <Button href="/worker">← Назад</Button>
       </div>
 
@@ -320,16 +319,8 @@ const BlogPage = () => {
           <Space direction="vertical" style={{ width: "100%" }}>
             {filteredEntries.map((entry) => (
               <Card key={entry.id} id={`entry-${entry.entryType}-${entry.id}`}>
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <Title
-                    level={4}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => setSelectedEntry(entry)}
-                  >
-                    {entry.title}
-                  </Title>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <Title level={4} style={{ margin: 0 }}>{entry.title}</Title>
                   <Button
                     icon={<UserAddOutlined />}
                     onClick={() => handleSubscribe(entry)}
@@ -351,13 +342,7 @@ const BlogPage = () => {
                 <Divider />
                 <Text>{entry.description || "Без опису"}</Text>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    marginTop: 12
-                  }}
-                >
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12 }}>
                   <Space>
                     <Button type="text" onClick={() => toggleLike(entry)}>
                       {likesData[entry.id]?.userLiked ? (
@@ -372,6 +357,15 @@ const BlogPage = () => {
                     Поділитися
                   </Button>
                 </div>
+
+                <Divider />
+                <Button
+                  icon={<EyeOutlined />}
+                  type="link"
+                  onClick={() => handleDetails(entry)}
+                >
+                  Детальніше
+                </Button>
 
                 <Divider />
                 <Title level={5}>Коментарі:</Title>
@@ -404,7 +398,6 @@ const BlogPage = () => {
         </>
       )}
 
-      {/* ---------- Модалка поширення ---------- */}
       <Modal
         title="Поділитися постом"
         open={shareModal.visible}
@@ -415,43 +408,15 @@ const BlogPage = () => {
           <b>Посилання:</b> {shareModal.url}
         </p>
         <Space wrap style={{ marginTop: 10 }}>
-          <Button
-            icon={<CopyOutlined />}
-            onClick={() => {
-              navigator.clipboard.writeText(shareModal.url);
-              message.success("Скопійовано!");
-            }}
-          >
+          <Button icon={<CopyOutlined />} onClick={() => {
+            navigator.clipboard.writeText(shareModal.url);
+            message.success("Скопійовано!");
+          }}>
             Копіювати
-          </Button>
-          <Button
-            href={`https://t.me/share/url?url=${encodeURIComponent(
-              shareModal.url
-            )}`}
-            target="_blank"
-          >
-            Telegram
-          </Button>
-          <Button
-            href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-              shareModal.url
-            )}`}
-            target="_blank"
-          >
-            Facebook
-          </Button>
-          <Button
-            href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(
-              shareModal.url
-            )}`}
-            target="_blank"
-          >
-            Twitter
           </Button>
         </Space>
       </Modal>
 
-      {/* ---------- Модалка деталей ---------- */}
       <Modal
         title={selectedEntry?.title}
         open={!!selectedEntry}
@@ -461,13 +426,9 @@ const BlogPage = () => {
         <Tag color={getTagColor(selectedEntry?.entryType)}>
           {selectedEntry?.entryType?.toUpperCase()}
         </Tag>
-        <p>
-          <b>Автор:</b> {selectedEntry?.authorname}
-        </p>
+        <p><b>Автор:</b> {selectedEntry?.authorname}</p>
         {selectedEntry?.status && (
-          <p>
-            <b>Статус:</b> {translateStatus(selectedEntry.status)}
-          </p>
+          <p><b>Статус:</b> {translateStatus(selectedEntry.status)}</p>
         )}
         <Divider />
         <p>{selectedEntry?.description || "Без опису"}</p>
