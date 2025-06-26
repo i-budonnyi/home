@@ -115,14 +115,16 @@ const Subscriptions = () => {
     }
   };
 
-  // ✅ Оновлена функція — відкриває в новій вкладці з параметрами
+  // ✅ Працююча функція переходу
   const handleDetailsClick = (entry_type, entry_id) => {
     if (!entry_type || !entry_id) return;
-    const url = new URL(window.location.origin + "/blog");
-    url.searchParams.set("entryType", entry_type);
-    url.searchParams.set("entryId", entry_id);
-    url.searchParams.set("timestamp", Date.now());
-    window.open(url.toString(), "_blank");
+    navigate("/blog", {
+      state: {
+        entryType: entry_type,
+        entryId: entry_id,
+        timestamp: Date.now(),
+      },
+    });
   };
 
   const themeMode = {
