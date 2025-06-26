@@ -56,14 +56,17 @@ const Header = () => {
 
   if (!isLoaded) return null;
 
+  const textColor = theme === 'dark' ? '#ffffff' : '#000000';
+  const glowColor = theme === 'dark' ? '#00e0ff' : '#0080ff';
+
   return (
     <>
       <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@700&display=swap" rel="stylesheet" />
 
-      {/* LED Смуга зверху */}
+      {/* LED Смуга */}
       <div className="led-strip" />
 
-      <header style={headerStyle}>
+      <header style={{ ...headerStyle, color: textColor }}>
         <div
           style={{ ...leftStyle, fontFamily: 'Roboto Slab, serif' }}
           onClick={() => navigate('/')}
@@ -113,19 +116,12 @@ const Header = () => {
 
           .led-glow {
             position: relative;
-            color: #ffffff;
             text-shadow:
-              0 0 6px #00f0ff,
-              0 0 12px #00c4ff,
-              0 0 20px #008cff,
-              0 0 32px rgba(0, 136, 255, 0.6);
-            filter: drop-shadow(0 0 6px #00e0ff);
-          }
-
-          @media (prefers-color-scheme: light) {
-            .led-glow {
-              color: #000000;
-            }
+              0 0 6px ${glowColor},
+              0 0 12px ${glowColor},
+              0 0 20px ${glowColor},
+              0 0 32px ${glowColor};
+            filter: drop-shadow(0 0 6px ${glowColor});
           }
         `}
       </style>
@@ -165,8 +161,6 @@ const nameStyle = {
   cursor: 'pointer',
   textDecoration: 'underline',
   fontSize: '14px',
-  background: 'none',
-  border: 'none',
 };
 
 const linkStyle = {
