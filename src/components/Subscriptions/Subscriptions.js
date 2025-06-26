@@ -12,6 +12,7 @@ import {
   ConfigProvider,
   theme,
   Select,
+  Space,
 } from "antd";
 import { SunOutlined, MoonOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -114,7 +115,7 @@ const Subscriptions = () => {
     }
   };
 
-  const handleCardClick = (entry_type, entry_id) => {
+  const handleDetailsClick = (entry_type, entry_id) => {
     if (!entry_type || !entry_id) return;
     navigate("/", {
       state: {
@@ -185,7 +186,7 @@ const Subscriptions = () => {
           {isLoading ? (
             <Skeleton active />
           ) : filteredSubscriptions.length === 0 ? (
-            <Alert message="Підписок не знайено." type="info" showIcon />
+            <Alert message="Підписок не знайдено." type="info" showIcon />
           ) : (
             <List
               grid={{ gutter: 20, column: 1 }}
@@ -194,7 +195,6 @@ const Subscriptions = () => {
                 <List.Item>
                   <Card
                     hoverable
-                    onClick={() => handleCardClick(sub.entry_type, sub.entry_id)}
                     title={
                       <Title level={4} style={{ marginBottom: 0, color: themeMode.token.colorTextBase }}>
                         {sub.title || "Без назви"}
@@ -203,7 +203,6 @@ const Subscriptions = () => {
                     style={{
                       width: "100%",
                       borderRadius: "12px",
-                      cursor: "pointer",
                       boxShadow: isDarkMode
                         ? "0 4px 12px rgba(0,0,0,0.4)"
                         : "0 4px 10px rgba(0,0,0,0.1)",
@@ -228,6 +227,15 @@ const Subscriptions = () => {
                         ? `${sub.author_first_name} ${sub.author_last_name}`
                         : sub.author || "Невідомий"}
                     </Text>
+                    <br />
+                    <Space style={{ marginTop: 16 }}>
+                      <Button
+                        type="primary"
+                        onClick={() => handleDetailsClick(sub.entry_type, sub.entry_id)}
+                      >
+                        Детальніше
+                      </Button>
+                    </Space>
                   </Card>
                 </List.Item>
               )}
