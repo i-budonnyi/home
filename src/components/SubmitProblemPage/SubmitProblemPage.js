@@ -94,8 +94,18 @@ const SubmitProblemPage = () => {
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f9" }}>
       <Content style={{ padding: "40px 20px", position: "relative" }}>
-        <div style={{ textAlign: "center", background: "#fff", padding: "24px 0", borderRadius: "8px", marginBottom: "30px" }}>
-          <Title level={3} style={{ margin: 0, color: "#000" }}>Подати ідею</Title>
+        <div
+          style={{
+            textAlign: "center",
+            background: "#fff",
+            padding: "24px 0",
+            borderRadius: "8px",
+            marginBottom: "30px",
+          }}
+        >
+          <Title level={3} style={{ margin: 0, color: "#000" }}>
+            Подати проблему
+          </Title>
         </div>
 
         <div style={{ position: "absolute", left: "20px", top: "40px" }}>
@@ -128,14 +138,18 @@ const SubmitProblemPage = () => {
             <Form.Item
               label="Назва проблеми"
               name="title"
-              rules={[{ required: true, message: "Будь ласка, введіть назву проблеми!" }]}
+              rules={[
+                { required: true, message: "Будь ласка, введіть назву проблеми!" },
+              ]}
             >
               <Input />
             </Form.Item>
             <Form.Item
               label="Опис проблеми"
               name="description"
-              rules={[{ required: true, message: "Будь ласка, введіть опис проблеми!" }]}
+              rules={[
+                { required: true, message: "Будь ласка, введіть опис проблеми!" },
+              ]}
             >
               <Input.TextArea rows={4} />
             </Form.Item>
