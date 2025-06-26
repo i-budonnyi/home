@@ -62,6 +62,9 @@ const Header = () => {
     <>
       <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@700&display=swap" rel="stylesheet" />
       <header style={{ ...headerStyle, color: textColor }}>
+        {/* LED-полоска */}
+        <div className="led-strip" />
+
         <div
           style={{ ...leftStyle, color: textColor, fontFamily: 'Roboto Slab, serif' }}
           onClick={() => navigate('/')}
@@ -85,6 +88,7 @@ const Header = () => {
           )}
         </div>
       </header>
+
       <style>
         {`
           .logo-text {
@@ -96,6 +100,29 @@ const Header = () => {
           @keyframes fadeInLogo {
             0% { opacity: 0; transform: translateY(-10px); }
             100% { opacity: 1; transform: translateY(0); }
+          }
+
+          .led-strip {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 5px;
+            border-radius: 6px;
+            background: radial-gradient(circle, #00f0ff, #0078ff);
+            box-shadow:
+              0 0 8px rgba(0, 224, 255, 0.8),
+              0 0 16px rgba(0, 224, 255, 0.5),
+              0 0 24px rgba(0, 224, 255, 0.3);
+            z-index: 1;
+            animation: glow 2s ease-in-out infinite alternate;
+            pointer-events: none;
+          }
+
+          @keyframes glow {
+            from { opacity: 0.7; }
+            to { opacity: 1; }
           }
         `}
       </style>
