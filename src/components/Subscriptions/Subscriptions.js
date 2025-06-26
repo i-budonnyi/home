@@ -115,19 +115,15 @@ const Subscriptions = () => {
     }
   };
 
-// 🔁 замінюємо тільки handleDetailsClick
-const handleDetailsClick = (entry_type, entry_id) => {
-  if (!entry_type || !entry_id) return;
-  navigate("/blog", {
-    state: {
-      entryType: entry_type,
-      entryId: entry_id,
-      timestamp: Date.now(),
-    },
-  });
-};
-
-
+  // ✅ Оновлена функція — відкриває в новій вкладці з параметрами
+  const handleDetailsClick = (entry_type, entry_id) => {
+    if (!entry_type || !entry_id) return;
+    const url = new URL(window.location.origin + "/blog");
+    url.searchParams.set("entryType", entry_type);
+    url.searchParams.set("entryId", entry_id);
+    url.searchParams.set("timestamp", Date.now());
+    window.open(url.toString(), "_blank");
+  };
 
   const themeMode = {
     algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
