@@ -126,7 +126,7 @@ const handleDetailsClick = (entry_type, entry_id) => {
     },
   });
 };
-...
+
 
 
   const themeMode = {
