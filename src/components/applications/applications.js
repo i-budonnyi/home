@@ -18,26 +18,71 @@ const { Title }    = Typography;
 const { TextArea } = Input;
 const { Option }   = Select;
 
+/* ────────────────────────────────────────── */
+/* 1. Константи, утиліти та Axios-інтерсептор */
+/* ────────────────────────────────────────── */
 const API_BASE         = "https://backend-avtologistika.onrender.com";
 const APPLICATIONS_URL = "/api/applicationRoutes";
 
+/* Кольорова консоль-utility з часовою міткою */
+const log = (label, data = undefined) => {
+  const time = new Date().toISOString().split("T")[1].slice(0, 8);
+  if (data !== undefined) {
+    console.log(
+      `%c[${time}] %c${label}:`,
+      "color:#999",
+      "color:#00a",
+      data
+    );
+  } else {
+    console.log(`%c[${time}] %c${label}`, "color:#999", "color:#00a");
+  }
+};
+
 const buildApiClient = () => {
   const token = localStorage.getItem("token") || "";
-  return axios.create({
+  const instance = axios.create({
     baseURL: API_BASE,
     headers: {
       Authorization: `Bearer ${token}`,
       Accept: "application/json",
       "Content-Type": "application/json",
     },
+    validateStatus: () => true, // обробити будь-який статус у then
     withCredentials: false,
   });
+
+  /* Логування запиту */
+  instance.interceptors.request.use((cfg) => {
+    log("Axios → Request", { method: cfg.method, url: cfg.url, data: cfg.data });
+    return cfg;
+  });
+
+  /* Логування відповіді/помилки */
+  instance.interceptors.response.use(
+    (res) => {
+      log("Axios → Response", { status: res.status, data: res.data });
+      return res;
+    },
+    (err) => {
+      log("Axios → Error", err);
+      return Promise.reject(err);
+    }
+  );
+
+  return instance;
 };
 
+/* ────────────────────────────────────────── */
+/* 2. Головний компонент                      */
+/* ────────────────────────────────────────── */
 const Applications = () => {
+  log("Компонент Applications ▸ Mount");
+
   const nav = useNavigate();
   const [axiosApi] = useState(() => buildApiClient());
 
+  /* Стан заявки */
   const [application, setApplication] = useState({
     title: "",
     content: "",
@@ -46,127 +91,125 @@ const Applications = () => {
     type: "idea",
   });
 
-  const [idea, setIdea] = useState(null);
+  /* Локальний стан */
+  const [idea, setIdea]       = useState(null);
   const [loading, setLoading] = useState(false);
 
+  /* WebSocket */
   const [socket] = useState(() => {
     const token = localStorage.getItem("token") || "";
     return io(API_BASE, { auth: { token } });
   });
 
+  /* ініціалізація */
   useEffect(() => {
-    console.log("🔧 Компонент Applications ▸ Mount");
+    log("useEffect ▸ старт");
 
-    const savedIdea = localStorage.getItem("selectedIdea");
-    const savedUser = localStorage.getItem("user");
-
-    const currentUserId =
+    const savedIdea  = localStorage.getItem("selectedIdea");
+    const savedUser  = localStorage.getItem("user");
+    const currentUID =
       savedUser && JSON.parse(savedUser)?.id
         ? Number(JSON.parse(savedUser).id)
         : null;
 
-    console.log("🧠 useEffect + статика");
-    console.log("🟡 user_id =", currentUserId);
+    log("user_id", currentUID);
 
     if (savedIdea) {
-      const parsedIdea = JSON.parse(savedIdea);
-      console.log("✅ selectedIdea знайдено:", parsedIdea);
+      const parsed = JSON.parse(savedIdea);
+      log("selectedIdea знайдено", parsed);
 
-      setIdea(parsedIdea);
+      setIdea(parsed);
       setApplication((prev) => ({
         ...prev,
-        title: parsedIdea.title || "Без назви",
-        content: parsedIdea.description || "Без опису",
-        user_id: currentUserId,
-        idea_id: Number(parsedIdea.id),
+        title   : parsed.title       || "Без назви",
+        content : parsed.description || "Без опису",
+        user_id : currentUID,
+        idea_id : Number(parsed.id),
       }));
     } else {
-      setApplication((prev) => ({ ...prev, user_id: currentUserId }));
+      setApplication((prev) => ({ ...prev, user_id: currentUID }));
+      log("selectedIdea відсутня");
     }
 
-    socket.on("connect", () => {
-      console.info("🔌 WebSocket connected:", socket.id);
-    });
-    socket.on("connect_error", (err) =>
-      console.error("❌ WebSocket connect error:", err.message)
-    );
+    socket.on("connect",     () => log("WS connected", socket.id));
+    socket.on("connect_error", (e) => log("WS error", e.message));
 
     return () => {
       socket.off();
       socket.disconnect();
-      console.log("📴 WebSocket ▸ disconnected");
+      log("WS disconnected");
     };
   }, [socket]);
 
+  /* ──────────────────────────────────────── */
+  /*  submit                                 */
+  /* ──────────────────────────────────────── */
   const handleSubmitApplication = async () => {
-    console.log("⏩ handleSubmitApplication ▸ старт");
+    if (loading) return; // захист від повторних кліків
 
+    log("handleSubmitApplication ▸ START");
     const { user_id, title, content, idea_id, type } = application;
 
+    /* Перевірка обов’язкових полів */
     if (!user_id || !title.trim() || !content.trim()) {
       return message.warning("⚠️ Заповніть усі обов’язкові поля.");
     }
 
     const payload = {
       user_id,
-      title: title.trim(),
+      title  : title.trim(),
       content: content.trim(),
       type,
       idea_id: type === "idea" ? Number(idea_id) : null,
     };
-
-    console.log("📦 payload сформовано", payload);
+    log("payload", payload);
 
     setLoading(true);
 
     try {
-      console.group("📤 POST →", APPLICATIONS_URL);
-      const response = await axiosApi.post(APPLICATIONS_URL, payload);
+      const { status, data } = await axiosApi.post(APPLICATIONS_URL, payload);
 
-      console.log("✅ Відповідь з бекенду:", response);
-      console.log("🟢 status =", response.status);
-
-      if (response.status === 200 || response.status === 201) {
+      if (status === 200 || status === 201) {
         message.success("✅ Заявку створено успішно!");
-        console.log("📡 Надсилаємо WebSocket:");
-        socket.emit("application_created", {
-          ...payload,
-          timestamp: Date.now(),
-        });
 
-        console.log("🚦 redirect → /applications");
+        try {
+          log("WS emit application_created");
+          socket.emit("application_created", { ...payload, timestamp: Date.now() });
+        } catch (wsErr) {
+          log("WS emit error", wsErr.message);
+        }
+
         nav("/applications");
+      } else if (status === 409) {
+        message.info(data?.message || "Заявка вже існує для цієї ідеї.");
       } else {
-        throw new Error(`❗️ Unexpected status: ${response.status}`);
+        throw new Error(`Статус ${status}`);
       }
     } catch (err) {
-      console.log("❌ Axios error = ", err);
-
       const resStatus = err?.response?.status;
-      const resData = err?.response?.data;
+      const resMsg    = err?.response?.data?.message;
 
-      console.error("📛 status:", resStatus);
-      console.error("📛 data  :", resData);
+      log("Axios catch", { resStatus, resMsg, err: err.message });
 
       if (resStatus === 409) {
-        return message.info(
-          resData?.message || "Заявка вже існує для цієї ідеї."
-        );
+        return message.info(resMsg || "Заявка вже існує для цієї ідеї.");
       }
 
       message.error(
-        resData?.message ||
+        resMsg ||
           (err.message.includes("Network")
             ? "Проблеми мережі"
             : "Сталася помилка. Спробуйте пізніше.")
       );
     } finally {
       setLoading(false);
-      console.groupEnd();
-      console.log("✅ handleSubmitApplication ▸ завершено");
+      log("handleSubmitApplication ▸ END");
     }
   };
 
+  /* ──────────────────────────────────────── */
+  /* 3. UI                                   */
+/* ──────────────────────────────────────── */
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f8", padding: 20 }}>
       <Title level={2}>Створення заявки</Title>
@@ -204,9 +247,7 @@ const Applications = () => {
         <Form.Item label="Тип заявки">
           <Select
             value={application.type}
-            onChange={(val) =>
-              setApplication({ ...application, type: val })
-            }
+            onChange={(val) => setApplication({ ...application, type: val })}
           >
             <Option value="idea">Ідея</Option>
             <Option value="problem">Проблема</Option>
