@@ -88,8 +88,7 @@ const IdeasSubmissionPage = () => {
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
         <Header style={{ background: "transparent", height: 30, padding: 0 }} />
-        
-        {/* Кнопка Назад + Місяць — зліва і нижче */}
+
         <div style={{ display: "flex", alignItems: "center", gap: 12, paddingLeft: 20, marginTop: "70px" }}>
           <div
             onClick={toggleTheme}
@@ -172,7 +171,16 @@ const IdeasSubmissionPage = () => {
                     <br />
                     <Button
                       type="primary"
-                      onClick={() => navigate(`/problem/${problem.id}`)}
+                      onClick={() =>
+                        navigate("/", {
+                          state: {
+                            openEntry: {
+                              entryType: "problem",
+                              entryId: problem.id
+                            }
+                          }
+                        })
+                      }
                       style={{ marginTop: "10px" }}
                     >
                       Детальніше
