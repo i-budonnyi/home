@@ -172,13 +172,13 @@ const IdeasSubmissionPage = () => {
                     <Button
                       type="primary"
                       onClick={() =>
-                        navigate("/", {
+                        navigate("/blog", {
                           state: {
                             openEntry: {
                               entryType: "problem",
-                              entryId: problem.id
-                            }
-                          }
+                              entryId: problem.id,
+                            },
+                          },
                         })
                       }
                       style={{ marginTop: "10px" }}
