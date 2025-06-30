@@ -1,4 +1,3 @@
-/* Subscriptions.jsx */
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import {
@@ -22,24 +21,19 @@ const { Title, Text } = Typography;
 const { Header, Content } = Layout;
 const { Option } = Select;
 
-/* === API === */
 const API_BASE = "https://backend-avtologistika.onrender.com/api";
 const API_SUBSCRIPTIONS_URL = `${API_BASE}/subscriptionRoutes/user-subscriptions`;
-const API_STATUSES_URL      = `${API_BASE}/statusRoutes/get-statuses`;
-const API_IDEA_URL          = `${API_BASE}/ideaRoutes`;                 // ← нове!
+const API_STATUSES_URL = `${API_BASE}/statusRoutes/get-statuses`;
+const API_IDEA_URL = `${API_BASE}/ideaRoutes`;
 
-/* ---------- Компонент ---------- */
 const Subscriptions = () => {
-  const [subscriptions,       setSubscriptions]       = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
   const [filteredSubscriptions, setFilteredSubscriptions] = useState([]);
-
-  const [statuses,       setStatuses]       = useState([]);
+  const [statuses, setStatuses] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState("усі");
-
   const [isLoading, setIsLoading] = useState(true);
-  const [error,     setError]     = useState(null);
+  const [error, setError] = useState(null);
 
-  /* тема -------------------------------------------------------------- */
   const [isDarkMode, setIsDarkMode] = useState(
     localStorage.getItem("theme") === "dark"
   );
@@ -49,32 +43,27 @@ const Subscriptions = () => {
     localStorage.setItem("theme", newTheme);
   };
 
-  const navigate      = useNavigate();
-  const getAuthToken  = () => localStorage.getItem("token");
+  const navigate = useNavigate();
+  const getAuthToken = () => localStorage.getItem("token");
 
-  /* ---------- 1. Отримуємо статус-довідник --------------------------- */
   const fetchStatuses = async () => {
     try {
-      // 1️⃣ статичний довідник
       const resStatic = await axios.get(`${API_STATUSES_URL}?nocache=${Date.now()}`);
       const list1 = Array.isArray(resStatic.data)
         ? resStatic.data.filter((s) => typeof s === "string" && s.trim())
         : [];
 
-      // 2️⃣ статуси, реально використані в ідеях
-      const resIdeas  = await axios.get(API_IDEA_URL);          // ← GET /ideaRoutes
+      const resIdeas = await axios.get(API_IDEA_URL);
       const list2 = Array.isArray(resIdeas.data)
         ? [...new Set(resIdeas.data.map((i) => i.status).filter(Boolean))]
         : [];
 
-      // Об’єднуємо та сортуємо
       setStatuses([...new Set([...list1, ...list2])].sort());
     } catch (err) {
       console.warn("⚠️ Статуси:", err.message);
     }
   };
 
-  /* ---------- 2. Отримуємо підписки користувача ---------------------- */
   const fetchUserSubscriptions = useCallback(async () => {
     try {
       const token = getAuthToken();
@@ -91,50 +80,56 @@ const Subscriptions = () => {
       console.error("❌ Підписки:", err);
       setError(
         err.response?.data?.message ||
-        err.message ||
-        "Сталася помилка на сервері"
+          err.message ||
+          "Сталася помилка на сервері"
       );
     } finally {
       setIsLoading(false);
     }
   }, [selectedStatus]);
 
-  /* --------------------------------------------------------------- */
   useEffect(() => {
     fetchStatuses();
     fetchUserSubscriptions();
   }, [fetchUserSubscriptions]);
 
-  /* ---------- Фільтр ------------------------------------------- */
   const filterByStatus = (data, status) => {
     if (status.toLowerCase() === "усі") setFilteredSubscriptions(data);
-    else setFilteredSubscriptions(data.filter((s) => s.status === status));
+    else setFilteredSubscriptions(data.filter((s) => (s.status || "").toLowerCase() === status.toLowerCase()));
   };
+
   const handleStatusChange = (value) => {
     setSelectedStatus(value);
     filterByStatus(subscriptions, value);
   };
 
-  /* ---------- Допоміжні ---------------------------------------- */
   const translateStatus = (s = "") =>
     s
       .replace(/до_секретаря/gi, "Амбасадор ➜ Секретар")
-      .replace(/pending/i,      "Очікує")
-      .replace(/approved/i,     "Схвалено")
-      .replace(/rejected/i,     "Відхилено")
+      .replace(/pending/i, "Очікує")
+      .replace(/approved/i, "Схвалено")
+      .replace(/rejected/i, "Відхилено")
+      .replace(/not_reviewed/i, "Не розглянуто")
+      .replace(/draft/i, "Чернетка")
       .toUpperCase();
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case "pending":        return "orange";
-      case "approved":       return "green";
-      case "rejected":       return "red";
-      case "до_секретаря":   return "purple";
-      default:               return "blue";
+    switch ((status || "").toLowerCase()) {
+      case "pending":
+        return "orange";
+      case "approved":
+        return "green";
+      case "rejected":
+        return "red";
+      case "до_секретаря":
+        return "purple";
+      case "not_reviewed":
+        return "gold";
+      default:
+        return "blue";
     }
   };
 
-  /* ---------- Перехід у блог ------------------------------------ */
   const handleDetailsClick = (entryType, entryId) => {
     if (!entryType || !entryId) return;
     navigate("/blog", {
@@ -142,27 +137,24 @@ const Subscriptions = () => {
     });
   };
 
-  /* ---------- Тема Ant Design ---------------------------------- */
   const themeMode = {
     algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
     token: {
-      colorPrimary:   "#1E63F2",
-      borderRadius:   12,
-      fontFamily:     "Roboto, sans-serif",
-      colorTextBase:  isDarkMode ? "#E1E6EB" : "#1C1C1C",
+      colorPrimary: "#1E63F2",
+      borderRadius: 12,
+      fontFamily: "Roboto, sans-serif",
+      colorTextBase: isDarkMode ? "#E1E6EB" : "#1C1C1C",
       colorBgContainer: isDarkMode ? "#1E1E1E" : "#FFFFFF",
-      colorBgLayout:    isDarkMode ? "#121212" : "#F4F6F8",
-      colorBorder:      isDarkMode ? "#2C313A" : "#DDE1E6",
+      colorBgLayout: isDarkMode ? "#121212" : "#F4F6F8",
+      colorBorder: isDarkMode ? "#2C313A" : "#DDE1E6",
     },
   };
 
-  /* ---------- UI ---------------------------------------------- */
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh", background: themeMode.token.colorBgLayout }}>
         <Header style={{ background: "transparent", padding: 0 }} />
         <Content style={{ padding: "60px 20px 20px", maxWidth: 900, margin: "0 auto" }}>
-          {/* Панель керування */}
           <div style={{ display: "flex", gap: 16, alignItems: "center", marginBottom: 24 }}>
             <div
               onClick={toggleTheme}
@@ -185,12 +177,10 @@ const Subscriptions = () => {
             </Select>
           </div>
 
-          {/* Заголовок */}
           <Title level={3} style={{ textAlign: "center", color: themeMode.token.colorTextBase }}>
             Мої підписки
           </Title>
 
-          {/* Контент */}
           {error && <Alert message={error} type="error" showIcon />}
           {isLoading ? (
             <Skeleton active />
