@@ -19,14 +19,24 @@ const { TextArea } = Input;
 const { Option }   = Select;
 
 /* ────────────────────────────────────────── */
-/* 1. Базові константи                        */
+/*  1. Базові константи й DEBUG-утиліти       */
 /* ────────────────────────────────────────── */
-const API_BASE           = "https://backend-avtologistika.onrender.com";
-const APPLICATIONS_URL   = "/api/applicationRoutes"; // ← як у backend/routes/applicationRoutes.js
+const API_BASE         = "https://backend-avtologistika.onrender.com";
+const APPLICATIONS_URL = "/api/applicationRoutes";
+
+const STEP = (label, data = null) => {
+  const time = new Date().toISOString().split("T")[1].slice(0, 12);
+  if (data !== null) {
+    console.log(`[%c${time}%c] %c${label}`, "color:#999", "", "color:#00b", data);
+  } else {
+    console.log(`[%c${time}%c] %c${label}`, "color:#999", "", "color:#00b");
+  }
+};
 
 const buildApiClient = () => {
+  STEP("Axios → створення інстанса");
   const token = localStorage.getItem("token") || "";
-  return axios.create({
+  const instance = axios.create({
     baseURL : API_BASE,
     headers : {
       Authorization : `Bearer ${token}`,
@@ -34,17 +44,39 @@ const buildApiClient = () => {
       "Content-Type": "application/json",
     },
     withCredentials : false,
+    validateStatus  : () => true, // дозволяє вручну обробити будь-який статус
   });
+
+  /* Запит */
+  instance.interceptors.request.use((cfg) => {
+    STEP("Axios → запит", { method: cfg.method, url: cfg.url, data: cfg.data });
+    return cfg;
+  });
+
+  /* Відповідь  */
+  instance.interceptors.response.use(
+    (res) => {
+      STEP("Axios → відповідь", { status: res.status, data: res.data });
+      return res;
+    },
+    (err) => {
+      STEP("Axios → помилка", err);
+      return Promise.reject(err);
+    }
+  );
+
+  return instance;
 };
 
 /* ────────────────────────────────────────── */
-/* 2. Головний компонент                      */
+/*  2. Головний компонент                     */
 /* ────────────────────────────────────────── */
 const Applications = () => {
+  STEP("Компонент Applications → Mount");
   const nav = useNavigate();
   const [axiosApi] = useState(() => buildApiClient());
 
-  /* 📝 стан заявки */
+  /* Стан заявки */
   const [application, setApplication] = useState({
     title   : "",
     content : "",
@@ -53,32 +85,38 @@ const Applications = () => {
     type    : "idea",
   });
 
-  /* 🧩 вибрана ідея */
+  /* Локальний стан */
   const [idea, setIdea]       = useState(null);
   const [loading, setLoading] = useState(false);
 
-  /* 🔌 WebSocket */
+  /* WebSocket */
   const [socket] = useState(() => {
+    STEP("WS → ініціалізація");
     const token = localStorage.getItem("token") || "";
     return io(API_BASE, { auth: { token } });
   });
 
   /* ──────────────────────────────────────── */
-  /*  ініціалізація                          */
+  /*  3. Ініціалізація при Mount             */
   /* ──────────────────────────────────────── */
   useEffect(() => {
-    const savedIdea = localStorage.getItem("selectedIdea");
-    const savedUser = localStorage.getItem("user");
+    STEP("useEffect → старт");
 
+    /* user_id */
+    const savedUser = localStorage.getItem("user");
     const currentUserId =
       savedUser && JSON.parse(savedUser)?.id
         ? Number(JSON.parse(savedUser).id)
         : null;
+    STEP("user_id →", currentUserId);
 
+    /* selectedIdea */
+    const savedIdea = localStorage.getItem("selectedIdea");
     if (savedIdea) {
       const parsedIdea = JSON.parse(savedIdea);
-
+      STEP("selectedIdea знайдено", parsedIdea);
       setIdea(parsedIdea);
+
       setApplication((prev) => ({
         ...prev,
         title   : parsedIdea.title       || "Без назви",
@@ -87,25 +125,29 @@ const Applications = () => {
         idea_id : Number(parsedIdea.id),
       }));
     } else {
+      STEP("selectedIdea не знайдено");
       setApplication((prev) => ({ ...prev, user_id: currentUserId }));
     }
 
-    socket.on("connect", () => console.info("🔌 WS connected:", socket.id));
-    socket.on("connect_error", (err) =>
-      console.error("❌ WS connect error:", err.message)
-    );
+    /* WS listeners */
+    socket.on("connect", () => STEP("WS → connect", socket.id));
+    socket.on("connect_error", (err) => STEP("WS → connect_error", err.message));
 
     return () => {
+      STEP("Компонент Applications → Unmount");
       socket.off();
       socket.disconnect();
     };
   }, [socket]);
 
   /* ──────────────────────────────────────── */
-  /*  submit                                 */
+  /*  4. Надсилання заявки                   */
   /* ──────────────────────────────────────── */
   const handleSubmitApplication = async () => {
+    STEP("handleSubmitApplication → старт");
+
     const { user_id, title, content, idea_id, type } = application;
+    STEP("Перевірка обов'язкових полів", { user_id, title, content });
 
     if (!user_id || !title.trim() || !content.trim()) {
       return message.warning("⚠️ Заповніть усі обов’язкові поля.");
@@ -118,47 +160,43 @@ const Applications = () => {
       type,
       idea_id: type === "idea" ? Number(idea_id) : null,
     };
-
-    console.log("🔍 payload:", payload);
+    STEP("payload сформовано", payload);
 
     setLoading(true);
 
     try {
-      console.group("📤 POST", APPLICATIONS_URL);
+      STEP("Запит → POST " + APPLICATIONS_URL);
       const { status, data } = await axiosApi.post(APPLICATIONS_URL, payload);
-      console.info("⬅️ status:", status);
-      console.debug("⬅️ data  :", data);
+
+      STEP("Відповідь отримано", { status, data });
 
       if (status === 200 || status === 201) {
         message.success("✅ Заявку створено успішно!");
         socket.emit("application_created", { ...payload, timestamp: Date.now() });
         nav("/applications");
+      } else if (status === 409) {
+        message.info(data?.message || "Заявка вже існує для цієї ідеї.");
       } else {
-        throw new Error(`Unexpected status ${status}`);
+        throw new Error(`Непередбачений статус ${status}`);
       }
     } catch (err) {
-      console.error("❌ error:", err);
+      STEP("catch → AxiosError", err);
 
-      if (err.response?.status === 409) {
-        return message.info(
-          err.response.data?.message || "Заявка вже існує для цієї ідеї."
-        );
-      }
+      const resp = err.response;
+      const net  = err.message?.includes("Network") ? " (Network)" : "";
 
       message.error(
-        err.response?.data?.message ||
-          (err.message.includes("Network")
-            ? "Проблеми мережі"
-            : "Сталася помилка. Спробуйте пізніше.")
+        resp?.data?.message ||
+          `Сталася помилка${net}. Спробуйте пізніше.`
       );
     } finally {
       setLoading(false);
-      console.groupEnd();
+      STEP("handleSubmitApplication → завершено");
     }
   };
 
   /* ──────────────────────────────────────── */
-  /*  UI                                     */
+  /* 5. UI                                   */
   /* ──────────────────────────────────────── */
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f8", padding: 20 }}>
