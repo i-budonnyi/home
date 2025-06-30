@@ -18,6 +18,7 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 const API_BASE = "https://backend-avtologistika.onrender.com";
+
 const getAxios = () => {
   const token = localStorage.getItem("token") || "";
   return axios.create({
@@ -39,6 +40,7 @@ const Applications = () => {
   });
 
   const [idea, setIdea] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [socket] = useState(() => {
     const token = localStorage.getItem("token") || "";
     return io(API_BASE, { auth: { token } });
@@ -84,24 +86,44 @@ const Applications = () => {
     };
     if (type === "idea" && idea_id) payload.idea_id = idea_id;
 
+    setLoading(true);
+
     try {
-      console.info("➡️ POST", "/api/applicationRoutes", payload);
+      console.group("📤 Відправлення заявки");
+      console.info("➡️ POST", "/api/applicationRoutes");
+      console.debug("Payload:", payload);
+
       const { status, data } = await axiosApi.post("/api/applicationRoutes", payload);
 
-      console.info("⬅️ response", status, data);
+      console.info("⬅️ Статус:", status);
+      console.debug("📦 Відповідь:", data);
 
       if (status === 201 || status === 200) {
-        message.success("✅ Заявку створено!");
+        message.success("✅ Заявку успішно створено!");
         socket.emit("application_created", { ...payload, timestamp: new Date() });
         navigate("/applications");
       } else {
-        throw new Error("unexpected status");
+        throw new Error("📛 Неочікуваний статус: " + status);
       }
     } catch (err) {
-      console.error("❌ Створення заявки:", err);
+      console.error("❌ ПОМИЛКА при створенні заявки:");
+      if (err.response) {
+        console.error("🔴 response.data:", err.response.data);
+        console.error("🔴 response.status:", err.response.status);
+        console.error("🔴 response.headers:", err.response.headers);
+      } else if (err.request) {
+        console.error("🟠 request (відправлено, але відповіді немає):", err.request);
+      } else {
+        console.error("⚠️ Інша помилка:", err.message);
+      }
+
       message.error(
-        err.response?.data?.message || "❌ Внутрішня помилка сервера."
+        err.response?.data?.message ||
+          "❌ Помилка сервера. Спробуйте пізніше."
       );
+    } finally {
+      setLoading(false);
+      console.groupEnd();
     }
   };
 
@@ -152,8 +174,8 @@ const Applications = () => {
         </Form.Item>
 
         <Form.Item>
-          <Button type="primary" onClick={handleSubmitApplication}>
-            Створити заявку
+          <Button type="primary" onClick={handleSubmitApplication} loading={loading}>
+            {loading ? "Надсилання..." : "Створити заявку"}
           </Button>
         </Form.Item>
       </Form>
