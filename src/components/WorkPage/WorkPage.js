@@ -11,8 +11,7 @@ import {
   List,
   Card,
   Divider,
-  Badge,
-  message
+  Badge
 } from "antd";
 import {
   MessageOutlined,
@@ -36,17 +35,20 @@ const { Title, Text } = Typography;
 const SOCKET_URL = "https://backend-avtologistika.onrender.com";          // WebSocket
 const API_BASE   = "https://backend-avtologistika.onrender.com/api";      // REST API root
 const API_USER   = `${API_BASE}/userRoutes/profile`;                      // профіль
-const API_NOTIF  = `${API_BASE}/notifications`;                           // усі сповіщення
+/* !!  ВАЖЛИВО: маршрут БЕЗ “s” — /notification  */
+const API_NOTIF  = `${API_BASE}/notification`;                            // сповіщення
 
 /* ────────────────────────────────────────── */
 /*  COMPONENT                                */
 /* ────────────────────────────────────────── */
 const WorkerPage = () => {
-  const [userData, setUserData]         = useState(null);
+  const [userData, setUserData]           = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [isCheckingRole, setIsCheckingRole] = useState(true);
-  const [error, setError]               = useState(null);
-  const [isDarkMode, setIsDarkMode]     = useState(localStorage.getItem("theme") === "dark");
+  const [error, setError]                 = useState(null);
+  const [isDarkMode, setIsDarkMode]       = useState(
+    localStorage.getItem("theme") === "dark"
+  );
 
   const navigate = useNavigate();
   const token    = localStorage.getItem("token");
@@ -97,15 +99,20 @@ const WorkerPage = () => {
   const fetchNotifications = useCallback(
     async (uid) => {
       try {
-        const res = await fetch(`${API_NOTIF}/${uid}`, {
+        /* 👉 Бекенд-роут: /notification/user/:id */
+        const res = await fetch(`${API_NOTIF}/user/${uid}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
+        if (res.status === 404) {
+          // нема сповіщень — це не помилка
+          setNotifications([]);
+          return;
+        }
         if (!res.ok) throw new Error(`${res.status}`);
 
         const data = await res.json();
 
-        // нормалізуємо, сортуємо за датою
         const parsed = data
           .map((n) => ({
             ...n,
@@ -141,10 +148,8 @@ const WorkerPage = () => {
   useEffect(() => {
     if (!userData?.id) return;
 
-    // 1) отримуємо всі попередні сповіщення
     fetchNotifications(userData.id);
 
-    // 2) підключаємо WebSocket для live-подій
     const socket = io(SOCKET_URL, {
       transports: ["websocket"],
       reconnection: true
@@ -156,7 +161,6 @@ const WorkerPage = () => {
     });
 
     socket.on("notification", (data) => {
-      console.log("📩 notification:", data);
       setNotifications((prev) => [
         {
           ...data,
@@ -169,7 +173,6 @@ const WorkerPage = () => {
     });
 
     socket.on("globalNotification", (data) => {
-      console.log("🌍 globalNotification:", data);
       setNotifications((prev) => [
         {
           ...data,
@@ -191,12 +194,11 @@ const WorkerPage = () => {
   /*  HANDLERS                        */
   /* ──────────────────────────────── */
   const markAllAsRead = async () => {
-    // фронтово: ставимо всі прочитаними
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
 
-    // бекенд (необовʼязково): позначаємо на сервері
     try {
-      await fetch(`${API_NOTIF}/${userData.id}/read-all`, {
+      /* PUT /notification/user/:id/read-all */
+      await fetch(`${API_NOTIF}/user/${userData.id}/read-all`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -251,12 +253,12 @@ const WorkerPage = () => {
             onClick={({ key }) => navigate(key)}
             style={{ background: "transparent", fontSize: 16 }}
             items={[
-              { key: "/submit-idea",   icon: <BulbOutlined />,    label: "Подати ідею" },
-              { key: "/submit-problem",icon: <FileTextOutlined />,label: "Подати проблему" },
-              { key: "/blog",          icon: <MessageOutlined />, label: "Блог" },
-              { key: "/my-problems",   icon: <ProjectOutlined />, label: "Мої проблеми" },
-              { key: "/projects",      icon: <ProjectOutlined />, label: "Мої подані ідеї" },
-              { key: "/subscriptions", icon: <StarOutlined />,    label: "Мої підписки" }
+              { key: "/submit-idea",    icon: <BulbOutlined />,    label: "Подати ідею" },
+              { key: "/submit-problem", icon: <FileTextOutlined />, label: "Подати проблему" },
+              { key: "/blog",           icon: <MessageOutlined />, label: "Блог" },
+              { key: "/my-problems",    icon: <ProjectOutlined />, label: "Мої проблеми" },
+              { key: "/projects",       icon: <ProjectOutlined />, label: "Мої подані ідеї" },
+              { key: "/subscriptions",  icon: <StarOutlined />,    label: "Мої підписки" }
             ]}
           />
         </Sider>
@@ -268,10 +270,6 @@ const WorkerPage = () => {
           <Content style={{ padding: 40, background: themeMode.token.colorBgLayout }}>
             {isCheckingRole ? (
               <Title level={3}>⏳ Завантаження...</Title>
-            ) : error ? (
-              <Title level={3} type="danger">
-                ❌ {error}
-              </Title>
             ) : (
               <Card
                 style={{
@@ -286,6 +284,13 @@ const WorkerPage = () => {
                 }}
                 bordered={false}
               >
+                {error && (
+                  <>
+                    <Title level={3} type="danger">❌ {error}</Title>
+                    <Divider />
+                  </>
+                )}
+
                 <Title level={4}>
                   {userData?.firstName} {userData?.lastName}
                 </Title>
@@ -298,14 +303,8 @@ const WorkerPage = () => {
                 </Text>
 
                 <Divider />
-                <Text>
-                  <MailOutlined /> {userData?.email}
-                </Text>
-                <br />
-                <Text>
-                  <PhoneOutlined /> {userData?.phone}
-                </Text>
-                <br />
+                <Text><MailOutlined /> {userData?.email}</Text><br />
+                <Text><PhoneOutlined /> {userData?.phone}</Text><br />
                 <Button
                   type="primary"
                   style={{ marginTop: 16 }}
