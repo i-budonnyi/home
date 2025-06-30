@@ -183,32 +183,33 @@ const BlogPage = () => {
   }, [fetchAllEntries, fetchSubscriptions]);
 
   useEffect(() => {
-    if (
-      location.state &&
-      location.state.entryType &&
-      location.state.entryId &&
-      entries.length
-    ) {
-      const { entryType, entryId } = location.state;
-      setFilteredType(entryType);
-      setTimeout(() => {
-        const el = document.getElementById(`entry-${entryType}-${entryId}`);
-        if (el) {
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
-          el.style.boxShadow = "0 0 10px 2px #1890ff";
-          setTimeout(() => (el.style.boxShadow = ""), 2000);
+  if (
+    location.state &&
+    location.state.entryType &&
+    location.state.entryId &&
+    entries.length
+  ) {
+    const entryType = location.state.entryType;
+    const entryId = Number(location.state.entryId);
+    setFilteredType(entryType);
 
-          const foundEntry = entries.find(
-            (e) => e.entryType === entryType && e.id === entryId
-          );
-          if (foundEntry) {
-            setSelectedEntry(foundEntry);
-          }
-        }
-      }, 400);
-    }
-  }, [entries, location.state]);
+    setTimeout(() => {
+      const el = document.getElementById(`entry-${entryType}-${entryId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.style.boxShadow = "0 0 10px 2px #1890ff";
+        setTimeout(() => (el.style.boxShadow = ""), 2001);
+      }
 
+      const foundEntry = entries.find(
+        (e) => e.entryType === entryType && Number(e.id) === entryId
+      );
+      if (foundEntry) {
+        setSelectedEntry(foundEntry);
+      }
+    }, 400);
+  }
+}, [entries, location.state]);
   const toggleLike = async (entry) => {
     try {
       const token = getAuthToken();
