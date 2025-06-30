@@ -21,8 +21,8 @@ const { Option }   = Select;
 /* ────────────────────────────────────────── */
 /* 1. Базові константи                        */
 /* ────────────────────────────────────────── */
-const API_BASE          = "https://backend-avtologistika.onrender.com";
-const APPLICATIONS_URL  = "/api/applications"; // один єдиний ендпоінт
+const API_BASE           = "https://backend-avtologistika.onrender.com";
+const APPLICATIONS_URL   = "/api/applicationRoutes"; // ← як у backend/routes/applicationRoutes.js
 
 const buildApiClient = () => {
   const token = localStorage.getItem("token") || "";
@@ -64,11 +64,11 @@ const Applications = () => {
   });
 
   /* ──────────────────────────────────────── */
-  /*    інаїт                             */
+  /*  ініціалізація                          */
   /* ──────────────────────────────────────── */
   useEffect(() => {
     const savedIdea = localStorage.getItem("selectedIdea");
-    const savedUser = localStorage.getItem("user"); //  { id, ... }
+    const savedUser = localStorage.getItem("user");
 
     const currentUserId =
       savedUser && JSON.parse(savedUser)?.id
@@ -145,11 +145,12 @@ const Applications = () => {
         );
       }
 
-      const serverMsg =
+      message.error(
         err.response?.data?.message ||
-        (err.message.includes("Network") ? "Проблеми мережі" : null);
-
-      message.error(serverMsg || "Сталася помилка. Спробуйте пізніше.");
+          (err.message.includes("Network")
+            ? "Проблеми мережі"
+            : "Сталася помилка. Спробуйте пізніше.")
+      );
     } finally {
       setLoading(false);
       console.groupEnd();
