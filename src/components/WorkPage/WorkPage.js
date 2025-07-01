@@ -27,53 +27,57 @@ import {
 import io from "socket.io-client";
 
 const { Content, Sider, Header } = Layout;
-const { Title, Text } = Typography;
+const { Title, Text }           = Typography;
 
 /* ────────────────────────────────────────── */
 /*  CONSTANTS                                */
 /* ────────────────────────────────────────── */
-const SOCKET_URL = "https://backend-avtologistika.onrender.com";          // WebSocket
-const API_BASE   = "https://backend-avtologistika.onrender.com/api";      // REST API root
-const API_USER   = `${API_BASE}/userRoutes/profile`;                      // профіль
-/* !!  ВАЖЛИВО: маршрут БЕЗ “s” — /notification  */
-const API_NOTIF  = `${API_BASE}/notification`;                            // сповіщення
+const SOCKET_URL = "https://backend-avtologistika.onrender.com";     // WebSocket
+const API_BASE   = "https://backend-avtologistika.onrender.com/api"; // REST root
+
+/* → профіль користувача */
+const API_USER   = `${API_BASE}/userRoutes/profile`;
+
+/* → усі ендпоінти сповіщень починаються з /api/notifications */
+const API_NOTIF  = `${API_BASE}/notifications`;
 
 /* ────────────────────────────────────────── */
 /*  COMPONENT                                */
 /* ────────────────────────────────────────── */
 const WorkerPage = () => {
-  const [userData, setUserData]           = useState(null);
-  const [notifications, setNotifications] = useState([]);
+  /* STATE ──────────────────────────────── */
+  const [userData, setUserData]             = useState(null);
+  const [notifications, setNotifications]   = useState([]);
   const [isCheckingRole, setIsCheckingRole] = useState(true);
-  const [error, setError]                 = useState(null);
-  const [isDarkMode, setIsDarkMode]       = useState(
+  const [error, setError]                   = useState(null);
+  const [isDarkMode, setIsDarkMode]         = useState(
     localStorage.getItem("theme") === "dark"
   );
 
   const navigate = useNavigate();
-  const token    = localStorage.getItem("token");
+  const token    = localStorage.getItem("token"); // береться один раз
 
-  /* ──────────────────────────────── */
-  /*  HELPERS                         */
-  /* ──────────────────────────────── */
-  const sanitizeText = (text) => {
-    if (!text || typeof text !== "string") return "";
-    return text
-      .normalize("NFKC")
-      .replace(/[^\p{L}\p{N}\s.,!?"'():-]/gu, "")
-      .trim();
-  };
+  /* ─────────────────────────────────────── */
+  /* HELPERS                                */
+  /* ─────────────────────────────────────── */
+  const sanitizeText = (text) =>
+    !text || typeof text !== "string"
+      ? ""
+      : text
+          .normalize("NFKC")
+          .replace(/[^\p{L}\p{N}\s.,!?"'():-]/gu, "")
+          .trim();
 
-  /* ──────────────────────────────── */
-  /*  FETCH USER PROFILE              */
-  /* ──────────────────────────────── */
+  /* ─────────────────────────────────────── */
+  /* FETCH USER PROFILE                     */
+  /* ─────────────────────────────────────── */
   const fetchUserProfile = useCallback(async () => {
     try {
       const res = await fetch(API_USER, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      if (!res.ok) throw new Error(`${res.status}`);
+      if (!res.ok) throw new Error(String(res.status));
 
       const user = await res.json();
       setUserData({
@@ -82,7 +86,7 @@ const WorkerPage = () => {
         lastName:  user.last_name,
         email:     user.email,
         phone:     user.phone,
-        role:      user.role?.toLowerCase() || "worker"
+        role:      (user.role || "worker").toLowerCase()
       });
     } catch (err) {
       console.error("❌ Fetch profile error:", err.message);
@@ -93,47 +97,57 @@ const WorkerPage = () => {
     }
   }, [navigate, token]);
 
-  /* ──────────────────────────────── */
-  /*  FETCH NOTIFICATIONS (ONCE)      */
-  /* ──────────────────────────────── */
+  /* ─────────────────────────────────────── */
+  /* FETCH NOTIFICATIONS (ONE-SHOT)         */
+  /* ─────────────────────────────────────── */
   const fetchNotifications = useCallback(
     async (uid) => {
       try {
-        /* 👉 Бекенд-роут: /notification/user/:id */
-        const res = await fetch(`${API_NOTIF}/user/${uid}`, {
+        /* GET /api/notifications/:id */
+        const res = await fetch(`${API_NOTIF}/${uid}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
+        /* 404 → просто ще немає сповіщень;
+           401/403 → токен недійсний, перенаправляємо на логін. */
         if (res.status === 404) {
-          // нема сповіщень — це не помилка
           setNotifications([]);
           return;
         }
-        if (!res.ok) throw new Error(`${res.status}`);
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("401");
+        }
+        if (!res.ok) {
+          throw new Error(String(res.status));
+        }
 
         const data = await res.json();
-
         const parsed = data
           .map((n) => ({
             ...n,
-            is_read: n.is_read,
-            message: sanitizeText(n.message),
+            is_read:   n.is_read,
+            message:   sanitizeText(n.message),
             timestamp: n.created_at
           }))
           .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         setNotifications(parsed);
       } catch (err) {
-        console.error("❌ Fetch notifications error:", err.message);
-        setError("Не вдалося отримати сповіщення");
+        if (err.message === "401") {
+          localStorage.removeItem("token");
+          navigate("/login");
+        } else {
+          console.error("❌ Fetch notifications error:", err.message);
+          setError("Не вдалося отримати сповіщення");
+        }
       }
     },
-    [token]
+    [token, navigate]
   );
 
-  /* ──────────────────────────────── */
-  /*  INITIAL EFFECTS                 */
-  /* ──────────────────────────────── */
+  /* ─────────────────────────────────────── */
+  /* INITIAL EFFECTS                        */
+  /* ─────────────────────────────────────── */
   useEffect(() => {
     if (!token) {
       navigate("/login");
@@ -142,9 +156,9 @@ const WorkerPage = () => {
     }
   }, [token, navigate, fetchUserProfile]);
 
-  /* ──────────────────────────────── */
-  /*  WEBSOCKET + INITIAL NOTIFS      */
-  /* ──────────────────────────────── */
+  /* ─────────────────────────────────────── */
+  /* SOCKET + INITIAL NOTIFS                */
+  /* ─────────────────────────────────────── */
   useEffect(() => {
     if (!userData?.id) return;
 
@@ -160,6 +174,7 @@ const WorkerPage = () => {
       socket.emit("register", userData.id);
     });
 
+    /* приватне сповіщення */
     socket.on("notification", (data) => {
       setNotifications((prev) => [
         {
@@ -172,6 +187,7 @@ const WorkerPage = () => {
       ]);
     });
 
+    /* глобальне сповіщення */
     socket.on("globalNotification", (data) => {
       setNotifications((prev) => [
         {
@@ -184,21 +200,25 @@ const WorkerPage = () => {
       ]);
     });
 
-    socket.on("connect_error", (err) => console.error("WS connect_error:", err.message));
-    socket.on("disconnect", (reason) => console.warn("WS disconnect:", reason));
+    socket.on("connect_error", (err) =>
+      console.error("WS connect_error:", err.message)
+    );
+    socket.on("disconnect", (reason) =>
+      console.warn("WS disconnect:", reason)
+    );
 
     return () => socket.disconnect();
   }, [userData?.id, fetchNotifications]);
 
-  /* ──────────────────────────────── */
-  /*  HANDLERS                        */
-  /* ──────────────────────────────── */
+  /* ─────────────────────────────────────── */
+  /* HANDLERS                               */
+  /* ─────────────────────────────────────── */
   const markAllAsRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
 
     try {
-      /* PUT /notification/user/:id/read-all */
-      await fetch(`${API_NOTIF}/user/${userData.id}/read-all`, {
+      /* PUT /api/notifications/:id/read-all */
+      await fetch(`${API_NOTIF}/${userData.id}/read-all`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -213,31 +233,36 @@ const WorkerPage = () => {
     localStorage.setItem("theme", newTheme);
   };
 
-  /* ──────────────────────────────── */
-  /*  THEME CONFIG                    */
-  /* ──────────────────────────────── */
+  /* ─────────────────────────────────────── */
+  /* THEME CONFIG                           */
+  /* ─────────────────────────────────────── */
   const themeMode = {
     algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
     token: {
-      colorPrimary: "#1E63F2",
-      fontFamily: "Roboto, sans-serif",
-      borderRadius: 20,
+      colorPrimary:  "#1E63F2",
+      fontFamily:    "Roboto, sans-serif",
+      borderRadius:  20,
       colorTextBase: isDarkMode ? "#E1E6EB" : "#1C1C1C",
       colorBgContainer: isDarkMode ? "#1E1E1E" : "#FFFFFF",
-      colorBgLayout: isDarkMode ? "#121212" : "#F0F2F5",
-      colorBorder: isDarkMode ? "#2C313A" : "#DDE1E6"
+      colorBgLayout:    isDarkMode ? "#121212" : "#F0F2F5",
+      colorBorder:      isDarkMode ? "#2C313A" : "#DDE1E6"
     }
   };
 
-  /* ──────────────────────────────── */
-  /*  RENDER                          */
-  /* ──────────────────────────────── */
+  /* ─────────────────────────────────────── */
+  /* RENDER                                 */
+  /* ─────────────────────────────────────── */
   return (
     <ConfigProvider theme={themeMode}>
       <Layout style={{ minHeight: "100vh" }}>
         {/* ────────────────  SIDE BAR  ──────────────── */}
-        <Sider width={340} style={{ background: "transparent", padding: "32px 24px 48px 24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 32 }}>
+        <Sider
+          width={340}
+          style={{ background: "transparent", padding: "32px 24px 48px 24px" }}
+        >
+          <div
+            style={{ display: "flex", justifyContent: "space-between", marginBottom: 32 }}
+          >
             <Button
               type="text"
               icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
@@ -284,13 +309,17 @@ const WorkerPage = () => {
                 }}
                 bordered={false}
               >
+                {/* помилки */}
                 {error && (
                   <>
-                    <Title level={3} type="danger">❌ {error}</Title>
+                    <Title level={3} type="danger">
+                      ❌ {error}
+                    </Title>
                     <Divider />
                   </>
                 )}
 
+                {/* профіль */}
                 <Title level={4}>
                   {userData?.firstName} {userData?.lastName}
                 </Title>
@@ -303,8 +332,14 @@ const WorkerPage = () => {
                 </Text>
 
                 <Divider />
-                <Text><MailOutlined /> {userData?.email}</Text><br />
-                <Text><PhoneOutlined /> {userData?.phone}</Text><br />
+                <Text>
+                  <MailOutlined /> {userData?.email}
+                </Text>
+                <br />
+                <Text>
+                  <PhoneOutlined /> {userData?.phone}
+                </Text>
+                <br />
                 <Button
                   type="primary"
                   style={{ marginTop: 16 }}
@@ -313,6 +348,7 @@ const WorkerPage = () => {
                   Редагувати профіль
                 </Button>
 
+                {/* сповіщення */}
                 <Divider />
                 <Title level={5} style={{ marginTop: 24 }}>
                   Новини ({notifications.filter((n) => !n.is_read).length})
